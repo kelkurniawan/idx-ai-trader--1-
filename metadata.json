@@ -1,0 +1,7 @@
+{
+  "name": "IDX AI Trader",
+  "description": "AI-powered stock market analysis and prediction tool tailored for the Indonesian Stock Exchange (IDX), featuring technical analysis and Gemini-powered buy/sell signals.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}

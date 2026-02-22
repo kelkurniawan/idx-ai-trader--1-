@@ -1,0 +1,28 @@
+# IDX AI Trader Backend - Dependencies
+
+# Web Framework
+fastapi>=0.100.0
+uvicorn[standard]>=0.23.0
+
+# Data Validation
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+
+# Database
+sqlalchemy>=2.0.0
+
+# AI Integration (optional, only needed for production)
+google-generativeai>=0.3.0
+
+# Data Processing
+numpy>=1.24.0
+pandas>=2.0.0
+
+# Environment
+python-dotenv>=1.0.0
+
+# HTTP Client (for future IDX API integration)
+httpx>=0.24.0
+
+# File upload support
+python-multipart>=0.0.6
