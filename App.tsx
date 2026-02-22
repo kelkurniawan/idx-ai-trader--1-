@@ -4,6 +4,8 @@ import { useTheme } from './context/ThemeContext';
 import { Sun, Moon } from 'lucide-react';
 import {
   SAMPLE_IDX_STOCKS,
+  IDX_SECTORS,
+  IDX_STOCK_INDICES,
   StockProfile,
   StockDataPoint,
   TechnicalIndicators,
@@ -291,6 +293,37 @@ const App: React.FC = () => {
 
   // Search State
   const [searchTicker, setSearchTicker] = useState('');
+  const [browseMode, setBrowseMode] = useState<'home' | 'sector' | 'index'>('home');
+  const [browseFilter, setBrowseFilter] = useState('');
+
+  // Filtered stocks based on browse mode
+  const filteredStocks = useMemo(() => {
+    if (browseMode === 'sector') {
+      return SAMPLE_IDX_STOCKS.filter(s => s.sector === browseFilter);
+    }
+    if (browseMode === 'index') {
+      const index = IDX_STOCK_INDICES.find(i => i.id === browseFilter);
+      if (index) {
+        return SAMPLE_IDX_STOCKS.filter(s => (index.tickers as readonly string[]).includes(s.ticker));
+      }
+    }
+    return SAMPLE_IDX_STOCKS;
+  }, [browseMode, browseFilter]);
+
+  const handleBrowseSector = (sectorId: string) => {
+    setBrowseMode('sector');
+    setBrowseFilter(sectorId);
+  };
+
+  const handleBrowseIndex = (indexId: string) => {
+    setBrowseMode('index');
+    setBrowseFilter(indexId);
+  };
+
+  const handleBrowseBack = () => {
+    setBrowseMode('home');
+    setBrowseFilter('');
+  };
 
   // Watchlist & Alert State for Analysis View
   const [isSavedToWatchlist, setIsSavedToWatchlist] = useState(false);
@@ -706,13 +739,13 @@ const App: React.FC = () => {
 
           {/* MARKET ANALYSIS TAB */}
           {view === 'analysis' && (!selectedStock ? (
-            <div className="py-24 text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm animate-fade-in">
-              <div className="w-24 h-24 bg-indigo-50 dark:bg-indigo-900/20 rounded-3xl flex items-center justify-center text-5xl mx-auto mb-8 shadow-sm">🔍</div>
-              <h2 className="text-4xl font-black text-slate-800 dark:text-slate-100 tracking-tight">Market IQ Scanner</h2>
-              <p className="text-slate-400 dark:text-slate-500 font-bold mb-8 uppercase tracking-widest text-xs">Search or Select a major ticker to start IDX technical scan</p>
+            <div className="py-16 text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm animate-fade-in">
+              <div className="w-20 h-20 bg-indigo-50 dark:bg-indigo-900/20 rounded-3xl flex items-center justify-center text-4xl mx-auto mb-6 shadow-sm">🔍</div>
+              <h2 className="text-3xl font-black text-slate-800 dark:text-slate-100 tracking-tight">Market IQ Scanner</h2>
+              <p className="text-slate-400 dark:text-slate-500 font-bold mb-8 uppercase tracking-widest text-xs">Search a ticker or browse by sector & index</p>
 
               {/* Search Bar */}
-              <div className="max-w-xl mx-auto mb-12 relative">
+              <div className="max-w-xl mx-auto mb-10 relative px-6">
                 <form onSubmit={handleSearchSubmit}>
                   <input
                     type="text"
@@ -721,44 +754,204 @@ const App: React.FC = () => {
                     value={searchTicker}
                     onChange={(e) => setSearchTicker(e.target.value)}
                   />
-                  <button type="submit" className="absolute right-2 top-2 bottom-2 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-xl px-6 transition-all">
+                  <button type="submit" className="absolute right-8 top-2 bottom-2 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-xl px-6 transition-all">
                     Scan
                   </button>
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500">
+                  <span className="absolute left-10 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500">
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                   </span>
                 </form>
               </div>
 
-              <div className="flex flex-wrap gap-3 justify-center max-w-2xl mx-auto px-6">
-                {SAMPLE_IDX_STOCKS.map(s => (
-                  <button
-                    key={s.ticker}
-                    onClick={() => handleSelectStock(s)}
-                    className="px-6 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:border-indigo-500 hover:text-indigo-600 text-slate-500 dark:text-slate-400 font-bold rounded-xl transition-all shadow-sm active:scale-95 text-xs"
-                  >
-                    {s.ticker}
-                  </button>
-                ))}
-              </div>
+              {browseMode === 'home' ? (
+                <>
+                  {/* Browse by Sector */}
+                  <div className="max-w-4xl mx-auto px-6 mb-10">
+                    <h3 className="text-left text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-4 flex items-center gap-2">
+                      <span className="w-5 h-px bg-slate-300 dark:bg-slate-700"></span>
+                      Browse by Business Sector
+                    </h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
+                      {IDX_SECTORS.filter(s => s.id !== 'All').map(sector => {
+                        const count = SAMPLE_IDX_STOCKS.filter(s => s.sector === sector.id).length;
+                        return (
+                          <button
+                            key={sector.id}
+                            onClick={() => handleBrowseSector(sector.id)}
+                            className="flex items-center gap-3 px-4 py-3.5 bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl hover:border-indigo-500 hover:shadow-md transition-all active:scale-[0.98] group text-left"
+                          >
+                            <span className="text-xl">{sector.icon}</span>
+                            <div className="flex-1 min-w-0">
+                              <span className="text-xs font-bold text-slate-700 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors block truncate">{sector.label}</span>
+                              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">{count} stocks</span>
+                            </div>
+                            <svg className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600 group-hover:text-indigo-500 transition-colors flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" /></svg>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Browse by Index */}
+                  <div className="max-w-4xl mx-auto px-6">
+                    <h3 className="text-left text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-4 flex items-center gap-2">
+                      <span className="w-5 h-px bg-slate-300 dark:bg-slate-700"></span>
+                      Browse by Stock Index
+                    </h3>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
+                      {IDX_STOCK_INDICES.map(index => (
+                        <button
+                          key={index.id}
+                          onClick={() => handleBrowseIndex(index.id)}
+                          className="flex flex-col items-center gap-2 px-4 py-5 bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl hover:border-indigo-500 hover:shadow-md transition-all active:scale-[0.98] group"
+                        >
+                          <span className="text-2xl">{index.icon}</span>
+                          <span className="text-sm font-black text-slate-700 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{index.label}</span>
+                          <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium leading-tight text-center">{index.description}</span>
+                          <span className="text-[10px] mt-1 px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 font-bold">{index.tickers.length} stocks</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              ) : (
+                /* Drill-down: Show stocks for selected sector or index */
+                <div className="max-w-5xl mx-auto px-6">
+                  {/* Back button + title */}
+                  <div className="flex items-center gap-3 mb-6">
+                    <button
+                      onClick={handleBrowseBack}
+                      className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+                      Back
+                    </button>
+                    <span className="text-sm font-black text-slate-700 dark:text-slate-200">
+                      {browseMode === 'sector'
+                        ? `${IDX_SECTORS.find(s => s.id === browseFilter)?.icon || ''} ${browseFilter}`
+                        : `${IDX_STOCK_INDICES.find(i => i.id === browseFilter)?.icon || ''} ${browseFilter}`
+                      }
+                    </span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 font-bold">
+                      {filteredStocks.length} stocks
+                    </span>
+                  </div>
+
+                  {/* Filtered stock grid */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5">
+                    {filteredStocks.map(s => (
+                      <button
+                        key={s.ticker}
+                        onClick={() => handleSelectStock(s)}
+                        className="flex flex-col items-start px-4 py-3 bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 hover:border-indigo-500 hover:shadow-md text-left rounded-xl transition-all active:scale-95 group"
+                      >
+                        <span className="font-black text-sm text-slate-800 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{s.ticker}</span>
+                        <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium leading-tight mt-0.5 line-clamp-1">{s.name}</span>
+                        {s.subsector && (
+                          <span className="text-[8px] mt-1.5 px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">{s.subsector}</span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <div className="flex flex-col gap-10 animate-fade-in pb-20">
               <div className="flex flex-col md:flex-row justify-between items-start gap-6 border-b border-slate-200 dark:border-slate-800 pb-10">
                 <div>
-                  <button
-                    onClick={() => setSelectedStock(null)}
-                    className="mb-4 text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 hover:text-indigo-600 flex items-center gap-2 transition-colors"
-                  >
-                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-                    Back to Scanner
-                  </button>
+                  <div className="flex items-center gap-3 mb-4">
+                    <button
+                      onClick={() => setSelectedStock(null)}
+                      className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 hover:text-indigo-600 flex items-center gap-2 transition-colors"
+                    >
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+                      Back to Scanner
+                    </button>
+
+                    {/* Inline Quick Search */}
+                    <div className="relative ml-2">
+                      <input
+                        type="text"
+                        placeholder="Jump to ticker..."
+                        className="w-36 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg py-1.5 pl-7 pr-2 text-[11px] font-bold text-slate-600 dark:text-slate-300 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 focus:w-52 transition-all uppercase placeholder:normal-case"
+                        value={searchTicker}
+                        onChange={(e) => setSearchTicker(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && searchTicker.trim()) {
+                            handleSearchSubmit(e as any);
+                          }
+                        }}
+                      />
+                      <svg className="w-3 h-3 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+
+                      {/* Search Dropdown */}
+                      {searchTicker.trim().length >= 1 && (
+                        <div className="absolute top-full left-0 mt-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-50 w-64 max-h-48 overflow-y-auto animate-fade-in">
+                          {SAMPLE_IDX_STOCKS
+                            .filter(s =>
+                              s.ticker.includes(searchTicker.trim().toUpperCase()) ||
+                              s.name.toLowerCase().includes(searchTicker.trim().toLowerCase())
+                            )
+                            .slice(0, 8)
+                            .map(s => (
+                              <button
+                                key={s.ticker}
+                                onClick={() => { setSearchTicker(''); handleSelectStock(s); }}
+                                className="w-full flex items-center gap-3 px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-left first:rounded-t-xl last:rounded-b-xl"
+                              >
+                                <span className="font-black text-xs text-slate-800 dark:text-slate-100">{s.ticker}</span>
+                                <span className="text-[10px] text-slate-400 dark:text-slate-500 truncate flex-1">{s.name}</span>
+                                <span className="text-[8px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-400 font-bold">{s.sector}</span>
+                              </button>
+                            ))
+                          }
+                          {SAMPLE_IDX_STOCKS.filter(s =>
+                            s.ticker.includes(searchTicker.trim().toUpperCase()) ||
+                            s.name.toLowerCase().includes(searchTicker.trim().toLowerCase())
+                          ).length === 0 && (
+                              <div className="px-3 py-3 text-[10px] text-slate-400 text-center font-bold">No matches found</div>
+                            )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
                   <div className="flex items-center gap-4">
                     <h1 className="text-5xl font-black text-slate-800 dark:text-slate-100 tracking-tighter">{selectedStock.ticker}</h1>
                     <span className="bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 text-xs px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 font-black uppercase">IDX</span>
                     {realTimeData && <span className="flex items-center gap-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-[10px] px-3 py-1.5 rounded-full border border-red-100 dark:border-red-900/50 animate-pulse font-black"><span className="w-2 h-2 bg-red-500 rounded-full"></span> LIVE</span>}
                   </div>
                   <p className="text-slate-500 dark:text-slate-400 mt-2 text-xl font-bold">{selectedStock.name}</p>
+
+                  {/* Sector & Index Tags */}
+                  <div className="flex flex-wrap items-center gap-2 mt-3">
+                    {/* Sector tag */}
+                    {selectedStock.sector && selectedStock.sector !== 'Unknown' && (
+                      <button
+                        onClick={() => { setSelectedStock(null); handleBrowseSector(selectedStock.sector); }}
+                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 text-[10px] font-bold border border-indigo-100 dark:border-indigo-900/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors cursor-pointer"
+                      >
+                        <span>{IDX_SECTORS.find(s => s.id === selectedStock.sector)?.icon || '📁'}</span>
+                        <span>#{selectedStock.sector}</span>
+                      </button>
+                    )}
+
+                    {/* Index tags */}
+                    {IDX_STOCK_INDICES
+                      .filter(idx => (idx.tickers as readonly string[]).includes(selectedStock.ticker))
+                      .map(idx => (
+                        <button
+                          key={idx.id}
+                          onClick={() => { setSelectedStock(null); handleBrowseIndex(idx.id); }}
+                          className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-900/15 text-amber-700 dark:text-amber-400 text-[10px] font-bold border border-amber-100 dark:border-amber-900/40 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors cursor-pointer"
+                        >
+                          <span>{idx.icon}</span>
+                          <span>{idx.label}</span>
+                        </button>
+                      ))
+                    }
+                  </div>
                 </div>
 
                 <div className="flex flex-col items-end gap-6 w-full md:w-auto">

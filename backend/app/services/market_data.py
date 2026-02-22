@@ -15,23 +15,122 @@ from ..schemas.stock import StockProfile, StockDataPoint, StockPriceOHLCV, RealT
 settings = get_settings()
 
 
-# Sample IDX Stocks (same as frontend)
+# Complete IDX Stock Database (sourced from LQ45, IDX30, IDX80, KOMPAS100)
 SAMPLE_IDX_STOCKS: List[Dict[str, Any]] = [
-    {"ticker": "BBCA", "name": "Bank Central Asia Tbk", "sector": "Finance", "base_price": 9500},
-    {"ticker": "BBRI", "name": "Bank Rakyat Indonesia", "sector": "Finance", "base_price": 5200},
-    {"ticker": "BMRI", "name": "Bank Mandiri", "sector": "Finance", "base_price": 6800},
-    {"ticker": "BBNI", "name": "Bank Negara Indonesia", "sector": "Finance", "base_price": 5100},
-    {"ticker": "BRIS", "name": "Bank Syariah Indonesia", "sector": "Finance", "base_price": 2450},
-    {"ticker": "GOTO", "name": "GoTo Gojek Tokopedia", "sector": "Technology", "base_price": 76},
-    {"ticker": "BUKA", "name": "Bukalapak.com", "sector": "Technology", "base_price": 124},
-    {"ticker": "ADRO", "name": "Adaro Energy", "sector": "Energy", "base_price": 2680},
-    {"ticker": "TLKM", "name": "Telkom Indonesia", "sector": "Infrastructure", "base_price": 3450},
-    {"ticker": "ASII", "name": "Astra International", "sector": "Conglomerate", "base_price": 5025},
-    {"ticker": "UNVR", "name": "Unilever Indonesia", "sector": "Consumer", "base_price": 4280},
-    {"ticker": "ICBP", "name": "Indofood CBP Sukses Makmur", "sector": "Consumer", "base_price": 11200},
-    {"ticker": "INDF", "name": "Indofood Sukses Makmur", "sector": "Consumer", "base_price": 6875},
-    {"ticker": "KLBF", "name": "Kalbe Farma", "sector": "Healthcare", "base_price": 1590},
-    {"ticker": "HMSP", "name": "HM Sampoerna", "sector": "Consumer", "base_price": 875},
+    # Financials
+    {"ticker": "BBCA", "name": "Bank Central Asia Tbk", "sector": "Financials", "base_price": 9500},
+    {"ticker": "BBRI", "name": "Bank Rakyat Indonesia Tbk", "sector": "Financials", "base_price": 5200},
+    {"ticker": "BMRI", "name": "Bank Mandiri Tbk", "sector": "Financials", "base_price": 6800},
+    {"ticker": "BBNI", "name": "Bank Negara Indonesia Tbk", "sector": "Financials", "base_price": 5100},
+    {"ticker": "BRIS", "name": "Bank Syariah Indonesia Tbk", "sector": "Financials", "base_price": 2450},
+    {"ticker": "BBTN", "name": "Bank Tabungan Negara Tbk", "sector": "Financials", "base_price": 1350},
+    {"ticker": "ARTO", "name": "Bank Jago Tbk", "sector": "Financials", "base_price": 2900},
+    {"ticker": "BNGA", "name": "Bank CIMB Niaga Tbk", "sector": "Financials", "base_price": 1750},
+    {"ticker": "BDMN", "name": "Bank Danamon Indonesia Tbk", "sector": "Financials", "base_price": 2600},
+    {"ticker": "MEGA", "name": "Bank Mega Tbk", "sector": "Financials", "base_price": 6200},
+    {"ticker": "BTPS", "name": "Bank BTPN Syariah Tbk", "sector": "Financials", "base_price": 1200},
+
+    # Energy
+    {"ticker": "ADRO", "name": "Adaro Energy Indonesia Tbk", "sector": "Energy", "base_price": 2680},
+    {"ticker": "MEDC", "name": "Medco Energi Internasional Tbk", "sector": "Energy", "base_price": 1350},
+    {"ticker": "PGAS", "name": "Perusahaan Gas Negara Tbk", "sector": "Energy", "base_price": 1650},
+    {"ticker": "PTBA", "name": "Bukit Asam Tbk", "sector": "Energy", "base_price": 2900},
+    {"ticker": "AKRA", "name": "AKR Corporindo Tbk", "sector": "Energy", "base_price": 1520},
+    {"ticker": "BUMI", "name": "Bumi Resources Tbk", "sector": "Energy", "base_price": 145},
+    {"ticker": "ESSA", "name": "ESSA Industries Indonesia Tbk", "sector": "Energy", "base_price": 870},
+    {"ticker": "PGEO", "name": "Pertamina Geothermal Energy Tbk", "sector": "Energy", "base_price": 1260},
+    {"ticker": "DSSA", "name": "Dian Swastatika Sentosa Tbk", "sector": "Energy", "base_price": 38000},
+    {"ticker": "ELSA", "name": "Elnusa Tbk", "sector": "Energy", "base_price": 380},
+    {"ticker": "RAJA", "name": "Rukun Raharja Tbk", "sector": "Energy", "base_price": 490},
+    {"ticker": "INDY", "name": "Indika Energy Tbk", "sector": "Energy", "base_price": 1480},
+
+    # Basic Materials
+    {"ticker": "ANTM", "name": "Aneka Tambang Tbk", "sector": "Basic Materials", "base_price": 1780},
+    {"ticker": "INCO", "name": "Vale Indonesia Tbk", "sector": "Basic Materials", "base_price": 4200},
+    {"ticker": "BRPT", "name": "Barito Pacific Tbk", "sector": "Basic Materials", "base_price": 1050},
+    {"ticker": "INKP", "name": "Indah Kiat Pulp & Paper Tbk", "sector": "Basic Materials", "base_price": 8650},
+    {"ticker": "TKIM", "name": "Pabrik Kertas Tjiwi Kimia Tbk", "sector": "Basic Materials", "base_price": 7500},
+    {"ticker": "SMGR", "name": "Semen Indonesia Tbk", "sector": "Basic Materials", "base_price": 4100},
+    {"ticker": "INTP", "name": "Indocement Tunggal Prakarsa Tbk", "sector": "Basic Materials", "base_price": 7200},
+    {"ticker": "MBMA", "name": "Merdeka Battery Materials Tbk", "sector": "Basic Materials", "base_price": 520},
+    {"ticker": "MDKA", "name": "Merdeka Copper Gold Tbk", "sector": "Basic Materials", "base_price": 1950},
+    {"ticker": "NCKL", "name": "Trimegah Bangun Persada Tbk", "sector": "Basic Materials", "base_price": 820},
+    {"ticker": "AMMN", "name": "Amman Mineral Internasional Tbk", "sector": "Basic Materials", "base_price": 9650},
+    {"ticker": "BREN", "name": "Barito Renewables Energy Tbk", "sector": "Basic Materials", "base_price": 6800},
+
+    # Technology
+    {"ticker": "GOTO", "name": "GoTo Gojek Tokopedia Tbk", "sector": "Technology", "base_price": 76},
+    {"ticker": "BUKA", "name": "Bukalapak.com Tbk", "sector": "Technology", "base_price": 124},
+    {"ticker": "EMTK", "name": "Elang Mahkota Teknologi Tbk", "sector": "Technology", "base_price": 470},
+    {"ticker": "DCII", "name": "DCI Indonesia Tbk", "sector": "Technology", "base_price": 36500},
+    {"ticker": "MTDL", "name": "Metrodata Electronics Tbk", "sector": "Technology", "base_price": 590},
+    {"ticker": "BELI", "name": "Global Digital Niaga Tbk", "sector": "Technology", "base_price": 342},
+    {"ticker": "WIFI", "name": "Solusi Sinergi Digital Tbk", "sector": "Technology", "base_price": 250},
+
+    # Consumer Non-Cyclicals
+    {"ticker": "UNVR", "name": "Unilever Indonesia Tbk", "sector": "Consumer Non-Cyclicals", "base_price": 4280},
+    {"ticker": "ICBP", "name": "Indofood CBP Sukses Makmur Tbk", "sector": "Consumer Non-Cyclicals", "base_price": 11200},
+    {"ticker": "INDF", "name": "Indofood Sukses Makmur Tbk", "sector": "Consumer Non-Cyclicals", "base_price": 6875},
+    {"ticker": "HMSP", "name": "HM Sampoerna Tbk", "sector": "Consumer Non-Cyclicals", "base_price": 875},
+    {"ticker": "GGRM", "name": "Gudang Garam Tbk", "sector": "Consumer Non-Cyclicals", "base_price": 23000},
+    {"ticker": "CPIN", "name": "Charoen Pokphand Indonesia Tbk", "sector": "Consumer Non-Cyclicals", "base_price": 5300},
+    {"ticker": "JPFA", "name": "JAPFA Comfeed Indonesia Tbk", "sector": "Consumer Non-Cyclicals", "base_price": 1700},
+    {"ticker": "AMRT", "name": "Sumber Alfaria Trijaya Tbk", "sector": "Consumer Non-Cyclicals", "base_price": 2900},
+    {"ticker": "MYOR", "name": "Mayora Indah Tbk", "sector": "Consumer Non-Cyclicals", "base_price": 2450},
+    {"ticker": "KLBF", "name": "Kalbe Farma Tbk", "sector": "Consumer Non-Cyclicals", "base_price": 1590},
+    {"ticker": "SIDO", "name": "Industri Jamu Sido Muncul Tbk", "sector": "Consumer Non-Cyclicals", "base_price": 620},
+    {"ticker": "AALI", "name": "Astra Agro Lestari Tbk", "sector": "Consumer Non-Cyclicals", "base_price": 6500},
+
+    # Consumer Cyclicals
+    {"ticker": "ASII", "name": "Astra International Tbk", "sector": "Consumer Cyclicals", "base_price": 5025},
+    {"ticker": "MAPI", "name": "Mitra Adiperkasa Tbk", "sector": "Consumer Cyclicals", "base_price": 1700},
+    {"ticker": "MAPA", "name": "MAP Aktif Adiperkasa Tbk", "sector": "Consumer Cyclicals", "base_price": 850},
+    {"ticker": "ACES", "name": "Aspirasi Hidup Indonesia Tbk", "sector": "Consumer Cyclicals", "base_price": 740},
+    {"ticker": "ERAA", "name": "Erajaya Swasembada Tbk", "sector": "Consumer Cyclicals", "base_price": 440},
+    {"ticker": "SCMA", "name": "Surya Citra Media Tbk", "sector": "Consumer Cyclicals", "base_price": 168},
+    {"ticker": "AUTO", "name": "Astra Otoparts Tbk", "sector": "Consumer Cyclicals", "base_price": 2200},
+    {"ticker": "SSIA", "name": "Surya Semesta Internusa Tbk", "sector": "Consumer Cyclicals", "base_price": 820},
+
+    # Healthcare
+    {"ticker": "HEAL", "name": "Medikaloka Hermina Tbk", "sector": "Healthcare", "base_price": 1350},
+    {"ticker": "SILO", "name": "Siloam International Hospitals Tbk", "sector": "Healthcare", "base_price": 2700},
+    {"ticker": "MIKA", "name": "Mitra Keluarga Karyasehat Tbk", "sector": "Healthcare", "base_price": 2900},
+    {"ticker": "SAME", "name": "Sarana Meditama Metropolitan Tbk", "sector": "Healthcare", "base_price": 710},
+    {"ticker": "PRDA", "name": "Prodia Widyahusada Tbk", "sector": "Healthcare", "base_price": 4300},
+
+    # Infrastructures
+    {"ticker": "TLKM", "name": "Telkom Indonesia Tbk", "sector": "Infrastructures", "base_price": 3450},
+    {"ticker": "ISAT", "name": "Indosat Ooredoo Hutchison Tbk", "sector": "Infrastructures", "base_price": 8200},
+    {"ticker": "EXCL", "name": "XL Axiata Tbk", "sector": "Infrastructures", "base_price": 2350},
+    {"ticker": "TOWR", "name": "Sarana Menara Nusantara Tbk", "sector": "Infrastructures", "base_price": 980},
+    {"ticker": "TBIG", "name": "Tower Bersama Infrastructure Tbk", "sector": "Infrastructures", "base_price": 1850},
+    {"ticker": "JSMR", "name": "Jasa Marga Tbk", "sector": "Infrastructures", "base_price": 4200},
+    {"ticker": "MTEL", "name": "Dayamitra Telekomunikasi Tbk", "sector": "Infrastructures", "base_price": 640},
+
+    # Transportation & Logistics
+    {"ticker": "BIRD", "name": "Blue Bird Tbk", "sector": "Transportation & Logistics", "base_price": 1500},
+    {"ticker": "GIAA", "name": "Garuda Indonesia Tbk", "sector": "Transportation & Logistics", "base_price": 68},
+    {"ticker": "SMDR", "name": "Samudera Indonesia Tbk", "sector": "Transportation & Logistics", "base_price": 410},
+    {"ticker": "ASSA", "name": "Adi Sarana Armada Tbk", "sector": "Transportation & Logistics", "base_price": 820},
+    {"ticker": "TMAS", "name": "Temas Tbk", "sector": "Transportation & Logistics", "base_price": 290},
+
+    # Industrials
+    {"ticker": "UNTR", "name": "United Tractors Tbk", "sector": "Industrials", "base_price": 26000},
+    {"ticker": "ITMG", "name": "Indo Tambangraya Megah Tbk", "sector": "Industrials", "base_price": 27500},
+    {"ticker": "WIKA", "name": "Wijaya Karya Tbk", "sector": "Industrials", "base_price": 340},
+    {"ticker": "WSKT", "name": "Waskita Karya Tbk", "sector": "Industrials", "base_price": 258},
+    {"ticker": "PTRO", "name": "Petrosea Tbk", "sector": "Industrials", "base_price": 3200},
+    {"ticker": "ADMR", "name": "Adaro Minerals Indonesia Tbk", "sector": "Industrials", "base_price": 1320},
+    {"ticker": "SRTG", "name": "Saratoga Investama Sedaya Tbk", "sector": "Industrials", "base_price": 2400},
+
+    # Property & Real Estate
+    {"ticker": "CTRA", "name": "Ciputra Development Tbk", "sector": "Property & Real Estate", "base_price": 1100},
+    {"ticker": "SMRA", "name": "Summarecon Agung Tbk", "sector": "Property & Real Estate", "base_price": 580},
+    {"ticker": "BSDE", "name": "Bumi Serpong Damai Tbk", "sector": "Property & Real Estate", "base_price": 1050},
+    {"ticker": "PWON", "name": "Pakuwon Jati Tbk", "sector": "Property & Real Estate", "base_price": 430},
+    {"ticker": "KIJA", "name": "Kawasan Industri Jababeka Tbk", "sector": "Property & Real Estate", "base_price": 128},
+    {"ticker": "LPKR", "name": "Lippo Karawaci Tbk", "sector": "Property & Real Estate", "base_price": 108},
+    {"ticker": "DILD", "name": "Intiland Development Tbk", "sector": "Property & Real Estate", "base_price": 172},
 ]
 
 

@@ -179,17 +179,64 @@ export const fetchStockNews = async (ticker: string, companyName: string): Promi
 export const analyzeStockWithGemini = async (ticker: string, history: StockDataPoint[], technicals: TechnicalIndicators, realTimeData?: RealTimeMarketData): Promise<AIAnalysisResult> => {
   return fetchWithRetry(async () => {
     const ai = getClient();
+
+    // --- Resolve stock metadata for the prompt ---
+    const { SAMPLE_IDX_STOCKS, IDX_STOCK_INDICES } = await import('../types');
+    const stockProfile = SAMPLE_IDX_STOCKS.find(s => s.ticker === ticker);
+    const sector = stockProfile?.sector || 'Unknown';
+    const subsector = stockProfile?.subsector || '';
+    const companyName = stockProfile?.name || ticker;
+    const memberOf = IDX_STOCK_INDICES
+      .filter(idx => (idx.tickers as readonly string[]).includes(ticker))
+      .map(idx => idx.label);
+    const indexStr = memberOf.length > 0 ? memberOf.join(', ') : 'None';
+
+    // --- Derive indicator summaries from technicals ---
+    const rsiValue = technicals.rsi?.toFixed(1) || 'N/A';
+    const rsiStatus = technicals.rsi > 70 ? 'Overbought' : technicals.rsi < 30 ? 'Oversold' : 'Neutral';
+    const macdStatus = (technicals.macd ?? 0) > 0 ? 'Bullish (histogram positive)' : 'Bearish (histogram negative)';
+    const currentPrice = realTimeData?.price || history[history.length - 1]?.price || 0;
+    const ma50 = technicals.ma50?.toFixed(0) || 'N/A';
+    const priceVsMa = currentPrice > (technicals.ma50 || 0) ? 'above' : 'below';
+    const volumeStatus = (realTimeData?.volume || history[history.length - 1]?.volume || 0) > (technicals.volumeAvg || 1) ? 'Above average (confirming)' : 'Below average (weak confirmation)';
+
     const prompt = `
-      Analyze stock ${ticker} (${realTimeData?.price ? 'Current Price: ' + realTimeData.price : ''}) on IDX.
-      1. perform a Google Search to find the latest Fundamental Data (PE, PBV, ROE, DER, Market Cap, Dividend Yield).
-      2. Analyze technicals: Trend ${technicals.trendLong}, RSI ${technicals.rsi}.
-      3. Provide an Investment Verdict: Rating (Buy/Hold/Sell), Suitability scores (0-100) for Growth, Value, Dividend investors.
-      4. List Pros and Cons.
-      Return JSON matching the schema.
+You are an elite, highly accurate quantitative financial analyst AI specializing in the Indonesian Stock Exchange (IDX).
+
+CRITICAL DIRECTIVES:
+1. LOGICAL CONSISTENCY: Your final recommendation (signal) MUST perfectly align with the underlying technical indicators. Do NOT issue a "Buy" signal if MACD or Volume is bearish. Do NOT issue "Sell" if RSI and MACD are bullish.
+2. FACTUAL ACCURACY: This stock's official IDX-IC sector is "${sector}"${subsector ? ` (subsector: ${subsector})` : ''}. Index membership: ${indexStr}. Never hallucinate sectors or indices.
+3. CHAIN OF THOUGHT: Internally analyze the exact relationship between price, moving averages, and momentum indicators before generating the final output.
+
+INPUT DATA:
+Ticker: ${ticker} (${companyName})
+Sector: ${sector}
+Index Membership: ${indexStr}
+Current Price: Rp ${currentPrice.toLocaleString('id-ID')}
+RSI (14): ${rsiValue} (${rsiStatus})
+MACD: ${macdStatus}
+50-Day MA: Rp ${ma50} (price is ${priceVsMa} the MA)
+Volume: ${volumeStatus}
+Long-term Trend: ${technicals.trendLong || 'N/A'}
+
+TASKS:
+1. Perform a Google Search to find the latest Fundamental Data (PE, PBV, ROE, DER, Market Cap, Dividend Yield) for ${ticker} on IDX.
+2. Generate a synthesized 5-point analysis:
+   - Point 1: RSI Insight — what the current momentum means for price action
+   - Point 2: MACD Insight — trend direction and crossover signal
+   - Point 3: Moving Average Insight — price relative to the 50-day MA
+   - Point 4: Volume Insight — does volume confirm or reject the current trend?
+   - Point 5: Sector Outlook — factual insight about the ${sector} sector in Indonesia's current macro environment
+3. Write a cohesive summary headline (1 sentence) that is logically supported by all 5 points. Include clear support/resistance levels.
+4. Provide an Investment Verdict: Rating (Buy/Hold/Sell), Suitability scores (0-100) for Growth, Value, Dividend investors.
+5. List Pros and Cons.
+
+Put the 5-point analysis into the "reasoning" array. Put the headline into "summary".
+Return JSON matching the schema.
     `;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.0-flash-exp', // Upgraded model for better reasoning
+      model: 'gemini-2.0-flash-exp',
       contents: prompt,
       config: {
         tools: [{ googleSearch: {} }],
