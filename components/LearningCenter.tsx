@@ -125,17 +125,17 @@ const LearningCenter: React.FC = () => {
 
     return (
         <div className="animate-fade-in pb-12">
-            <div className="flex items-center gap-4 mb-8">
-                <div className="w-12 h-12 bg-amber-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-amber-100">
-                    <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="flex items-center gap-3 md:gap-4 mb-6 md:mb-8">
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-amber-500 rounded-xl md:rounded-2xl flex items-center justify-center text-white shadow-lg shadow-amber-100 flex-shrink-0">
+                    <svg className="w-5 h-5 md:w-7 md:h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path d="M12 14l9-5-9-5-9 5 9 5z" />
                         <path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222" />
                     </svg>
                 </div>
                 <div>
-                    <h2 className="text-3xl font-black text-slate-800 tracking-tight">Learning Hub</h2>
-                    <p className="text-slate-500 font-medium">Master the markets with expert guides</p>
+                    <h2 className="text-2xl md:text-3xl font-black text-slate-800 tracking-tight">Learning Hub</h2>
+                    <p className="text-slate-500 font-medium text-xs md:text-sm">Master the markets with expert guides</p>
                 </div>
             </div>
 
@@ -147,17 +147,17 @@ const LearningCenter: React.FC = () => {
                             onClick={() => setActiveArticle(article)}
                             className="bg-white border border-slate-200 rounded-3xl p-6 hover:shadow-xl hover:shadow-indigo-500/10 hover:border-indigo-300 transition-all cursor-pointer group flex flex-col h-full active:scale-95"
                         >
-                            <div className="flex justify-between items-start mb-6">
-                                <div className={`w-12 h-12 rounded-2xl bg-${article.color}-50 flex items-center justify-center text-2xl shadow-inner border border-${article.color}-100`}>
+                            <div className="flex justify-between items-start mb-4 md:mb-6">
+                                <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-${article.color}-50 flex items-center justify-center text-xl md:text-2xl shadow-inner border border-${article.color}-100 flex-shrink-0`}>
                                     {article.icon}
                                 </div>
-                                <span className={`px-3 py-1 bg-${article.color}-50 text-${article.color}-600 text-[10px] font-black uppercase tracking-widest rounded-full border border-${article.color}-100`}>
+                                <span className={`px-2 md:px-3 py-0.5 md:py-1 bg-${article.color}-50 text-${article.color}-600 text-[9px] md:text-[10px] font-black uppercase tracking-widest rounded-full border border-${article.color}-100`}>
                                     {article.category}
                                 </span>
                             </div>
 
-                            <h3 className="text-xl font-black text-slate-800 mb-3 group-hover:text-indigo-600 transition-colors">{article.title}</h3>
-                            <p className="text-slate-500 text-sm leading-relaxed mb-6 flex-grow">{article.description}</p>
+                            <h3 className="text-lg md:text-xl font-black text-slate-800 mb-2 md:mb-3 group-hover:text-indigo-600 transition-colors">{article.title}</h3>
+                            <p className="text-slate-500 text-xs md:text-sm leading-relaxed mb-4 md:mb-6 flex-grow">{article.description}</p>
 
                             <div className="flex items-center justify-between pt-6 border-t border-slate-50 mt-auto">
                                 <div className="flex items-center gap-2 text-slate-400 text-xs font-bold">
@@ -179,30 +179,30 @@ const LearningCenter: React.FC = () => {
                     </div>
                 </div>
             ) : (
-                <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm animate-fade-in">
-                    <div className="border-b border-slate-100 bg-slate-50/50 p-6 flex items-center gap-4 sticky top-0 backdrop-blur-md z-10">
+                <div className="bg-white border border-slate-200 rounded-2xl md:rounded-3xl overflow-hidden shadow-sm animate-fade-in">
+                    <div className="border-b border-slate-100 bg-slate-50/50 p-4 md:p-6 flex items-center gap-3 md:gap-4 sticky top-0 backdrop-blur-md z-10">
                         <button
                             onClick={() => setActiveArticle(null)}
-                            className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-800 hover:border-slate-300 transition-all shadow-sm"
+                            className="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-800 hover:border-slate-300 transition-all shadow-sm flex-shrink-0"
                         >
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+                            <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
                         </button>
                         <div>
-                            <span className={`text-[10px] font-black uppercase tracking-widest text-${activeArticle.color}-600 block`}>{activeArticle.category}</span>
-                            <h1 className="text-xl font-black text-slate-800">{activeArticle.title}</h1>
+                            <span className={`text-[9px] md:text-[10px] font-black uppercase tracking-widest text-${activeArticle.color}-600 block`}>{activeArticle.category}</span>
+                            <h1 className="text-lg md:text-xl font-black text-slate-800">{activeArticle.title}</h1>
                         </div>
                     </div>
 
-                    <div className="p-8 md:p-12 max-w-4xl mx-auto">
-                        <div className="prose prose-slate prose-lg max-w-none">
+                    <div className="p-5 md:p-8 lg:p-12 max-w-4xl mx-auto">
+                        <div className="prose prose-sm md:prose-base lg:prose-lg prose-slate max-w-none">
                             {activeArticle.content}
                         </div>
 
-                        <div className="mt-12 pt-8 border-t border-slate-100 flex justify-between items-center">
-                            <p className="text-slate-400 text-sm italic">Did you find this guide helpful?</p>
+                        <div className="mt-8 md:mt-12 pt-6 md:pt-8 border-t border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4">
+                            <p className="text-slate-400 text-xs md:text-sm italic text-center sm:text-left">Did you find this guide helpful?</p>
                             <button
                                 onClick={() => setActiveArticle(null)}
-                                className="px-6 py-3 bg-indigo-50 text-indigo-600 font-black rounded-xl hover:bg-indigo-100 transition-colors"
+                                className="w-full sm:w-auto px-6 py-3 min-h-touch bg-indigo-50 text-indigo-600 font-black rounded-xl hover:bg-indigo-100 transition-colors text-sm md:text-base"
                             >
                                 Back to Hub
                             </button>

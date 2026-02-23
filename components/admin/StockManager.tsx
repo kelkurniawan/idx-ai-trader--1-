@@ -93,17 +93,17 @@ const StockManager: React.FC = () => {
     return (
         <div className="space-y-6 animate-fade-in">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-0">
                 <div>
-                    <h2 className="text-2xl font-black tracking-tight">Stock Overrides</h2>
-                    <p className="text-sm text-slate-400 mt-1">
-                        Manually set prices, signals, and fundamentals. Overrides take priority over API data.
+                    <h2 className="text-xl md:text-2xl font-black tracking-tight">Stock Overrides</h2>
+                    <p className="text-xs md:text-sm text-slate-400 mt-1">
+                        Manually set prices, signals, etc. Overrides take priority over API data.
                     </p>
                 </div>
                 {!isEditing && (
                     <button
                         onClick={handleAddNew}
-                        className="flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-indigo-100 dark:shadow-none hover:from-indigo-600 hover:to-indigo-700 transition-all active:scale-95"
+                        className="w-full sm:w-auto flex justify-center items-center gap-2 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white min-h-touch px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-indigo-100 dark:shadow-none hover:from-indigo-600 hover:to-indigo-700 transition-all active:scale-95"
                     >
                         <span className="text-lg">+</span> Add Override
                     </button>
@@ -112,8 +112,8 @@ const StockManager: React.FC = () => {
 
             {/* Edit / Add Form */}
             {isEditing && (
-                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
-                    <h3 className="text-lg font-black mb-6 flex items-center gap-2">
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl md:rounded-3xl p-5 md:p-6 shadow-sm">
+                    <h3 className="text-base md:text-lg font-black mb-5 md:mb-6 flex items-center gap-2">
                         <span className="text-xl">{showAdd ? '➕' : '✏️'}</span>
                         {showAdd ? 'New Override' : `Editing ${editTicker}`}
                     </h3>
@@ -239,8 +239,8 @@ const StockManager: React.FC = () => {
 
                     {/* Fundamentals Section */}
                     <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-800">
-                        <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Fundamentals Override</h4>
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                        <h4 className="text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Fundamentals Override</h4>
+                        <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 md:gap-4">
                             {[
                                 { key: 'peRatio', label: 'P/E Ratio', placeholder: '15.2' },
                                 { key: 'pbvRatio', label: 'P/BV', placeholder: '2.8' },
@@ -255,7 +255,7 @@ const StockManager: React.FC = () => {
                                         step="0.01"
                                         value={form.fundamentals?.[key as keyof typeof form.fundamentals] ?? ''}
                                         onChange={e => updateFundamental(key, e.target.value ? Number(e.target.value) : undefined)}
-                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-bold focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
+                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg md:rounded-xl px-3 py-2 min-h-input text-xs font-bold focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
                                         placeholder={placeholder}
                                     />
                                 </div>
@@ -266,7 +266,7 @@ const StockManager: React.FC = () => {
                                     type="text"
                                     value={form.fundamentals?.marketCap ?? ''}
                                     onChange={e => updateFundamental('marketCap', e.target.value || undefined)}
-                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-bold focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
+                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg md:rounded-xl px-3 py-2 min-h-input text-xs font-bold focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
                                     placeholder="Rp 150T"
                                 />
                             </div>
@@ -286,17 +286,17 @@ const StockManager: React.FC = () => {
                     </div>
 
                     {/* Actions */}
-                    <div className="flex items-center gap-3 mt-6">
+                    <div className="flex flex-col sm:flex-row items-center gap-3 mt-6">
                         <button
                             onClick={handleSave}
                             disabled={!form.ticker}
-                            className="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white px-6 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-emerald-100 dark:shadow-none hover:from-emerald-600 hover:to-emerald-700 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+                            className="w-full sm:w-auto bg-gradient-to-r from-emerald-500 to-emerald-600 text-white min-h-touch px-6 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-emerald-100 dark:shadow-none hover:from-emerald-600 hover:to-emerald-700 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
                         >
                             💾 Save Override
                         </button>
                         <button
                             onClick={() => { setEditTicker(null); setShowAdd(false); setForm({}); }}
-                            className="bg-slate-100 dark:bg-slate-800 text-slate-500 px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
+                            className="w-full sm:w-auto bg-slate-100 dark:bg-slate-800 text-slate-500 min-h-touch px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-all active:scale-95"
                         >
                             Cancel
                         </button>

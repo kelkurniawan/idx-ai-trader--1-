@@ -33,15 +33,15 @@ const IndicatorCard: React.FC<IndicatorCardProps> = ({ label, value, subtext, tr
   }
 
   return (
-    <div className={`glass-card rounded-2xl p-4 flex flex-col items-center justify-center min-w-[100px] relative overflow-visible group transition-all duration-200 hover:scale-[1.03] ${glowRing}`}>
-      <div className="flex items-center gap-1.5 mb-1.5 z-20">
-        <span className="text-slate-400 dark:text-slate-500 text-[10px] uppercase font-black tracking-widest">{label}</span>
+    <div className={`glass-card rounded-2xl p-3 md:p-4 flex flex-col items-center justify-center min-w-[80px] md:min-w-[100px] min-h-[72px] md:min-h-[80px] h-full relative overflow-visible group transition-all duration-200 hover:scale-[1.03] ${glowRing}`}>
+      <div className="flex items-center gap-1 md:gap-1.5 mb-1 md:mb-1.5 z-20">
+        <span className="text-slate-400 dark:text-slate-500 text-[9px] md:text-[10px] uppercase font-black tracking-widest text-center leading-tight">{label}</span>
 
         {tooltip && (
           <div className="relative inline-block group/tooltip">
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              className="h-3.5 w-3.5 text-slate-300 dark:text-slate-600 hover:text-slate-500 dark:hover:text-slate-400 cursor-help transition-colors"
+              className="h-3 w-3 md:h-3.5 md:w-3.5 text-slate-300 dark:text-slate-600 hover:text-slate-500 dark:hover:text-slate-400 cursor-help transition-colors"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -59,11 +59,11 @@ const IndicatorCard: React.FC<IndicatorCardProps> = ({ label, value, subtext, tr
         )}
       </div>
 
-      <div className="flex items-center gap-1.5">
-        <span className={`text-xl font-black tabular-nums ${valueColor}`}>{value}</span>
+      <div className="flex items-center gap-1 md:gap-1.5">
+        <span className={`text-base md:text-xl font-black tabular-nums ${valueColor}`}>{value}</span>
         {trendIcon}
       </div>
-      {subtext && <span className="text-slate-400 dark:text-slate-500 text-[10px] mt-1 font-bold">{subtext}</span>}
+      {subtext && <span className="text-slate-400 dark:text-slate-500 text-[8px] md:text-[10px] mt-0.5 md:mt-1 font-bold">{subtext}</span>}
     </div>
   );
 };

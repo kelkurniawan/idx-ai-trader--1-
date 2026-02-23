@@ -111,22 +111,22 @@ export const LoginPage: React.FC<AuthProps> = ({ onLogin, onSwitch, onMfaRequire
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1">Email Address</label>
+            <label className="block text-sm font-medium text-slate-300 mb-1.5 md:mb-1">Email Address</label>
             <input
               type="email"
               required
-              className="w-full bg-slate-900 border border-slate-700 rounded-lg py-2.5 px-4 text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+              className="w-full min-h-input bg-slate-900 border border-slate-700 rounded-lg md:rounded-xl py-3 md:py-2.5 px-4 text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
               placeholder="you@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1">Password</label>
+            <label className="block text-sm font-medium text-slate-300 mb-1.5 md:mb-1">Password</label>
             <input
               type="password"
               required
-              className="w-full bg-slate-900 border border-slate-700 rounded-lg py-2.5 px-4 text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+              className="w-full min-h-input bg-slate-900 border border-slate-700 rounded-lg md:rounded-xl py-3 md:py-2.5 px-4 text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -150,7 +150,7 @@ export const LoginPage: React.FC<AuthProps> = ({ onLogin, onSwitch, onMfaRequire
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-emerald-500 hover:bg-emerald-600 disabled:bg-emerald-500/50 text-white font-semibold py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2"
+            className="w-full min-h-touch bg-emerald-500 hover:bg-emerald-600 disabled:bg-emerald-500/50 text-white font-semibold flex items-center justify-center gap-2 py-3 md:py-2.5 rounded-xl transition-colors active:scale-[0.98] mt-2"
           >
             {loading ? (
               <>
@@ -173,7 +173,7 @@ export const LoginPage: React.FC<AuthProps> = ({ onLogin, onSwitch, onMfaRequire
         <button
           onClick={handleGoogleLogin}
           disabled={loading}
-          className="w-full bg-white hover:bg-slate-100 text-slate-900 font-medium py-2.5 rounded-lg transition-colors flex items-center justify-center gap-3"
+          className="w-full min-h-touch bg-white hover:bg-slate-100 text-slate-900 font-medium flex items-center justify-center gap-3 py-3 md:py-2.5 rounded-xl transition-colors active:scale-[0.98]"
         >
           <GoogleIcon />
           Continue with Google
@@ -265,45 +265,45 @@ export const RegisterPage: React.FC<AuthProps> = ({ onLogin, onSwitch, onMfaRequ
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1">Full Name</label>
+            <label className="block text-sm font-medium text-slate-300 mb-1.5 md:mb-1">Full Name</label>
             <input
               type="text"
               required
-              className="w-full bg-slate-900 border border-slate-700 rounded-lg py-2.5 px-4 text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+              className="w-full min-h-input bg-slate-900 border border-slate-700 rounded-lg md:rounded-xl py-3 md:py-2.5 px-4 text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
               placeholder="John Doe"
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1">Email Address</label>
+            <label className="block text-sm font-medium text-slate-300 mb-1.5 md:mb-1">Email Address</label>
             <input
               type="email"
               required
-              className="w-full bg-slate-900 border border-slate-700 rounded-lg py-2.5 px-4 text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+              className="w-full min-h-input bg-slate-900 border border-slate-700 rounded-lg md:rounded-xl py-3 md:py-2.5 px-4 text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
               placeholder="you@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1">Password</label>
+            <label className="block text-sm font-medium text-slate-300 mb-1.5 md:mb-1">Password</label>
             <input
               type="password"
               required
               minLength={8}
-              className="w-full bg-slate-900 border border-slate-700 rounded-lg py-2.5 px-4 text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+              className="w-full min-h-input bg-slate-900 border border-slate-700 rounded-lg md:rounded-xl py-3 md:py-2.5 px-4 text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
-            <p className="text-xs text-slate-500 mt-1">Minimum 8 characters</p>
+            <p className="text-xs text-slate-500 mt-1.5 md:mt-1">Minimum 8 characters</p>
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-emerald-500 hover:bg-emerald-600 disabled:bg-emerald-500/50 text-white font-semibold py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2"
+            className="w-full min-h-touch bg-emerald-500 hover:bg-emerald-600 disabled:bg-emerald-500/50 text-white font-semibold flex items-center justify-center gap-2 py-3 md:py-2.5 rounded-xl transition-colors active:scale-[0.98] mt-4"
           >
             {loading ? (
               <>
@@ -326,7 +326,7 @@ export const RegisterPage: React.FC<AuthProps> = ({ onLogin, onSwitch, onMfaRequ
         <button
           onClick={handleGoogleLogin}
           disabled={loading}
-          className="w-full bg-white hover:bg-slate-100 text-slate-900 font-medium py-2.5 rounded-lg transition-colors flex items-center justify-center gap-3"
+          className="w-full min-h-touch bg-white hover:bg-slate-100 text-slate-900 font-medium flex items-center justify-center gap-3 py-3 md:py-2.5 rounded-xl transition-colors active:scale-[0.98]"
         >
           <GoogleIcon />
           Continue with Google

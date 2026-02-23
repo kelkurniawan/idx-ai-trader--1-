@@ -46,7 +46,7 @@ const Chart: React.FC<ChartProps> = ({ data, timeFrame = '3M', markers, chartMod
   };
 
   return (
-    <div className="w-full h-[350px] bg-slate-800/50 rounded-xl p-4 border border-slate-700 backdrop-blur-sm transition-all duration-500">
+    <div className="w-full h-[300px] md:h-[350px] bg-slate-800/50 rounded-xl p-3 md:p-4 border border-slate-700 backdrop-blur-sm transition-all duration-500 flex flex-col">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Price Action</h3>
         <span className="text-xs text-slate-500 font-mono">{timeFrame}</span>

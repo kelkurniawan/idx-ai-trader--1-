@@ -3,6 +3,16 @@
 
 All notable changes to the IDX AI Trader project will be documented in this file.
 
+## [1.3.0] - Auth & UI Enhancements - 2026-02-24
+
+### Added
+- **Authentication System:** Complete backend authentication system using JWT in HTTP-only cookies, password hashing with bcrypt, and MFA support (TOTP & OTP).
+- **Frontend Auth Flow:** Added `ProfileSetup`, `MfaSetup`, and `MfaVerify` components to handle secure login, registration, and complete user auth flows.
+- **Watchlist Hashtags:** Sector and Index tags (e.g., `#Financials`, `LQ45`) are now displayed on the Watchlist tab (`PortfolioRow`), visually linking the Watchlist to the Market Analysis tab.
+
+### Fixed
+- **CORS Configuration:** Added `http://localhost:3001` to the backend CORS allowed origins list to resolve dev server connection failures.
+
 ## [1.2.1] - Stability Patch - 2025-01-22
 
 ### Fixed

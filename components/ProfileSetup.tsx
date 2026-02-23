@@ -60,10 +60,10 @@ const ProfileSetup: React.FC<ProfileSetupProps> = ({ user, onComplete, onSkip })
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-slate-300 mb-1">Display Name</label>
+                        <label className="block text-sm font-medium text-slate-300 mb-1.5 md:mb-1">Display Name</label>
                         <input
                             type="text"
-                            className="w-full bg-slate-900 border border-slate-700 rounded-lg py-2.5 px-4 text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+                            className="w-full min-h-input bg-slate-900 border border-slate-700 rounded-lg md:rounded-xl py-3 md:py-2.5 px-4 text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
                             placeholder="Your name"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
@@ -71,12 +71,12 @@ const ProfileSetup: React.FC<ProfileSetupProps> = ({ user, onComplete, onSkip })
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-slate-300 mb-1">
-                            Phone Number <span className="text-slate-500">(optional, for WhatsApp OTP)</span>
+                        <label className="block text-sm font-medium text-slate-300 mb-1.5 md:mb-1">
+                            Phone Number <span className="text-slate-500 text-xs md:text-sm block md:inline mt-0.5 md:mt-0">(optional, for WhatsApp OTP)</span>
                         </label>
                         <input
                             type="tel"
-                            className="w-full bg-slate-900 border border-slate-700 rounded-lg py-2.5 px-4 text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+                            className="w-full min-h-input bg-slate-900 border border-slate-700 rounded-lg md:rounded-xl py-3 md:py-2.5 px-4 text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
                             placeholder="+62 8xx xxxx xxxx"
                             value={phone}
                             onChange={(e) => setPhone(e.target.value)}
@@ -86,7 +86,7 @@ const ProfileSetup: React.FC<ProfileSetupProps> = ({ user, onComplete, onSkip })
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-semibold py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2"
+                        className="w-full min-h-touch bg-emerald-500 hover:bg-emerald-600 text-white font-semibold flex items-center justify-center gap-2 py-3 md:py-2.5 rounded-xl transition-colors active:scale-[0.98]"
                     >
                         {loading ? 'Saving...' : 'Save & Continue'}
                     </button>
@@ -94,7 +94,7 @@ const ProfileSetup: React.FC<ProfileSetupProps> = ({ user, onComplete, onSkip })
 
                 <button
                     onClick={onSkip}
-                    className="w-full mt-3 text-slate-500 hover:text-slate-300 text-sm font-medium py-2 transition-colors"
+                    className="w-full mt-4 text-slate-400 hover:text-slate-200 text-sm font-medium py-3 min-h-touch transition-colors"
                 >
                     Skip for now
                 </button>

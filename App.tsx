@@ -49,38 +49,38 @@ const AdminDashboard = React.lazy(() => import('./components/admin/AdminDashboar
 
 // Helper Components moved to top for hoisting safety
 const FundamentalsCard = ({ data }: { data: FundamentalData }) => (
-  <div className="glass-card rounded-3xl p-8 relative overflow-hidden h-full animate-slide-up">
+  <div className="glass-card rounded-3xl p-6 md:p-8 relative overflow-hidden h-full animate-slide-up">
     <div className="absolute top-0 left-0 w-1.5 h-full accent-emerald rounded-l-3xl" />
-    <h3 className="text-lg font-black text-slate-800 dark:text-slate-100 mb-6 flex items-center gap-3">
-      <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center">
+    <h3 className="text-base md:text-lg font-black text-slate-800 dark:text-slate-100 mb-6 flex items-center gap-3">
+      <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
         <span className="text-lg">🏛️</span>
       </div>
       Fundamental Health
     </h3>
-    <div className="grid grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
       <div className="space-y-1">
-        <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">P/E Ratio</p>
-        <p className="text-xl font-mono font-black text-slate-800 dark:text-slate-200">{data.peRatio?.toFixed(2)}x</p>
+        <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest truncate">P/E Ratio</p>
+        <p className="text-lg md:text-xl font-mono font-black text-slate-800 dark:text-slate-200 truncate">{data.peRatio?.toFixed(2)}x</p>
       </div>
       <div className="space-y-1">
-        <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">PBV Ratio</p>
-        <p className="text-xl font-mono font-black text-slate-800 dark:text-slate-200">{data.pbvRatio?.toFixed(2)}x</p>
+        <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest truncate">PBV Ratio</p>
+        <p className="text-lg md:text-xl font-mono font-black text-slate-800 dark:text-slate-200 truncate">{data.pbvRatio?.toFixed(2)}x</p>
       </div>
       <div className="space-y-1">
-        <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">ROE</p>
-        <p className={`text-xl font-mono font-black ${data.roe > 15 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-800 dark:text-slate-200'}`}>{data.roe?.toFixed(2)}%</p>
+        <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest truncate">ROE</p>
+        <p className={`text-lg md:text-xl font-mono font-black truncate ${data.roe > 15 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-800 dark:text-slate-200'}`}>{data.roe?.toFixed(2)}%</p>
       </div>
       <div className="space-y-1">
-        <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">DER</p>
-        <p className={`text-xl font-mono font-black ${data.der < 1 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-800 dark:text-slate-200'}`}>{data.der?.toFixed(2)}x</p>
+        <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest truncate">DER</p>
+        <p className={`text-lg md:text-xl font-mono font-black truncate ${data.der < 1 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-800 dark:text-slate-200'}`}>{data.der?.toFixed(2)}x</p>
       </div>
       <div className="space-y-1">
-        <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Div. Yield</p>
-        <p className="text-xl font-mono font-black text-slate-800 dark:text-slate-200">{data.dividendYield?.toFixed(2)}%</p>
+        <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest truncate">Div. Yield</p>
+        <p className="text-lg md:text-xl font-mono font-black text-slate-800 dark:text-slate-200 truncate">{data.dividendYield?.toFixed(2)}%</p>
       </div>
       <div className="space-y-1">
-        <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Market Cap</p>
-        <p className="text-sm font-mono font-black text-slate-800 dark:text-slate-200">{data.marketCap}</p>
+        <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest truncate">Market Cap</p>
+        <p className="text-xs md:text-sm font-mono font-black text-slate-800 dark:text-slate-200 truncate">{data.marketCap}</p>
       </div>
     </div>
   </div>
@@ -89,17 +89,17 @@ const FundamentalsCard = ({ data }: { data: FundamentalData }) => (
 const VerdictCard = ({ verdict }: { verdict: InvestmentVerdict }) => {
   const accentClass = verdict.rating === 'Buy' ? 'accent-emerald' : verdict.rating === 'Sell' ? 'accent-rose' : 'accent-amber';
   return (
-    <div className="glass-card rounded-3xl p-8 relative overflow-hidden h-full animate-slide-up">
+    <div className="glass-card rounded-3xl p-6 md:p-8 relative overflow-hidden h-full animate-slide-up">
       <div className={`absolute top-0 left-0 right-0 h-1 ${accentClass} rounded-t-3xl`} />
-      <div className="flex justify-between items-start mb-8">
+      <div className="flex flex-col sm:flex-row sm:justify-between items-start mb-6 md:mb-8 gap-4 sm:gap-0">
         <div>
-          <h3 className="text-lg font-black text-slate-800 dark:text-slate-100 mb-2">Investment Verdict</h3>
-          <span className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest ${verdict.rating === 'Buy' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400' : verdict.rating === 'Sell' ? 'bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400' : 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400'}`}>
+          <h3 className="text-base md:text-lg font-black text-slate-800 dark:text-slate-100 mb-2">Investment Verdict</h3>
+          <span className={`px-3 md:px-4 py-1.5 md:py-2 rounded-xl text-xs font-black uppercase tracking-widest ${verdict.rating === 'Buy' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400' : verdict.rating === 'Sell' ? 'bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400' : 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400'}`}>
             {verdict.rating}
           </span>
         </div>
-        <div className="text-right">
-          <div className="flex gap-2 items-end h-10">
+        <div className="text-right w-full sm:w-auto">
+          <div className="flex justify-start sm:justify-end gap-2 items-end h-10">
             {['Growth', 'Value', 'Dividend'].map((type) => (
               <div key={type} className="flex flex-col items-center gap-1 group w-4">
                 <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-full relative overflow-hidden">
@@ -112,13 +112,13 @@ const VerdictCard = ({ verdict }: { verdict: InvestmentVerdict }) => {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <h4 className="text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest mb-3">Pros</h4>
           <ul className="space-y-2">
             {verdict.pros.slice(0, 3).map((pro, i) => (
               <li key={i} className="flex items-start gap-2 text-[10px] font-bold text-slate-600 dark:text-slate-400 leading-tight">
-                <span className="text-emerald-500 mt-0.5">✓</span> {pro}
+                <span className="text-emerald-500 mt-0.5 flex-shrink-0">✓</span> <span>{pro}</span>
               </li>
             ))}
           </ul>
@@ -128,7 +128,7 @@ const VerdictCard = ({ verdict }: { verdict: InvestmentVerdict }) => {
           <ul className="space-y-2">
             {verdict.cons.slice(0, 3).map((con, i) => (
               <li key={i} className="flex items-start gap-2 text-[10px] font-bold text-slate-600 dark:text-slate-400 leading-tight">
-                <span className="text-red-500 mt-0.5">✕</span> {con}
+                <span className="text-red-500 mt-0.5 flex-shrink-0">✕</span> <span>{con}</span>
               </li>
             ))}
           </ul>
@@ -139,10 +139,10 @@ const VerdictCard = ({ verdict }: { verdict: InvestmentVerdict }) => {
 };
 
 const QualitativeCard = ({ data }: { data: QualitativeAnalysis }) => (
-  <div className="glass-card rounded-3xl p-8 relative overflow-hidden animate-slide-up stagger-1">
+  <div className="glass-card rounded-3xl p-6 md:p-8 relative overflow-hidden animate-slide-up stagger-1 h-full">
     <div className="absolute top-0 left-0 w-1.5 h-full accent-blue rounded-l-3xl" />
-    <h3 className="text-lg font-black text-slate-800 dark:text-slate-100 mb-6 flex items-center gap-3">
-      <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center">
+    <h3 className="text-base md:text-lg font-black text-slate-800 dark:text-slate-100 mb-6 flex items-center gap-3">
+      <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center flex-shrink-0">
         <span className="text-lg">🎯</span>
       </div>
       Qualitative Analysis
@@ -155,8 +155,8 @@ const QualitativeCard = ({ data }: { data: QualitativeAnalysis }) => (
         { label: 'Competitive Position', text: data.competitivePosition },
       ].map(({ label, text }) => (
         <div key={label} className="group">
-          <h4 className="text-xs font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-1.5">{label}</h4>
-          <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">{text}</p>
+          <h4 className="text-[10px] md:text-xs font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-1.5">{label}</h4>
+          <p className="text-xs md:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">{text}</p>
         </div>
       ))}
     </div>
@@ -164,10 +164,10 @@ const QualitativeCard = ({ data }: { data: QualitativeAnalysis }) => (
 );
 
 const QuantitativeCard = ({ data }: { data: QuantitativeAnalysis }) => (
-  <div className="glass-card rounded-3xl p-8 relative overflow-hidden animate-slide-up stagger-2">
+  <div className="glass-card rounded-3xl p-6 md:p-8 relative overflow-hidden animate-slide-up stagger-2 h-full">
     <div className="absolute top-0 left-0 w-1.5 h-full accent-violet rounded-l-3xl" />
-    <h3 className="text-lg font-black text-slate-800 dark:text-slate-100 mb-6 flex items-center gap-3">
-      <div className="w-9 h-9 rounded-xl bg-violet-50 dark:bg-violet-500/10 flex items-center justify-center">
+    <h3 className="text-base md:text-lg font-black text-slate-800 dark:text-slate-100 mb-6 flex items-center gap-3">
+      <div className="w-9 h-9 rounded-xl bg-violet-50 dark:bg-violet-500/10 flex items-center justify-center flex-shrink-0">
         <span className="text-lg">📊</span>
       </div>
       Quantitative Analysis
@@ -179,12 +179,12 @@ const QuantitativeCard = ({ data }: { data: QuantitativeAnalysis }) => (
         { label: 'Cash Flow', entries: data.cashFlow, color: 'text-violet-600 dark:text-violet-400' },
       ].map(({ label, entries, color }) => (
         <div key={label}>
-          <h4 className={`text-xs font-black ${color} uppercase tracking-widest mb-3`}>{label}</h4>
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+          <h4 className={`text-[10px] md:text-xs font-black ${color} uppercase tracking-widest mb-3`}>{label}</h4>
+          <div className="grid grid-cols-2 gap-3 md:gap-4">
             {Object.entries(entries).map(([key, value]) => (
               <div key={key} className="space-y-1">
-                <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">{key.replace(/_/g, ' ')}</p>
-                <p className="text-base font-mono font-black text-slate-800 dark:text-slate-200">{value}</p>
+                <p className="text-[8px] md:text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest truncate">{key.replace(/_/g, ' ')}</p>
+                <p className="text-sm md:text-base font-mono font-black text-slate-800 dark:text-slate-200 truncate">{value}</p>
               </div>
             ))}
           </div>
@@ -195,27 +195,27 @@ const QuantitativeCard = ({ data }: { data: QuantitativeAnalysis }) => (
 );
 
 const AnalysisApproachCard = ({ data }: { data: AnalysisApproach }) => (
-  <div className="glass-card rounded-2xl p-6 relative overflow-hidden animate-slide-up h-full">
+  <div className="glass-card rounded-2xl p-5 md:p-6 relative overflow-hidden animate-slide-up h-full">
     <div className="absolute top-0 left-0 right-0 h-1 accent-indigo rounded-t-2xl" />
-    <h3 className="text-slate-800 dark:text-slate-100 text-sm font-black uppercase tracking-widest mb-5 flex items-center gap-2.5">
-      <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center">
-        <span className="text-base">🔍</span>
+    <h3 className="text-slate-800 dark:text-slate-100 text-xs md:text-sm font-black uppercase tracking-widest mb-4 md:mb-5 flex items-center gap-2.5">
+      <div className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center flex-shrink-0">
+        <span className="text-sm md:text-base">🔍</span>
       </div>
       Analysis Approach
     </h3>
     <div className="space-y-4">
       <div className="flex items-center gap-3">
-        <span className="px-3.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400">
+        <span className="px-3 md:px-3.5 py-1 md:py-1.5 rounded-lg text-[9px] md:text-[10px] font-black uppercase tracking-widest bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400">
           {data.methodology}
         </span>
       </div>
-      <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">{data.description}</p>
-      <div>
-        <h4 className="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest mb-3">Key Factors</h4>
+      <p className="text-xs md:text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-medium">{data.description}</p>
+      <div className="pt-2">
+        <h4 className="text-[10px] md:text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest mb-2 md:mb-3">Key Factors</h4>
         <ul className="space-y-2">
           {data.keyFactors.map((factor, i) => (
-            <li key={i} className="flex items-start gap-2 text-sm text-slate-600 dark:text-slate-300">
-              <span className="w-5 h-5 rounded-md bg-indigo-50 dark:bg-indigo-500/10 text-indigo-500 flex items-center justify-center text-[10px] font-black flex-shrink-0 mt-0.5">{i + 1}</span>
+            <li key={i} className="flex items-start gap-2 text-xs md:text-sm text-slate-600 dark:text-slate-300 font-medium">
+              <span className="w-4 h-4 md:w-5 md:h-5 rounded-md bg-indigo-50 dark:bg-indigo-500/10 text-indigo-500 flex items-center justify-center text-[9px] md:text-[10px] font-black flex-shrink-0 mt-0.5">{i + 1}</span>
               <span>{factor}</span>
             </li>
           ))}
@@ -226,29 +226,29 @@ const AnalysisApproachCard = ({ data }: { data: AnalysisApproach }) => (
 );
 
 const DashboardHeroCard = ({ icon, title, desc, activeCount, color, onClick }: any) => (
-  <div onClick={onClick} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 hover:shadow-2xl hover:shadow-indigo-500/10 transition-all group relative overflow-hidden flex flex-col h-full border-b-[8px] border-b-indigo-500 cursor-pointer active:scale-[0.99]">
-    <div className="absolute top-0 right-0 p-6">
-      <span className="bg-slate-900 dark:bg-slate-800 text-white text-[9px] px-3 py-1 rounded-full font-black tracking-widest uppercase shadow-xl">{activeCount} TRADERS</span>
+  <div onClick={onClick} className={`bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl md:rounded-3xl p-6 md:p-8 hover:shadow-2xl hover:shadow-${color}-500/10 transition-all group relative overflow-hidden flex flex-col h-full border-b-4 md:border-b-[8px] border-b-${color}-500 cursor-pointer active:scale-[0.99]`}>
+    <div className="absolute top-0 right-0 p-4 md:p-6">
+      <span className="bg-slate-900 dark:bg-slate-800 text-white text-[8px] md:text-[9px] px-2 md:px-3 py-1 rounded-full font-black tracking-widest uppercase shadow-xl">{activeCount} TRADERS</span>
     </div>
-    <div className={`w-16 h-16 bg-${color}-50 dark:bg-${color}-900/20 rounded-2xl flex items-center justify-center text-3xl mb-6 border border-${color}-100 dark:border-${color}-900/50 group-hover:scale-110 transition-transform shadow-inner`}>{icon}</div>
-    <h3 className="text-2xl font-black text-slate-800 dark:text-slate-100 mb-3 tracking-tight">{title}</h3>
-    <p className="text-slate-400 dark:text-slate-500 font-bold text-sm mb-12 leading-relaxed flex-grow">{desc}</p>
-    <button className={`w-full py-4 bg-${color}-600 hover:bg-${color}-700 text-white font-black rounded-2xl transition-all shadow-xl shadow-${color}-100 dark:shadow-none`}>Launch AI Vision</button>
+    <div className={`w-12 h-12 md:w-16 md:h-16 bg-${color}-50 dark:bg-${color}-900/20 rounded-xl md:rounded-2xl flex items-center justify-center text-2xl md:text-3xl mb-4 md:mb-6 border border-${color}-100 dark:border-${color}-900/50 group-hover:scale-110 transition-transform shadow-inner`}>{icon}</div>
+    <h3 className="text-xl md:text-2xl font-black text-slate-800 dark:text-slate-100 mb-2 md:mb-3 tracking-tight">{title}</h3>
+    <p className="text-slate-400 dark:text-slate-500 font-bold text-xs md:text-sm mb-8 md:mb-12 leading-relaxed flex-grow">{desc}</p>
+    <button className={`w-full min-h-touch py-3 md:py-4 bg-${color}-600 hover:bg-${color}-700 text-white font-black rounded-xl md:rounded-2xl transition-all shadow-xl shadow-${color}-100 dark:shadow-none active:scale-95 text-sm md:text-base`}>Launch AI Vision</button>
   </div>
 );
 
 const ToolGridCard = ({ icon, label, sub, badge, onClick }: any) => (
-  <div onClick={onClick} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 flex items-center gap-5 cursor-pointer hover:border-indigo-500 hover:shadow-lg transition-all group border-b-4 border-b-transparent active:scale-95">
-    <div className="w-12 h-12 rounded-xl bg-slate-50 dark:bg-slate-800 group-hover:bg-indigo-50 dark:group-hover:bg-indigo-900/20 flex items-center justify-center text-2xl transition-colors shadow-inner">{icon}</div>
-    <div className="flex-1">
-      <h4 className="font-black text-slate-800 dark:text-slate-200 text-sm flex items-center gap-2">
+  <div onClick={onClick} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-3 md:p-5 flex items-center gap-3 md:gap-5 min-h-[72px] md:min-h-[80px] cursor-pointer hover:border-indigo-500 hover:shadow-lg transition-all group border-b-4 border-b-transparent active:scale-95 select-none touch-manipulation">
+    <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-slate-50 dark:bg-slate-800 group-hover:bg-indigo-50 dark:group-hover:bg-indigo-900/20 flex items-center justify-center text-xl md:text-2xl transition-colors shadow-inner flex-shrink-0">{icon}</div>
+    <div className="flex-1 min-w-0">
+      <h4 className="font-black text-slate-800 dark:text-slate-200 text-xs md:text-sm flex items-center gap-2 truncate">
         {label}
-        {badge && <span className="text-[7px] bg-indigo-600 text-white px-2 py-0.5 rounded-full font-black tracking-tighter">{badge}</span>}
+        {badge && <span className="text-[6px] md:text-[7px] bg-indigo-600 text-white px-1.5 md:px-2 py-0.5 rounded-full font-black tracking-tighter flex-shrink-0">{badge}</span>}
       </h4>
-      <p className="text-[9px] text-slate-400 font-black uppercase tracking-wider mt-1.5">{sub}</p>
+      <p className="text-[8px] md:text-[9px] text-slate-400 font-black uppercase tracking-wider mt-1 md:mt-1.5 truncate">{sub}</p>
     </div>
-    <div className="text-slate-300 dark:text-slate-600 group-hover:text-indigo-500 transform group-hover:translate-x-1 transition-all">
-      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3.5} d="M9 5l7 7-7 7" /></svg>
+    <div className="text-slate-300 dark:text-slate-600 group-hover:text-indigo-500 transform group-hover:translate-x-1 transition-all flex-shrink-0">
+      <svg className="w-3 h-3 md:w-4 md:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3.5} d="M9 5l7 7-7 7" /></svg>
     </div>
   </div>
 );
@@ -674,9 +674,9 @@ const App: React.FC = () => {
       </aside>
 
       {/* MAIN CONTENT AREA */}
-      <main className="flex-1 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto pb-24 lg:pb-0">
         {/* Nav Bar */}
-        <nav className="h-16 border-b border-slate-200 flex items-center justify-between px-8 bg-white/80 backdrop-blur-md sticky top-0 z-[45]">
+        <nav className="h-16 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 lg:px-8 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-[45] transition-colors">
           <div className="flex items-center gap-4">
             <button className="lg:hidden p-2 text-slate-500"><svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" /></svg></button>
             <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest">{view.replace('-', ' ')}</h2>
@@ -690,10 +690,10 @@ const App: React.FC = () => {
           </div>
         </nav>
 
-        <div className="p-8 max-w-6xl mx-auto space-y-12">
+        <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-8 md:space-y-12">
           {/* MFA Settings panel (overlays main content when active) */}
           {settingsView === 'mfa' && (
-            <div className="animate-fade-in pb-20">
+            <div className="animate-fade-in pb-12 md:pb-20">
               <MfaSetup
                 mfaEnabled={user.mfa_enabled || false}
                 mfaType={user.mfa_type}
@@ -715,14 +715,14 @@ const App: React.FC = () => {
 
           {/* DASHBOARD VIEW */}
           {!settingsView && view === 'dashboard' && (
-            <div className="animate-fade-in space-y-12 pb-20">
+            <div className="animate-fade-in space-y-8 md:space-y-12 pb-20">
               {/* Header */}
               <div>
-                <div className="flex items-center gap-3 mb-1">
-                  <span className="text-3xl">👋</span>
-                  <h2 className="text-3xl font-black text-slate-800 dark:text-slate-100 tracking-tight">Welcome back, {user.name}!</h2>
+                <div className="flex items-center gap-2 md:gap-3 mb-1">
+                  <span className="text-2xl md:text-3xl lg:text-4xl">👋</span>
+                  <h2 className="text-2xl md:text-3xl lg:text-4xl font-black text-slate-800 dark:text-slate-100 tracking-tight leading-tight truncate">Welcome back, {user.name}!</h2>
                 </div>
-                <p className="text-slate-400 dark:text-slate-500 font-bold text-lg">Thursday, January 22 • Ready for today's market?</p>
+                <p className="text-slate-400 dark:text-slate-500 font-bold text-xs md:text-sm mt-1 md:mt-2">Thursday, January 22 • Ready for today's market?</p>
               </div>
 
               {/* Top Action Row */}
@@ -746,12 +746,12 @@ const App: React.FC = () => {
               </div>
 
               {/* Tool Grid Section */}
-              <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 space-y-8 shadow-sm">
+              <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl md:rounded-3xl p-5 md:p-8 space-y-6 md:space-y-8 shadow-sm">
                 <div>
-                  <h3 className="text-xl font-black text-slate-800 dark:text-slate-100 tracking-tight">Trading Command Center</h3>
-                  <p className="text-slate-400 dark:text-slate-500 text-sm font-medium mt-1">Master the market with advanced AI tools</p>
+                  <h3 className="text-lg md:text-xl font-black text-slate-800 dark:text-slate-100 tracking-tight">Trading Command Center</h3>
+                  <p className="text-slate-400 dark:text-slate-500 text-xs md:text-sm font-medium mt-1">Master the market with advanced AI tools</p>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-5">
                   <ToolGridCard icon="📅" label="Swing Trades" sub="Multi-day pattern matching" badge="POPULAR" onClick={() => setView('swing')} />
                   <ToolGridCard icon="⏱️" label="Scalp Trades" sub="Quick volatility scanner" badge="NEW" onClick={() => setView('scalp')} />
                   <ToolGridCard icon="🤖" label="Market Analysis" sub="Gemini-powered ticker scan" onClick={() => setView('analysis')} />
@@ -1247,16 +1247,16 @@ const App: React.FC = () => {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pb-12">
                 <div className="lg:col-span-2">
                   {analysis ? (
-                    <div className="glass-card rounded-3xl p-8 relative overflow-hidden h-full animate-slide-up">
+                    <div className="glass-card rounded-3xl p-6 md:p-8 relative overflow-hidden h-full animate-slide-up">
                       <div className="absolute top-0 left-0 right-0 h-1 accent-violet rounded-t-3xl" />
-                      <div className="absolute top-0 right-0 p-4 opacity-[0.03] pointer-events-none"><svg className="w-48 h-48" fill="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z" /></svg></div>
-                      <h2 className="text-2xl font-black text-slate-800 dark:text-slate-100 mb-8 flex items-center gap-4"><span className="text-4xl">🤖</span> AI Engine Insight</h2>
-                      <p className="text-slate-500 dark:text-slate-400 text-lg font-bold leading-relaxed mb-12">{analysis.summary}</p>
-                      <div className="grid md:grid-cols-3 gap-6">
+                      <div className="absolute top-0 right-0 p-4 opacity-[0.03] pointer-events-none"><svg className="w-32 h-32 md:w-48 md:h-48" fill="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z" /></svg></div>
+                      <h2 className="text-xl md:text-2xl font-black text-slate-800 dark:text-slate-100 mb-6 md:mb-8 flex items-center gap-3 md:gap-4"><span className="text-3xl md:text-4xl">🤖</span> AI Engine Insight</h2>
+                      <p className="text-slate-500 dark:text-slate-400 text-base md:text-lg font-bold leading-relaxed mb-8 md:mb-12">{analysis.summary}</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
                         {analysis.reasoning.map((point, idx) => (
-                          <div key={idx} className="glass-card p-6 rounded-2xl hover:scale-[1.02] transition-all group flex flex-col h-full">
-                            <div className="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xs font-black mb-6 group-hover:scale-110 transition-transform">{idx + 1}</div>
-                            <p className="text-[11px] text-slate-500 dark:text-slate-400 font-black uppercase tracking-wider leading-relaxed flex-grow">{point}</p>
+                          <div key={idx} className="glass-card p-5 md:p-6 rounded-2xl hover:scale-[1.02] transition-all group flex flex-col h-full active:scale-[0.98]">
+                            <div className="w-8 h-8 md:w-9 md:h-9 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xs font-black mb-4 md:mb-6 group-hover:scale-110 transition-transform flex-shrink-0">{idx + 1}</div>
+                            <p className="text-[10px] md:text-[11px] text-slate-500 dark:text-slate-400 font-black uppercase tracking-wider leading-relaxed flex-grow">{point}</p>
                           </div>
                         ))}
                       </div>
@@ -1279,6 +1279,29 @@ const App: React.FC = () => {
           )}
         </div>
       </main>
+
+      {/* MOBILE BOTTOM NAVIGATION */}
+      {view !== 'auth' && (
+        <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex justify-around items-center h-[72px] pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-50 transition-colors">
+          <button onClick={() => setView('dashboard')} className={`flex flex-col items-center justify-center p-2 min-w-[64px] min-h-touch ${view === 'dashboard' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 dark:text-slate-500'}`}>
+            <span className="text-xl mb-1">🏠</span>
+            <span className="text-[10px] font-bold">Dash</span>
+          </button>
+          <button onClick={() => setView('analysis')} className={`flex flex-col items-center justify-center p-2 min-w-[64px] min-h-touch ${view === 'analysis' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500'}`}>
+            <span className="text-xl mb-1">🤖</span>
+            <span className="text-[10px] font-bold">Analysis</span>
+          </button>
+          <button onClick={() => setView('watchlist')} className={`flex flex-col items-center justify-center p-2 min-w-[64px] min-h-touch ${view === 'watchlist' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 dark:text-slate-500'}`}>
+            <span className="text-xl mb-1">👀</span>
+            <span className="text-[10px] font-bold">Watch</span>
+          </button>
+          <button onClick={() => setView('admin')} className={`flex flex-col items-center justify-center p-2 min-w-[64px] min-h-touch ${view === 'admin' ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400 dark:text-slate-500'}`}>
+            <span className="text-xl mb-1">⚙️</span>
+            <span className="text-[10px] font-bold">Admin</span>
+          </button>
+        </nav>
+      )}
+
     </div>
   );
 };

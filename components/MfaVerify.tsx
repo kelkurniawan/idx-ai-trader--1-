@@ -112,7 +112,7 @@ const MfaVerify: React.FC<MfaVerifyProps> = ({ tempToken, mfaMessage, onVerified
                 )}
 
                 {/* 6-digit code input */}
-                <div className="flex justify-center gap-3 mb-6" onPaste={handlePaste}>
+                <div className="flex justify-between sm:justify-center gap-1.5 md:gap-3 mb-6" onPaste={handlePaste}>
                     {digits.map((digit, i) => (
                         <input
                             key={i}
@@ -124,7 +124,7 @@ const MfaVerify: React.FC<MfaVerifyProps> = ({ tempToken, mfaMessage, onVerified
                             onChange={(e) => handleChange(i, e.target.value)}
                             onKeyDown={(e) => handleKeyDown(i, e)}
                             disabled={loading}
-                            className="w-12 h-14 bg-slate-900 border-2 border-slate-600 rounded-xl text-center text-white text-xl font-mono focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all disabled:opacity-50"
+                            className="w-10 h-12 md:w-12 md:h-14 bg-slate-900 border-2 border-slate-600 rounded-lg md:rounded-xl text-center text-white text-lg md:text-xl font-mono focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all disabled:opacity-50"
                         />
                     ))}
                 </div>

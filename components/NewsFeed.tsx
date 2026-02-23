@@ -51,20 +51,20 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ news, isLoading }) => {
             href={item.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="group block bg-slate-800/30 border border-slate-700/50 rounded-xl p-4 hover:bg-slate-800/60 hover:border-emerald-500/30 transition-all"
+            className="group block bg-slate-800/30 border border-slate-700/50 rounded-xl p-3 md:p-4 hover:bg-slate-800/60 hover:border-emerald-500/30 transition-all"
           >
             <div className="flex justify-between items-start mb-2">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-500/80 bg-emerald-500/10 px-2 py-0.5 rounded">
+              <span className="text-[9px] md:text-[10px] font-bold uppercase tracking-widest text-emerald-500/80 bg-emerald-500/10 px-1.5 md:px-2 py-0.5 rounded">
                 {item.source}
               </span>
-              <span className="text-[10px] text-slate-500 font-medium">
+              <span className="text-[9px] md:text-[10px] text-slate-500 font-medium">
                 {item.publishedAt || 'Recent'}
               </span>
             </div>
-            <h4 className="text-slate-200 font-semibold text-sm mb-2 group-hover:text-emerald-400 transition-colors line-clamp-2">
+            <h4 className="text-slate-200 font-semibold text-xs md:text-sm mb-1.5 md:mb-2 group-hover:text-emerald-400 transition-colors line-clamp-2">
               {item.title}
             </h4>
-            <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
+            <p className="text-[10px] md:text-xs text-slate-400 line-clamp-2 leading-relaxed">
               {item.snippet}
             </p>
           </a>
