@@ -7,6 +7,7 @@ uvicorn[standard]>=0.23.0
 # Data Validation
 pydantic>=2.0.0
 pydantic-settings>=2.0.0
+pydantic[email]>=2.0.0
 
 # Database
 sqlalchemy>=2.0.0
@@ -26,3 +27,28 @@ httpx>=0.24.0
 
 # File upload support
 python-multipart>=0.0.6
+
+# ===========================
+# Authentication & Security
+# ===========================
+
+# JWT token generation and verification
+PyJWT>=2.8.0
+
+# Password hashing (bcrypt)
+passlib[bcrypt]>=1.7.4
+
+# TOTP (Google Authenticator) support
+pyotp>=2.9.0
+
+# QR code generation for TOTP setup
+qrcode[pil]>=7.4.0
+
+# Google OAuth token verification
+# (already included via google-generativeai, listed for clarity)
+google-auth>=2.20.0
+
+# Redis client (optional, for production OTP storage)
+# Uncomment when deploying to production with OTP_STORE_BACKEND=redis
+# redis>=5.0.0
+

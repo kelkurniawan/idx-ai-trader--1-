@@ -33,6 +33,10 @@ import TrendAnalysis from './components/TrendAnalysis';
 import NewsFeed from './components/NewsFeed';
 import { HeaderPriceSkeleton, AnalysisSkeleton, GaugeSkeleton, TrendSkeleton } from './components/Skeletons';
 import { LoginPage, RegisterPage } from './components/Auth';
+import ProfileSetup from './components/ProfileSetup';
+import MfaVerify from './components/MfaVerify';
+import MfaSetup from './components/MfaSetup';
+import { checkAuthStatus, logout as apiLogout, getMe } from './services/authApi';
 
 // Lazy-loaded components (only loaded when their tab/view is active)
 const ChartAnalyzer = React.lazy(() => import('./components/ChartAnalyzer'));
@@ -278,6 +282,12 @@ const ThemeToggle = () => {
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [authView, setAuthView] = useState<'login' | 'register'>('login');
+  const [authLoading, setAuthLoading] = useState(true); // Loading while checking session
+  // MFA challenge state
+  const [mfaTempToken, setMfaTempToken] = useState<string | null>(null);
+  const [mfaMessage, setMfaMessage] = useState('');
+  // Settings sub-view
+  const [settingsView, setSettingsView] = useState<'mfa' | null>(null);
   const [view, setView] = useState<'dashboard' | 'analysis' | 'swing' | 'scalp' | 'backtest' | 'review' | 'journal' | 'learning' | 'community' | 'watchlist' | 'admin'>('dashboard');
   const [selectedStock, setSelectedStock] = useState<StockProfile | null>(null);
   const [timeFrame, setTimeFrame] = useState<TimeFrame>('3M');
@@ -332,9 +342,31 @@ const App: React.FC = () => {
 
   const pollingInProgress = useRef(false);
 
+  // On mount: check if user has a valid session via HTTP-only cookies
   useEffect(() => {
-    const savedUser = localStorage.getItem('idx_user');
-    if (savedUser) setUser(JSON.parse(savedUser));
+    const checkSession = async () => {
+      try {
+        const status = await checkAuthStatus();
+        if (status.authenticated && status.user) {
+          setUser({
+            id: status.user.id,
+            name: status.user.name,
+            email: status.user.email,
+            avatar: status.user.avatar ?? undefined,
+            phone_number: status.user.phone_number ?? undefined,
+            mfa_enabled: status.user.mfa_enabled,
+            mfa_type: status.user.mfa_type as any,
+            profile_complete: status.user.profile_complete,
+            auth_provider: status.user.auth_provider as any,
+          });
+        }
+      } catch {
+        // Not authenticated — stay on login
+      } finally {
+        setAuthLoading(false);
+      }
+    };
+    checkSession();
   }, []);
 
   useEffect(() => {
@@ -378,14 +410,26 @@ const App: React.FC = () => {
 
   const handleLogin = (userData: User) => {
     setUser(userData);
-    localStorage.setItem('idx_user', JSON.stringify(userData));
+    setMfaTempToken(null);
+    setMfaMessage('');
     setView('dashboard');
   };
 
-  const handleLogout = () => {
+  const handleMfaRequired = (tempToken: string, message: string) => {
+    setMfaTempToken(tempToken);
+    setMfaMessage(message);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await apiLogout();
+    } catch {
+      // Clear locally even if API fails
+    }
     setUser(null);
-    localStorage.removeItem('idx_user');
     setAuthView('login');
+    setMfaTempToken(null);
+    setSettingsView(null);
   };
 
   const handleSelectStock = useCallback(async (stock: StockProfile) => {
@@ -516,9 +560,44 @@ const App: React.FC = () => {
     return fullOhlc.slice(-daysToSlice);
   }, [fullStockData, timeFrame, realTimeData, selectedStock]);
 
+  // Loading screen while checking session cookies
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 bg-gradient-to-tr from-emerald-500 to-cyan-500 rounded-xl flex items-center justify-center font-bold text-white shadow-lg shadow-emerald-500/20 animate-pulse">AI</div>
+          <p className="text-slate-400 text-sm">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Not authenticated — show login/register
   if (!user) {
-    if (authView === 'login') return <LoginPage onLogin={handleLogin} onSwitch={() => setAuthView('register')} />;
-    return <RegisterPage onLogin={handleLogin} onSwitch={() => setAuthView('login')} />;
+    // MFA challenge screen
+    if (mfaTempToken) {
+      return (
+        <MfaVerify
+          tempToken={mfaTempToken}
+          mfaMessage={mfaMessage}
+          onVerified={handleLogin}
+          onCancel={() => { setMfaTempToken(null); setMfaMessage(''); }}
+        />
+      );
+    }
+    if (authView === 'login') return <LoginPage onLogin={handleLogin} onSwitch={() => setAuthView('register')} onMfaRequired={handleMfaRequired} />;
+    return <RegisterPage onLogin={handleLogin} onSwitch={() => setAuthView('login')} onMfaRequired={handleMfaRequired} />;
+  }
+
+  // Profile setup (if not complete)
+  if (user.profile_complete === false) {
+    return (
+      <ProfileSetup
+        user={user}
+        onComplete={(updatedUser) => setUser(updatedUser)}
+        onSkip={() => setUser({ ...user, profile_complete: true })}
+      />
+    );
   }
 
   // Admin Dashboard — full-page takeover (no sidebar)
@@ -571,6 +650,16 @@ const App: React.FC = () => {
               <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 ml-2">System</h3>
               <div className="space-y-1">
                 <SidebarItem icon="⚙️" label="Admin" viewId="admin" view={view} setView={setView} color="amber" />
+                <button
+                  onClick={() => setSettingsView(settingsView === 'mfa' ? null : 'mfa')}
+                  className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${settingsView === 'mfa'
+                    ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400'
+                    : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800'
+                    }`}
+                >
+                  <span>🔐</span>
+                  <span>MFA Settings</span>
+                </button>
               </div>
             </section>
           </div>
@@ -602,8 +691,30 @@ const App: React.FC = () => {
         </nav>
 
         <div className="p-8 max-w-6xl mx-auto space-y-12">
+          {/* MFA Settings panel (overlays main content when active) */}
+          {settingsView === 'mfa' && (
+            <div className="animate-fade-in pb-20">
+              <MfaSetup
+                mfaEnabled={user.mfa_enabled || false}
+                mfaType={user.mfa_type}
+                hasPhone={!!user.phone_number}
+                onMfaChanged={async () => {
+                  try {
+                    const fresh = await getMe();
+                    setUser({
+                      ...user,
+                      mfa_enabled: fresh.mfa_enabled,
+                      mfa_type: fresh.mfa_type as any,
+                    });
+                  } catch { /* ignore */ }
+                }}
+                onBack={() => setSettingsView(null)}
+              />
+            </div>
+          )}
+
           {/* DASHBOARD VIEW */}
-          {view === 'dashboard' && (
+          {!settingsView && view === 'dashboard' && (
             <div className="animate-fade-in space-y-12 pb-20">
               {/* Header */}
               <div>

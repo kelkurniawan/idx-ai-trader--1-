@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .config import get_settings
 from .database import init_db
-from .routers import stocks, market_analyzer, predictions
+from .routers import stocks, market_analyzer, predictions, auth
 
 settings = get_settings()
 
@@ -61,9 +61,17 @@ app.add_middleware(
 )
 
 # Include Routers
+app.include_router(auth.router, prefix="/api/auth", tags=["Auth"])
 app.include_router(stocks.router, prefix="/api/stocks", tags=["Stocks"])
 app.include_router(market_analyzer.router, prefix="/api/analyze", tags=["Market Analyzer"])
 app.include_router(predictions.router, prefix="/api/predict", tags=["Predictions"])
+
+# Serve uploaded avatar files
+import os
+from fastapi.staticfiles import StaticFiles
+upload_dir = settings.UPLOAD_DIR
+os.makedirs(upload_dir, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=upload_dir), name="uploads")
 
 
 @app.get("/", tags=["Health"])

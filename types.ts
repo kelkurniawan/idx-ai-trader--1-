@@ -159,6 +159,11 @@ export interface User {
   name: string;
   email: string;
   avatar?: string;
+  phone_number?: string;
+  mfa_enabled?: boolean;
+  mfa_type?: 'totp' | 'email_otp' | 'whatsapp_otp' | null;
+  profile_complete?: boolean;
+  auth_provider?: 'local' | 'google';
 }
 
 // --- Backtesting Types ---

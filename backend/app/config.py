@@ -38,6 +38,68 @@ class Settings(BaseSettings):
     USE_REAL_FUNDAMENTALS: bool = False
     FUNDAMENTAL_DATA_SOURCE: Literal["mock", "gemini", "idx_api"] = "mock"
     
+    # ===========================
+    # Authentication & Security
+    # ===========================
+    
+    # JWT Configuration
+    # IMPORTANT: Change this to a random 256-bit key in production!
+    # Generate with: python -c "import secrets; print(secrets.token_hex(32))"
+    JWT_SECRET_KEY: str = "dev-secret-key-CHANGE-THIS-IN-PRODUCTION-12345"
+    JWT_ALGORITHM: str = "HS256"
+    JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30  # Short-lived access token
+    JWT_REMEMBER_ME_EXPIRE_DAYS: int = 30      # Persistent "Remember Me" cookie lifetime
+    
+    # reCAPTCHA v2 (Invisible)
+    # Dev: Google's official test keys — always pass verification
+    # Prod: Register at https://www.google.com/recaptcha/admin and replace with real keys
+    RECAPTCHA_SECRET_KEY: str = "6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe"  # Google test secret
+    RECAPTCHA_SITE_KEY: str = "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"    # Google test site key
+    RECAPTCHA_ENABLED: bool = True  # Set to False to skip reCAPTCHA entirely (debug)
+    
+    # Email / SMTP (for OTP delivery)
+    # Dev: Leave empty — OTPs will be printed to console instead of emailed
+    # Prod: Use SendGrid, Amazon SES, or any SMTP provider
+    # Example for SendGrid: SMTP_HOST=smtp.sendgrid.net, SMTP_PORT=587, SMTP_USER=apikey, SMTP_PASSWORD=SG.xxx
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_FROM: str = "noreply@idxtrader.dev"
+    
+    # OTP Configuration
+    OTP_EXPIRE_MINUTES: int = 5   # How long an OTP code remains valid
+    OTP_LENGTH: int = 6           # Number of digits in OTP
+    
+    # WhatsApp OTP (via Meta Graph API)
+    # Dev: Leave empty — WhatsApp OTPs will be printed to console
+    # Prod: Register at https://developers.facebook.com → WhatsApp Business API
+    # WHATSAPP_PHONE_NUMBER_ID: Your WhatsApp Business phone number ID
+    # WHATSAPP_ACCESS_TOKEN: Your permanent/long-lived access token from Meta
+    WHATSAPP_PHONE_NUMBER_ID: str = ""
+    WHATSAPP_ACCESS_TOKEN: str = ""
+    
+    # Google OAuth (for "Continue with Google" login)
+    # Dev: Leave empty — Google login will use mock mode (always accepts)
+    # Prod: Create OAuth 2.0 Client ID at https://console.cloud.google.com/apis/credentials
+    # Set the Client ID here and configure authorized redirect URIs in Google Console
+    GOOGLE_OAUTH_CLIENT_ID: str = ""
+    
+    # Profile picture uploads
+    # Dev: Stored locally on disk
+    # Prod: Consider migrating to cloud storage (S3, GCS, Azure Blob)
+    UPLOAD_DIR: str = "./uploads/avatars"
+    MAX_UPLOAD_SIZE_MB: int = 5
+    
+    # OTP Store Backend
+    # Dev: "memory" — stores OTPs in a Python dict (single-server only)
+    # Prod: "redis" — use Redis for distributed OTP storage
+    OTP_STORE_BACKEND: Literal["memory", "redis"] = "memory"
+    # Redis Configuration (only used when OTP_STORE_BACKEND = "redis")
+    # REDIS_URL: Full Redis connection URL
+    # Example: redis://localhost:6379/0 or redis://:password@redis-host:6379/1
+    REDIS_URL: str = "redis://localhost:6379/0"
+    
     @property
     def is_development(self) -> bool:
         """Check if running in development mode."""
@@ -62,6 +124,21 @@ class Settings(BaseSettings):
     def cors_origins_list(self) -> list[str]:
         """Parse CORS origins into a list."""
         return [origin.strip() for origin in self.CORS_ORIGINS.split(",")]
+    
+    @property
+    def use_mock_google(self) -> bool:
+        """Use mock Google OAuth when no client ID is configured."""
+        return not bool(self.GOOGLE_OAUTH_CLIENT_ID)
+    
+    @property
+    def use_mock_email(self) -> bool:
+        """Print OTPs to console when no SMTP is configured."""
+        return not bool(self.SMTP_HOST)
+    
+    @property
+    def use_mock_whatsapp(self) -> bool:
+        """Print WhatsApp OTPs to console when no WA API is configured."""
+        return not bool(self.WHATSAPP_ACCESS_TOKEN)
     
     class Config:
         env_file = ".env"

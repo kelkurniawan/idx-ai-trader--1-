@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { User } from '../types';
+import { login, register, googleAuth, AuthResponse } from '../services/authApi';
 
 interface AuthProps {
   onLogin: (user: User) => void;
   onSwitch: () => void;
+  onMfaRequired?: (tempToken: string, message: string) => void;
 }
 
 const GoogleIcon = () => (
@@ -15,55 +17,103 @@ const GoogleIcon = () => (
   </svg>
 );
 
-export const LoginPage: React.FC<AuthProps> = ({ onLogin, onSwitch }) => {
+/** Map API AuthResponse to User type used by App */
+function mapAuthUser(result: AuthResponse): User | null {
+  if (!result.user) return null;
+  return {
+    id: result.user.id,
+    name: result.user.name,
+    email: result.user.email,
+    avatar: result.user.avatar ?? undefined,
+    phone_number: result.user.phone_number ?? undefined,
+    mfa_enabled: result.user.mfa_enabled,
+    mfa_type: result.user.mfa_type as any,
+    profile_complete: result.user.profile_complete,
+    auth_provider: result.user.auth_provider as any,
+  };
+}
+
+export const LoginPage: React.FC<AuthProps> = ({ onLogin, onSwitch, onMfaRequired }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      onLogin({
-        id: 'user-' + Date.now(),
-        name: email.split('@')[0],
-        email: email,
-        avatar: `https://ui-avatars.com/api/?name=${email.split('@')[0]}&background=10b981&color=fff`
+    setError('');
+
+    try {
+      const result = await login({
+        email,
+        password,
+        remember_me: rememberMe,
+        recaptcha_token: '', // Dev: test keys always pass
       });
+
+      if (result.mfa_required && result.temp_token) {
+        onMfaRequired?.(result.temp_token, result.message);
+        return;
+      }
+
+      const user = mapAuthUser(result);
+      if (user) onLogin(user);
+    } catch (err: any) {
+      setError(err.message || 'Login failed');
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
-  const handleGoogleLogin = () => {
-      setLoading(true);
-      setTimeout(() => {
-        onLogin({
-          id: 'google-user-123',
-          name: 'Google User',
-          email: 'user@gmail.com',
-          avatar: 'https://lh3.googleusercontent.com/a/default-user=s96-c'
-        });
-        setLoading(false);
-      }, 1500);
+  const handleGoogleLogin = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      // In dev mode, backend accepts any token. In production, you'd use
+      // Google Sign-In SDK to get a real ID token from the user.
+      const result = await googleAuth({
+        google_id_token: 'dev-mock-token-' + Date.now(),
+        recaptcha_token: '',
+      });
+
+      if (result.mfa_required && result.temp_token) {
+        onMfaRequired?.(result.temp_token, result.message);
+        return;
+      }
+
+      const user = mapAuthUser(result);
+      if (user) onLogin(user);
+    } catch (err: any) {
+      setError(err.message || 'Google login failed');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-slate-800 border border-slate-700 rounded-2xl p-8 shadow-2xl">
         <div className="text-center mb-8">
-            <div className="w-12 h-12 bg-gradient-to-tr from-emerald-500 to-cyan-500 rounded-xl flex items-center justify-center font-bold text-white shadow-lg shadow-emerald-500/20 mx-auto mb-4">
-              AI
-            </div>
-            <h1 className="text-2xl font-bold text-white">Welcome Back</h1>
-            <p className="text-slate-400 mt-2">Sign in to access your IDX Trader portfolio</p>
+          <div className="w-12 h-12 bg-gradient-to-tr from-emerald-500 to-cyan-500 rounded-xl flex items-center justify-center font-bold text-white shadow-lg shadow-emerald-500/20 mx-auto mb-4">
+            AI
+          </div>
+          <h1 className="text-2xl font-bold text-white">Welcome Back</h1>
+          <p className="text-slate-400 mt-2">Sign in to access your IDX Trader portfolio</p>
         </div>
+
+        {error && (
+          <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
+            {error}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-1">Email Address</label>
-            <input 
-              type="email" 
+            <input
+              type="email"
               required
               className="w-full bg-slate-900 border border-slate-700 rounded-lg py-2.5 px-4 text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
               placeholder="you@example.com"
@@ -73,8 +123,8 @@ export const LoginPage: React.FC<AuthProps> = ({ onLogin, onSwitch }) => {
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-1">Password</label>
-            <input 
-              type="password" 
+            <input
+              type="password"
               required
               className="w-full bg-slate-900 border border-slate-700 rounded-lg py-2.5 px-4 text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
               placeholder="••••••••"
@@ -82,29 +132,51 @@ export const LoginPage: React.FC<AuthProps> = ({ onLogin, onSwitch }) => {
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
-          
-          <button 
-            type="submit" 
+
+          {/* Remember Me checkbox */}
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="remember-me"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              className="w-4 h-4 rounded border-slate-600 bg-slate-900 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-0"
+            />
+            <label htmlFor="remember-me" className="text-sm text-slate-400 cursor-pointer">
+              Remember me for 30 days
+            </label>
+          </div>
+
+          <button
+            type="submit"
             disabled={loading}
-            className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-semibold py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2"
+            className="w-full bg-emerald-500 hover:bg-emerald-600 disabled:bg-emerald-500/50 text-white font-semibold py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2"
           >
-            {loading ? 'Signing in...' : 'Sign In'}
+            {loading ? (
+              <>
+                <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                Signing in...
+              </>
+            ) : 'Sign In'}
           </button>
         </form>
 
         <div className="my-6 flex items-center gap-4">
-            <div className="h-px bg-slate-700 flex-1"></div>
-            <span className="text-slate-500 text-sm">OR</span>
-            <div className="h-px bg-slate-700 flex-1"></div>
+          <div className="h-px bg-slate-700 flex-1"></div>
+          <span className="text-slate-500 text-sm">OR</span>
+          <div className="h-px bg-slate-700 flex-1"></div>
         </div>
 
-        <button 
-            onClick={handleGoogleLogin}
-            disabled={loading}
-            className="w-full bg-white hover:bg-slate-100 text-slate-900 font-medium py-2.5 rounded-lg transition-colors flex items-center justify-center gap-3"
+        <button
+          onClick={handleGoogleLogin}
+          disabled={loading}
+          className="w-full bg-white hover:bg-slate-100 text-slate-900 font-medium py-2.5 rounded-lg transition-colors flex items-center justify-center gap-3"
         >
-            <GoogleIcon />
-            Continue with Google
+          <GoogleIcon />
+          Continue with Google
         </button>
 
         <p className="mt-8 text-center text-sm text-slate-400">
@@ -118,117 +190,155 @@ export const LoginPage: React.FC<AuthProps> = ({ onLogin, onSwitch }) => {
   );
 };
 
-export const RegisterPage: React.FC<AuthProps> = ({ onLogin, onSwitch }) => {
-    const [name, setName] = useState('');
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [loading, setLoading] = useState(false);
-  
-    const handleSubmit = (e: React.FormEvent) => {
-      e.preventDefault();
-      setLoading(true);
-      // Simulate API call
-      setTimeout(() => {
-        onLogin({
-          id: 'user-' + Date.now(),
-          name: name,
-          email: email,
-          avatar: `https://ui-avatars.com/api/?name=${name}&background=10b981&color=fff`
-        });
-        setLoading(false);
-      }, 1000);
-    };
+export const RegisterPage: React.FC<AuthProps> = ({ onLogin, onSwitch, onMfaRequired }) => {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-    const handleGoogleLogin = () => {
-        setLoading(true);
-        setTimeout(() => {
-          onLogin({
-            id: 'google-user-123',
-            name: 'Google User',
-            email: 'user@gmail.com',
-            avatar: 'https://lh3.googleusercontent.com/a/default-user=s96-c'
-          });
-          setLoading(false);
-        }, 1500);
-    };
-  
-    return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
-        <div className="w-full max-w-md bg-slate-800 border border-slate-700 rounded-2xl p-8 shadow-2xl">
-          <div className="text-center mb-8">
-              <div className="w-12 h-12 bg-gradient-to-tr from-emerald-500 to-cyan-500 rounded-xl flex items-center justify-center font-bold text-white shadow-lg shadow-emerald-500/20 mx-auto mb-4">
-                AI
-              </div>
-              <h1 className="text-2xl font-bold text-white">Create Account</h1>
-              <p className="text-slate-400 mt-2">Start your journey with IDX AI Trader</p>
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters');
+      return;
+    }
+    setLoading(true);
+    setError('');
+
+    try {
+      const result = await register({
+        email,
+        name,
+        password,
+        recaptcha_token: '',
+      });
+
+      const user = mapAuthUser(result);
+      if (user) onLogin(user);
+    } catch (err: any) {
+      setError(err.message || 'Registration failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const result = await googleAuth({
+        google_id_token: 'dev-mock-token-' + Date.now(),
+        recaptcha_token: '',
+      });
+
+      if (result.mfa_required && result.temp_token) {
+        onMfaRequired?.(result.temp_token, result.message);
+        return;
+      }
+
+      const user = mapAuthUser(result);
+      if (user) onLogin(user);
+    } catch (err: any) {
+      setError(err.message || 'Google login failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
+      <div className="w-full max-w-md bg-slate-800 border border-slate-700 rounded-2xl p-8 shadow-2xl">
+        <div className="text-center mb-8">
+          <div className="w-12 h-12 bg-gradient-to-tr from-emerald-500 to-cyan-500 rounded-xl flex items-center justify-center font-bold text-white shadow-lg shadow-emerald-500/20 mx-auto mb-4">
+            AI
           </div>
-  
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">Full Name</label>
-              <input 
-                type="text" 
-                required
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg py-2.5 px-4 text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
-                placeholder="John Doe"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">Email Address</label>
-              <input 
-                type="email" 
-                required
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg py-2.5 px-4 text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">Password</label>
-              <input 
-                type="password" 
-                required
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg py-2.5 px-4 text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
-            
-            <button 
-              type="submit" 
-              disabled={loading}
-              className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-semibold py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2"
-            >
-              {loading ? 'Creating Account...' : 'Sign Up'}
-            </button>
-          </form>
-
-          <div className="my-6 flex items-center gap-4">
-            <div className="h-px bg-slate-700 flex-1"></div>
-            <span className="text-slate-500 text-sm">OR</span>
-            <div className="h-px bg-slate-700 flex-1"></div>
-          </div>
-
-          <button 
-            onClick={handleGoogleLogin}
-            disabled={loading}
-            className="w-full bg-white hover:bg-slate-100 text-slate-900 font-medium py-2.5 rounded-lg transition-colors flex items-center justify-center gap-3"
-           >
-            <GoogleIcon />
-            Continue with Google
-          </button>
-  
-          <p className="mt-8 text-center text-sm text-slate-400">
-            Already have an account?{' '}
-            <button onClick={onSwitch} className="text-emerald-400 hover:text-emerald-300 font-medium hover:underline">
-              Sign in
-            </button>
-          </p>
+          <h1 className="text-2xl font-bold text-white">Create Account</h1>
+          <p className="text-slate-400 mt-2">Start your journey with IDX AI Trader</p>
         </div>
+
+        {error && (
+          <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-1">Full Name</label>
+            <input
+              type="text"
+              required
+              className="w-full bg-slate-900 border border-slate-700 rounded-lg py-2.5 px-4 text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+              placeholder="John Doe"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-1">Email Address</label>
+            <input
+              type="email"
+              required
+              className="w-full bg-slate-900 border border-slate-700 rounded-lg py-2.5 px-4 text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-1">Password</label>
+            <input
+              type="password"
+              required
+              minLength={8}
+              className="w-full bg-slate-900 border border-slate-700 rounded-lg py-2.5 px-4 text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            <p className="text-xs text-slate-500 mt-1">Minimum 8 characters</p>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-emerald-500 hover:bg-emerald-600 disabled:bg-emerald-500/50 text-white font-semibold py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2"
+          >
+            {loading ? (
+              <>
+                <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                Creating Account...
+              </>
+            ) : 'Sign Up'}
+          </button>
+        </form>
+
+        <div className="my-6 flex items-center gap-4">
+          <div className="h-px bg-slate-700 flex-1"></div>
+          <span className="text-slate-500 text-sm">OR</span>
+          <div className="h-px bg-slate-700 flex-1"></div>
+        </div>
+
+        <button
+          onClick={handleGoogleLogin}
+          disabled={loading}
+          className="w-full bg-white hover:bg-slate-100 text-slate-900 font-medium py-2.5 rounded-lg transition-colors flex items-center justify-center gap-3"
+        >
+          <GoogleIcon />
+          Continue with Google
+        </button>
+
+        <p className="mt-8 text-center text-sm text-slate-400">
+          Already have an account?{' '}
+          <button onClick={onSwitch} className="text-emerald-400 hover:text-emerald-300 font-medium hover:underline">
+            Sign in
+          </button>
+        </p>
       </div>
-    );
+    </div>
+  );
 };
