@@ -4,8 +4,53 @@
 
 @layer base {
   body {
+    font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
     @apply transition-colors duration-300;
   }
+}
+
+/* =============================================
+   Font Utilities
+   ============================================= */
+.font-jakarta {
+  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+}
+
+.font-mono-trading {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* =============================================
+   Scrollbar Hidden (for horizontal ticker strip)
+   ============================================= */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* =============================================
+   Price Flash Animations
+   ============================================= */
+@keyframes price-flash-up {
+  0%   { background-color: rgba(16, 185, 129, 0.2); }
+  100% { background-color: transparent; }
+}
+
+@keyframes price-flash-down {
+  0%   { background-color: rgba(239, 68, 68, 0.2); }
+  100% { background-color: transparent; }
+}
+
+.price-flash-up {
+  animation: price-flash-up 0.8s ease-out;
+}
+
+.price-flash-down {
+  animation: price-flash-down 0.8s ease-out;
 }
 
 /* =============================================

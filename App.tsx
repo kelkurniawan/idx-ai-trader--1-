@@ -46,6 +46,11 @@ const LearningCenter = React.lazy(() => import('./components/LearningCenter'));
 const Community = React.lazy(() => import('./components/Community'));
 const Watchlist = React.lazy(() => import('./components/Watchlist'));
 const AdminDashboard = React.lazy(() => import('./components/admin/AdminDashboard'));
+import HomeDashboard from './components/HomeDashboard';
+
+// ─── Feature Flags ───────────────────────────────────────────────────────────
+// Set ARCHIVED = true to hide legacy menus from the UI (routes kept intact)
+const ARCHIVED = true;
 
 // Helper Components moved to top for hoisting safety
 const FundamentalsCard = ({ data }: { data: FundamentalData }) => (
@@ -288,7 +293,7 @@ const App: React.FC = () => {
   const [mfaMessage, setMfaMessage] = useState('');
   // Settings sub-view
   const [settingsView, setSettingsView] = useState<'mfa' | null>(null);
-  const [view, setView] = useState<'dashboard' | 'analysis' | 'swing' | 'scalp' | 'backtest' | 'review' | 'journal' | 'learning' | 'community' | 'watchlist' | 'admin'>('dashboard');
+  const [view, setView] = useState<'home' | 'analysis' | 'swing' | 'scalp' | 'backtest' | 'review' | 'journal' | 'learning' | 'community' | 'watchlist' | 'admin'>('home');
   const [selectedStock, setSelectedStock] = useState<StockProfile | null>(null);
   const [timeFrame, setTimeFrame] = useState<TimeFrame>('3M');
   const [chartMode, setChartMode] = useState<ChartMode>('line');
@@ -412,7 +417,7 @@ const App: React.FC = () => {
     setUser(userData);
     setMfaTempToken(null);
     setMfaMessage('');
-    setView('dashboard');
+    setView('home');
   };
 
   const handleMfaRequired = (tempToken: string, message: string) => {
@@ -604,50 +609,55 @@ const App: React.FC = () => {
   if (view === 'admin') {
     return (
       <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div></div>}>
-        <AdminDashboard onBack={() => setView('dashboard')} />
+        <AdminDashboard onBack={() => setView('home')} />
       </Suspense>
     );
   }
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 text-slate-900 dark:text-slate-50 font-sans flex overflow-hidden transition-colors duration-300">
-      {/* SIDEBAR */}
+      {/* SIDEBAR — Desktop only */}
       <aside className="w-64 border-r border-slate-200 dark:border-slate-800 flex-col hidden lg:flex sticky top-0 h-screen bg-white dark:bg-slate-900 shadow-sm z-50 transition-colors">
         <div className="p-6">
-          <div className="flex items-center gap-3 mb-10 cursor-pointer" onClick={() => setView('dashboard')}>
+          <div className="flex items-center gap-3 mb-10 cursor-pointer" onClick={() => setView('home')}>
             <div className="w-10 h-10 bg-gradient-to-tr from-indigo-500 to-indigo-700 rounded-xl flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-100">
               <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M3 3v18h18M7 16l4-4 4 4 6-6" /></svg>
             </div>
             <div>
-              <h1 className="text-lg font-black tracking-tighter text-slate-800 leading-none">IDX Assistant</h1>
+              <h1 className="text-lg font-black tracking-tighter text-slate-800 dark:text-slate-100 leading-none">IDX Assistant</h1>
               <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest mt-1">Smart AI Trading</p>
             </div>
           </div>
 
-          <div className="space-y-10">
+          <div className="space-y-8">
+            {/* Main Navigation — 5 tabs */}
             <section>
-              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 ml-2">Tools</h3>
+              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-2">Navigasi</h3>
               <div className="space-y-1">
-                <SidebarItem icon="🏠" label="Dashboard" viewId="dashboard" view={view} setView={setView} />
-                <SidebarItem icon="📅" label="Swing Trading" viewId="swing" view={view} setView={setView} />
-                <SidebarItem icon="⏱️" label="Scalp Trading" viewId="scalp" view={view} setView={setView} color="violet" />
-                <SidebarItem icon="⚡" label="Backtester" viewId="backtest" view={view} setView={setView} color="amber" />
+                <SidebarItem icon="🏠" label="Home" viewId="home" view={view} setView={setView} color="indigo" />
+                <SidebarItem icon="📊" label="Market Analysis" viewId="analysis" view={view} setView={setView} color="emerald" />
+                <SidebarItem icon="👁" label="Watchlist" viewId="watchlist" view={view} setView={setView} color="indigo" />
+                <SidebarItem icon="📓" label="Trade Journal" viewId="journal" view={view} setView={setView} color="rose" />
+                <SidebarItem icon="🎓" label="Learning" viewId="learning" view={view} setView={setView} color="amber" />
               </div>
             </section>
 
-            <section>
-              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 ml-2">Market IQ</h3>
-              <div className="space-y-1">
-                <SidebarItem icon="🤖" label="Market Analysis" viewId="analysis" view={view} setView={setView} color="emerald" />
-                <SidebarItem icon="👀" label="Watchlist" viewId="watchlist" view={view} setView={setView} color="indigo" />
-                <SidebarItem icon="📖" label="Learning" viewId="learning" view={view} setView={setView} color="amber" />
-                <SidebarItem icon="📓" label="Journal" viewId="journal" view={view} setView={setView} color="rose" />
-                <SidebarItem icon="👥" label="Community" viewId="community" view={view} setView={setView} color="blue" />
-              </div>
-            </section>
+            {/* Archived menus — hidden via feature flag */}
+            {!ARCHIVED && (
+              <section>
+                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-2">Tools</h3>
+                <div className="space-y-1">
+                  <SidebarItem icon="📅" label="Swing Trading" viewId="swing" view={view} setView={setView} />
+                  <SidebarItem icon="⏱️" label="Scalp Trading" viewId="scalp" view={view} setView={setView} color="violet" />
+                  <SidebarItem icon="⚡" label="Backtester" viewId="backtest" view={view} setView={setView} color="amber" />
+                  <SidebarItem icon="👥" label="Community" viewId="community" view={view} setView={setView} color="blue" />
+                </div>
+              </section>
+            )}
 
+            {/* System */}
             <section>
-              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 ml-2">System</h3>
+              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-2">Sistem</h3>
               <div className="space-y-1">
                 <SidebarItem icon="⚙️" label="Admin" viewId="admin" view={view} setView={setView} color="amber" />
                 <button
@@ -666,10 +676,10 @@ const App: React.FC = () => {
         </div>
         <div className="mt-auto p-6 space-y-4">
           <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
-            <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Theme</span>
+            <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Tema</span>
             <ThemeToggle />
           </div>
-          <button onClick={handleLogout} className="w-full bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-black py-3 rounded-xl text-sm transition-all border border-slate-200 dark:border-slate-700">Sign Out</button>
+          <button onClick={handleLogout} className="w-full bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-black py-3 rounded-xl text-sm transition-all border border-slate-200 dark:border-slate-700">Keluar</button>
         </div>
       </aside>
 
@@ -677,13 +687,22 @@ const App: React.FC = () => {
       <main className="flex-1 overflow-y-auto pb-24 lg:pb-0">
         {/* Nav Bar */}
         <nav className="h-16 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 lg:px-8 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-[45] transition-colors">
-          <div className="flex items-center gap-4">
-            <button className="lg:hidden p-2 text-slate-500"><svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" /></svg></button>
-            <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest">{view.replace('-', ' ')}</h2>
+          <div className="flex items-center gap-3">
+            {/* Mobile logo */}
+            <div className="lg:hidden flex items-center gap-2" onClick={() => setView('home')}>
+              <div className="w-8 h-8 bg-gradient-to-tr from-indigo-500 to-indigo-700 rounded-lg flex items-center justify-center">
+                <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M3 3v18h18M7 16l4-4 4 4 6-6" /></svg>
+              </div>
+              <span className="font-black text-sm text-slate-800 dark:text-slate-100 tracking-tight">IDX Assistant</span>
+            </div>
+            <h2 className="hidden lg:block text-xs font-black text-slate-400 uppercase tracking-widest">
+              {view === 'home' ? 'Home' : view === 'analysis' ? 'Market Analysis' : view === 'watchlist' ? 'Watchlist' : view === 'journal' ? 'Trade Journal' : view === 'learning' ? 'Learning' : view.replace('-', ' ')}
+            </h2>
           </div>
           <div className="flex items-center gap-3">
+            <ThemeToggle />
             <div className="text-right hidden sm:block">
-              <p className="text-xs font-black text-slate-800 leading-none">{user.name}</p>
+              <p className="text-xs font-black text-slate-800 dark:text-slate-100 leading-none">{user.name}</p>
               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Trader Pro</p>
             </div>
             <div className="w-9 h-9 bg-indigo-500 rounded-xl flex items-center justify-center text-white font-black text-sm shadow-md shadow-indigo-100">{user.name[0].toUpperCase()}</div>
@@ -713,110 +732,33 @@ const App: React.FC = () => {
             </div>
           )}
 
-          {/* DASHBOARD VIEW */}
-          {!settingsView && view === 'dashboard' && (
-            <div className="animate-fade-in space-y-8 md:space-y-12 pb-20">
-              {/* Header */}
-              <div>
-                <div className="flex items-center gap-2 md:gap-3 mb-1">
-                  <span className="text-2xl md:text-3xl lg:text-4xl">👋</span>
-                  <h2 className="text-2xl md:text-3xl lg:text-4xl font-black text-slate-800 dark:text-slate-100 tracking-tight leading-tight truncate">Welcome back, {user.name}!</h2>
-                </div>
-                <p className="text-slate-400 dark:text-slate-500 font-bold text-xs md:text-sm mt-1 md:mt-2">Thursday, January 22 • Ready for today's market?</p>
-              </div>
-
-              {/* Top Action Row */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <DashboardHeroCard
-                  icon="📈"
-                  title="Swing Vision"
-                  desc="Analyze higher timeframe charts. AI identifies multi-day patterns and structure."
-                  activeCount="9.1k"
-                  color="indigo"
-                  onClick={() => setView('swing')}
-                />
-                <DashboardHeroCard
-                  icon="⚡"
-                  title="Scalp Vision"
-                  desc="Ultra-short term analysis. Capture quick moves with precision AI mapping."
-                  activeCount="5.0k"
-                  color="violet"
-                  onClick={() => setView('scalp')}
-                />
-              </div>
-
-              {/* Tool Grid Section */}
-              <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl md:rounded-3xl p-5 md:p-8 space-y-6 md:space-y-8 shadow-sm">
-                <div>
-                  <h3 className="text-lg md:text-xl font-black text-slate-800 dark:text-slate-100 tracking-tight">Trading Command Center</h3>
-                  <p className="text-slate-400 dark:text-slate-500 text-xs md:text-sm font-medium mt-1">Master the market with advanced AI tools</p>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-5">
-                  <ToolGridCard icon="📅" label="Swing Trades" sub="Multi-day pattern matching" badge="POPULAR" onClick={() => setView('swing')} />
-                  <ToolGridCard icon="⏱️" label="Scalp Trades" sub="Quick volatility scanner" badge="NEW" onClick={() => setView('scalp')} />
-                  <ToolGridCard icon="🤖" label="Market Analysis" sub="Gemini-powered ticker scan" onClick={() => setView('analysis')} />
-                  <ToolGridCard icon="👀" label="Watchlist" sub="Price alerts & monitoring" onClick={() => setView('watchlist')} />
-                  <ToolGridCard icon="🧪" label="Backtester" sub="Simulate historical strategy" onClick={() => setView('backtest')} />
-                  <ToolGridCard icon="📓" label="Trade Journal" sub="Track your performance" onClick={() => setView('journal')} />
-                  <ToolGridCard icon="📖" label="Learning Hub" sub="Professional trading courses" onClick={() => setView('learning')} />
-                  <ToolGridCard icon="👥" label="Community" sub="Discuss with other traders" onClick={() => setView('community')} />
-                </div>
-              </section>
-
-              {/* Community & Tips Row */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {/* Community Card */}
-                <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 space-y-6 shadow-sm flex flex-col h-full">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-black text-slate-800 dark:text-slate-100">Community News</h3>
-                    <div className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 px-3 py-1 rounded-full text-[9px] font-black border border-emerald-100 dark:border-emerald-900/50">
-                      <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
-                      121 ONLINE
-                    </div>
-                  </div>
-                  <div className="space-y-4 flex-grow">
-                    <div className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 flex items-center gap-4 hover:bg-indigo-50/50 dark:hover:bg-indigo-900/10 transition-all cursor-pointer">
-                      <span className="text-xl">📊</span>
-                      <p className="text-xs font-bold text-slate-600 dark:text-slate-300 leading-relaxed">Weekly Wrap: Market sentiment remains bullish after rejection of support.</p>
-                    </div>
-                    <div className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 flex items-center gap-4 hover:bg-indigo-50/50 dark:hover:bg-indigo-900/10 transition-all cursor-pointer">
-                      <span className="text-xl">📚</span>
-                      <p className="text-xs font-bold text-slate-600 dark:text-slate-300 leading-relaxed">Academy: "The Psychology of Scalping" lesson is now live in Learning Hub.</p>
-                    </div>
-                  </div>
-                  <button onClick={() => setView('community')} className="w-full py-3 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-black rounded-xl text-xs transition-all border border-slate-200 dark:border-slate-700 shadow-sm active:scale-95">Explore Community</button>
-                </section>
-
-                {/* Tips Card */}
-                <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 space-y-6 shadow-sm flex flex-col h-full">
-                  <div className="flex items-center gap-3">
-                    <span className="text-xl">💡</span>
-                    <h3 className="text-lg font-black text-slate-800 dark:text-slate-100">Pro Tips</h3>
-                  </div>
-                  <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-900/50 rounded-2xl p-6 border-l-8 border-l-indigo-500 flex-grow">
-                    <h4 className="text-[10px] font-black text-indigo-700 dark:text-indigo-400 mb-3 uppercase tracking-[0.2em]">Risk Management</h4>
-                    <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed font-bold">
-                      "The key to surviving in trading is never letting one bad decision wipe you out. Always risk less than 1% of your total balance per trade to maintain longevity."
-                    </p>
-                  </div>
-                  <button onClick={() => setView('learning')} className="w-full py-3 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-black rounded-xl text-xs transition-all border border-slate-200 dark:border-slate-700 shadow-sm active:scale-95">Browse All Tips</button>
-                </section>
-              </div>
-            </div>
+          {/* HOME VIEW */}
+          {!settingsView && view === 'home' && (
+            <HomeDashboard
+              user={user}
+              onNavigateAnalysis={() => setView('analysis')}
+              onNavigateWatchlist={() => setView('watchlist')}
+              onSelectStock={(ticker) => handleSelectStock({ ticker, name: ticker, sector: 'Unknown' })}
+              onLogout={handleLogout}
+            />
           )}
 
-          {/* VISION TOOLS */}
-          {(view === 'swing' || view === 'scalp') && (
+          {/* ARCHIVED VIEWS — kept for route integrity, never render */}
+          {!ARCHIVED && view === 'dashboard' && null}
+          {(!ARCHIVED && (view === 'swing' || view === 'scalp')) && (
             <Suspense fallback={<div className="flex items-center justify-center py-24"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div></div>}>
               {view === 'swing' && <ChartAnalyzer type="SWING" />}
               {view === 'scalp' && <ChartAnalyzer type="SCALP" />}
             </Suspense>
           )}
-
-          {/* BACKTESTER */}
-          {view === 'backtest' && (
+          {!ARCHIVED && view === 'backtest' && (
             <Suspense fallback={<div className="flex items-center justify-center py-24"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div></div>}>
               <Backtester />
+            </Suspense>
+          )}
+          {!ARCHIVED && view === 'community' && (
+            <Suspense fallback={<div className="flex items-center justify-center py-24"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div></div>}>
+              <Community currentUser={user} />
             </Suspense>
           )}
 
@@ -831,13 +773,6 @@ const App: React.FC = () => {
           {view === 'learning' && (
             <Suspense fallback={<div className="flex items-center justify-center py-24"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div></div>}>
               <LearningCenter />
-            </Suspense>
-          )}
-
-          {/* COMMUNITY */}
-          {view === 'community' && (
-            <Suspense fallback={<div className="flex items-center justify-center py-24"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div></div>}>
-              <Community currentUser={user} />
             </Suspense>
           )}
 
@@ -1280,25 +1215,32 @@ const App: React.FC = () => {
         </div>
       </main>
 
-      {/* MOBILE BOTTOM NAVIGATION */}
+      {/* MOBILE BOTTOM NAVIGATION — 5 tabs */}
       {view !== 'auth' && (
-        <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex justify-around items-center h-[72px] pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-50 transition-colors">
-          <button onClick={() => setView('dashboard')} className={`flex flex-col items-center justify-center p-2 min-w-[64px] min-h-touch ${view === 'dashboard' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 dark:text-slate-500'}`}>
-            <span className="text-xl mb-1">🏠</span>
-            <span className="text-[10px] font-bold">Dash</span>
-          </button>
-          <button onClick={() => setView('analysis')} className={`flex flex-col items-center justify-center p-2 min-w-[64px] min-h-touch ${view === 'analysis' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500'}`}>
-            <span className="text-xl mb-1">🤖</span>
-            <span className="text-[10px] font-bold">Analysis</span>
-          </button>
-          <button onClick={() => setView('watchlist')} className={`flex flex-col items-center justify-center p-2 min-w-[64px] min-h-touch ${view === 'watchlist' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 dark:text-slate-500'}`}>
-            <span className="text-xl mb-1">👀</span>
-            <span className="text-[10px] font-bold">Watch</span>
-          </button>
-          <button onClick={() => setView('admin')} className={`flex flex-col items-center justify-center p-2 min-w-[64px] min-h-touch ${view === 'admin' ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400 dark:text-slate-500'}`}>
-            <span className="text-xl mb-1">⚙️</span>
-            <span className="text-[10px] font-bold">Admin</span>
-          </button>
+        <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 flex justify-around items-end h-[68px] pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_20px_-4px_rgba(0,0,0,0.12)] z-50 transition-colors">
+          {[
+            { id: 'home' as const, icon: '🏠', label: 'Home', activeColor: 'text-indigo-600 dark:text-indigo-400' },
+            { id: 'analysis' as const, icon: '📊', label: 'Analisis', activeColor: 'text-emerald-600 dark:text-emerald-400' },
+            { id: 'watchlist' as const, icon: '👁', label: 'Watchlist', activeColor: 'text-indigo-600 dark:text-indigo-400' },
+            { id: 'journal' as const, icon: '📓', label: 'Jurnal', activeColor: 'text-rose-600 dark:text-rose-400' },
+            { id: 'learning' as const, icon: '🎓', label: 'Belajar', activeColor: 'text-amber-600 dark:text-amber-400' },
+          ].map((tab) => {
+            const isActive = view === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setView(tab.id)}
+                className={`flex flex-col items-center justify-center py-2 px-3 min-w-[60px] min-h-[52px] relative touch-manipulation transition-all active:scale-95 ${isActive ? tab.activeColor : 'text-slate-400 dark:text-slate-500'}`}
+              >
+                {/* Active glow dot */}
+                {isActive && (
+                  <span className="absolute top-0 left-1/2 -translate-x-1/2 w-6 h-[3px] rounded-b-full bg-current opacity-90" />
+                )}
+                <span className={`text-[22px] leading-none transition-transform ${isActive ? 'scale-110' : 'scale-100'}`}>{tab.icon}</span>
+                <span className={`text-[9px] mt-1 font-black tracking-wide transition-all ${isActive ? 'opacity-100' : 'opacity-50'}`}>{tab.label}</span>
+              </button>
+            );
+          })}
         </nav>
       )}
 
