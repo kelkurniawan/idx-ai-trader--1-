@@ -12,14 +12,10 @@ import { startScheduler } from './queue/scheduler';
 
 // ─── App setup ────────────────────────────────────────────────
 const app = express();
-const PORT = parseInt(process.env.PORT ?? '3001', 10);
+const PORT = process.env.PORT || 3001;
 
 // ─── Global middleware ────────────────────────────────────────
-app.use(cors({
-  origin: process.env.CORS_ORIGIN ?? '*',
-  methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-}));
+app.use(cors());
 app.use(express.json({ limit: '1mb' }));
 app.use(requestLogger);
 

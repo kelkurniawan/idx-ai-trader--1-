@@ -238,12 +238,19 @@ export const DUMMY_NEWS: NewsItem[] = [
 // ─────────────────────────────────────────────────────────
 
 /** Fetch personalized news for the user based on portfolio + watchlist
- * PRODUCTION: POST /api/news/personalized
+ * PRODUCTION: GET /api/news/personalized
  * AI responsibilities: scrape IDX sources, classify impact, rank by relevance × recency
  */
 export async function fetchPersonalizedNews(watchlistTickers: string[], _portfolioTickers: string[]): Promise<NewsItem[]> {
-  await new Promise(r => setTimeout(r, 400));
-  return DUMMY_NEWS.filter(n => n.relevanceReason || n.tickers.some(t => watchlistTickers.includes(t)));
+  try {
+    const tickersParam = watchlistTickers.join(',');
+    const res = await fetch(`http://localhost:3002/api/news/personalized?tickers=${tickersParam}`);
+    if (!res.ok) throw new Error('Network response was not ok');
+    return await res.json();
+  } catch (err) {
+    console.error('Failed to fetch personalized news:', err);
+    return [];
+  }
 }
 
 /** Fetch all news for a specific ticker
@@ -251,16 +258,29 @@ export async function fetchPersonalizedNews(watchlistTickers: string[], _portfol
  * AI responsibilities: filter direct + indirect mentions, calculate price impact range
  */
 export async function fetchNewsByTicker(ticker: string): Promise<NewsItem[]> {
-  await new Promise(r => setTimeout(r, 350));
-  return DUMMY_NEWS.filter(n => n.tickers.includes(ticker));
+  try {
+    const res = await fetch(`http://localhost:3002/api/news/ticker/${ticker}`);
+    if (!res.ok) throw new Error('Network response was not ok');
+    return await res.json();
+  } catch (err) {
+    console.error('Failed to fetch ticker news:', err);
+    return [];
+  }
 }
 
 /** Fetch news by feed category
  * PRODUCTION: GET /api/news/feed?category=hot
  */
-export async function fetchNewsByCategory(category: NewsCategory): Promise<NewsItem[]> {
-  await new Promise(r => setTimeout(r, 300));
-  return DUMMY_NEWS.filter(n => n.categories.includes(category));
+export async function fetchNewsByCategory(category: NewsCategory | string, page: number = 1): Promise<NewsItem[]> {
+  try {
+    const res = await fetch(`http://localhost:3002/api/news/feed?tab=${category}&page=${page}&limit=20`);
+    if (!res.ok) throw new Error('Network response was not ok');
+    const data = await res.json();
+    return data.data || [];
+  } catch (err) {
+    console.error('Failed to fetch category news:', err);
+    return [];
+  }
 }
 
 /** Load more news (infinite scroll)

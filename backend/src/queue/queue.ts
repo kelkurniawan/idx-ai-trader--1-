@@ -1,17 +1,19 @@
 import { Queue, Worker, QueueEvents } from 'bullmq';
-import { getRedis } from '../cache/redis';
 import { runAgentPipeline } from '../agent/pipeline';
 
-const CONNECTION = getRedis();
-
 // ─── Queue definition ─────────────────────────────────────────
+const connection = {
+  host: process.env.REDIS_URL ? new URL(process.env.REDIS_URL).hostname : 'localhost',
+  port: process.env.REDIS_URL ? parseInt(new URL(process.env.REDIS_URL).port || '6379') : 6379,
+};
+
 export const agentQueue = new Queue('agent-runs', {
-  connection: CONNECTION,
+  connection,
   defaultJobOptions: {
     attempts: 2,
     backoff: { type: 'exponential', delay: 15_000 },
-    removeOnComplete: { count: 50 },  // keep last 50 completed jobs
-    removeOnFail:     { count: 20 },  // keep last 20 failed jobs
+    removeOnComplete: { count: 50 },
+    removeOnFail:     { count: 20 },
   },
 });
 
@@ -24,12 +26,8 @@ const worker = new Worker(
     await runAgentPipeline(agentRunId);
   },
   {
-    connection: CONNECTION,
+    connection,
     concurrency: 1,  // one agent run at a time
-    limiter: {
-      max: 1,
-      duration: 10_000, // prevent bursting
-    },
   }
 );
 
@@ -43,7 +41,7 @@ worker.on('failed', (job, err) => {
 });
 
 // ─── Queue events (for monitoring) ───────────────────────────
-const queueEvents = new QueueEvents('agent-runs', { connection: getRedis() });
+const queueEvents = new QueueEvents('agent-runs', { connection });
 
 queueEvents.on('waiting', ({ jobId }) =>
   console.log(`[Queue] Job ${jobId} waiting`)

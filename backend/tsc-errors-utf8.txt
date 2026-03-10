@@ -1,0 +1,10 @@
+﻿src/api/news/news.router.ts(137,34): error TS2339: Property 'toUpperCase' does not exist on type 'string | string[]'.
+  Property 'toUpperCase' does not exist on type 'string[]'.
+src/api/news/news.router.ts(173,36): error TS2345: Argument of type 'string | string[]' is not assignable to parameter of type 'string'.
+  Type 'string[]' is not assignable to type 'string'.
+src/api/news/news.router.ts(175,20): error TS2345: Argument of type 'string | string[]' is not assignable to parameter of type 'string'.
+  Type 'string[]' is not assignable to type 'string'.
+src/middleware/requestLogger.ts(17,3): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Argument of type '"dev" | ((tokens: TokenIndexer<IncomingMessage, ServerResponse<IncomingMessage>>, req: IncomingMessage, res: ServerResponse<...>) => string)' is not assignable to parameter of type 'FormatFn<IncomingMessage, ServerResponse<IncomingMessage>>'.
+      Type 'string' is not assignable to type 'FormatFn<IncomingMessage, ServerResponse<IncomingMessage>>'.

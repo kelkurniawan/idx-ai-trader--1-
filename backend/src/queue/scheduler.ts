@@ -2,17 +2,15 @@ import cron from 'node-cron';
 import { prisma } from '../db/prisma';
 import { agentQueue } from './queue';
 
-/**
- * IDX Market Hours (WIB = UTC+7):
- *   Pre-market:    08:45 – 09:00 WIB = 01:45 – 02:00 UTC
- *   Session 1:     09:00 – 12:00 WIB = 02:00 – 05:00 UTC
- *   Session 2:     13:30 – 15:49 WIB = 06:30 – 08:49 UTC
- *   Post-market:   15:50 – 16:15 WIB = 08:50 – 09:15 UTC
- *
- * We run every 15 minutes, Mon–Fri, from 01:45 UTC to 09:15 UTC.
- * Default AGENT_CRON_SCHEDULE: "45 1,2,3,4,5,6,7,8,9 * * 1-5" 
- * (simplified to "*/15 1-9 * * 1-5" per spec)
- */
+// IDX Market Hours (WIB = UTC+7):
+//   Pre-market:    08:45 – 09:00 WIB = 01:45 – 02:00 UTC
+//   Session 1:     09:00 – 12:00 WIB = 02:00 – 05:00 UTC
+//   Session 2:     13:30 – 15:49 WIB = 06:30 – 08:49 UTC
+//   Post-market:   15:50 – 16:15 WIB = 08:50 – 09:15 UTC
+//
+// We run every 15 minutes, Mon–Fri, from 01:45 UTC to 09:15 UTC.
+// Default AGENT_CRON_SCHEDULE: "45 1,2,3,4,5,6,7,8,9 * * 1-5" 
+// (simplified to "*/15 1-9 * * 1-5" per spec)
 
 // UTC bounds for IDX session (minutes since midnight)
 const MARKET_OPEN_UTC_MIN  = 1 * 60 + 45;  //  1:45 UTC = 08:45 WIB

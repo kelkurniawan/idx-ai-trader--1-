@@ -146,7 +146,7 @@ export async function runAgentPipeline(agentRunId: string): Promise<void> {
               tickers: enriched.tickers ?? [],
               aiConfidence: enriched.aiConfidence ?? 50,
               whyRelevant: enriched.whyRelevant ?? [],
-              estimatedImpact: enriched.estimatedImpact ?? [],
+              estimatedImpact: (enriched.estimatedImpact as any) ?? [],
               relevanceReason: enriched.relevanceReason ?? null,
               agentRunId,
               views: 0,
