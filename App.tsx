@@ -45,12 +45,27 @@ const TradeJournal = React.lazy(() => import('./components/TradeJournal'));
 const LearningCenter = React.lazy(() => import('./components/LearningCenter'));
 const Community = React.lazy(() => import('./components/Community'));
 const Watchlist = React.lazy(() => import('./components/Watchlist'));
-const AdminDashboard = React.lazy(() => import('./components/admin/AdminDashboard'));
+const AdminDashboard = React.lazy(() => import('./components/admin/AdminDashboard'));// RESTYLED: SahamGue Design System
 import HomeDashboard from './components/HomeDashboard';
+import { NewsPage, TickerNewsPanel } from './components/NewsPage';
 
 // ─── Feature Flags ───────────────────────────────────────────────────────────
 // Set ARCHIVED = true to hide legacy menus from the UI (routes kept intact)
 const ARCHIVED = true;
+
+// ─── SahamGue Navigation Tokens ───────────────────────────────────────────────
+const SGN = {
+  bg:     '#0d1417',
+  surface:'#151b1e',
+  border: '#1e2a2f',
+  green:  '#22c55e',
+  greenBg:'rgba(34,197,94,0.10)',
+  text:   '#f1f5f9',
+  muted:  '#475569',
+  dim:    '#64748b',
+  mono:   "'JetBrains Mono', monospace",
+  sans:   "'Plus Jakarta Sans', sans-serif",
+};
 
 // Helper Components moved to top for hoisting safety
 const FundamentalsCard = ({ data }: { data: FundamentalData }) => (
@@ -258,18 +273,27 @@ const ToolGridCard = ({ icon, label, sub, badge, onClick }: any) => (
   </div>
 );
 
-const SidebarItem = ({ icon, label, viewId, view, setView, color = 'indigo' }: { icon: string, label: string, viewId: any, view: string, setView: any, color?: string }) => (
-  <button
-    onClick={() => setView(viewId)}
-    className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all group ${view === viewId ? `bg-${color}-500/10 dark:bg-${color}-500/20 text-${color}-600 dark:text-${color}-400` : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
-  >
-    <div className="flex items-center gap-3">
-      <span className="text-xl group-hover:scale-110 transition-transform">{icon}</span>
-      <span className="text-sm font-bold tracking-tight">{label}</span>
-    </div>
-    {view === viewId && <div className={`w-1.5 h-4 bg-${color}-500 rounded-full`}></div>}
-  </button>
-);
+const SidebarItem = ({ icon, label, viewId, view, setView }: { icon: string, label: string, viewId: any, view: string, setView: any }) => {
+  const isActive = view === viewId;
+  return (
+    <button
+      onClick={() => setView(viewId)}
+      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold transition-colors touch-manipulation relative"
+      style={{
+        color: isActive ? SGN.green : SGN.muted,
+        background: isActive ? SGN.greenBg : 'transparent',
+        borderLeft: isActive ? `3px solid ${SGN.green}` : '3px solid transparent',
+        borderRadius: '0 10px 10px 0',
+        fontFamily: SGN.sans,
+        fontWeight: 600,
+        fontSize: '13px',
+      }}
+    >
+      <span className="text-base group-hover:scale-110 transition-transform">{icon}</span>
+      <span>{label}</span>
+    </button>
+  );
+};
 
 const ThemeToggle = () => {
   const { theme, setTheme } = useTheme();
@@ -615,97 +639,115 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 text-slate-900 dark:text-slate-50 font-sans flex overflow-hidden transition-colors duration-300">
+    <div className="min-h-screen text-slate-50 font-sans flex overflow-hidden transition-colors duration-300"
+      style={{ background: '#0a0f10' }}
+    >
       {/* SIDEBAR — Desktop only */}
-      <aside className="w-64 border-r border-slate-200 dark:border-slate-800 flex-col hidden lg:flex sticky top-0 h-screen bg-white dark:bg-slate-900 shadow-sm z-50 transition-colors">
-        <div className="p-6">
-          <div className="flex items-center gap-3 mb-10 cursor-pointer" onClick={() => setView('home')}>
-            <div className="w-10 h-10 bg-gradient-to-tr from-indigo-500 to-indigo-700 rounded-xl flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-100">
-              <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M3 3v18h18M7 16l4-4 4 4 6-6" /></svg>
+      <aside className="w-52 flex-col hidden lg:flex sticky top-0 h-screen z-50 transition-colors"
+        style={{ background: SGN.bg, borderRight: `1px solid ${SGN.border}` }}>
+        <div className="p-5">
+          {/* SahamGue Logo */}
+          <div className="flex items-center gap-3 mb-8 cursor-pointer" onClick={() => setView('home')}>
+            <div className="w-8 h-8 rounded-[9px] flex items-center justify-center flex-shrink-0"
+              style={{ background: 'linear-gradient(135deg, #22c55e, #16a34a)' }}>
+              <span style={{ fontFamily: SGN.mono, fontWeight: 800, fontSize: '12px', color: '#0a0f10' }}>SG</span>
             </div>
             <div>
-              <h1 className="text-lg font-black tracking-tighter text-slate-800 dark:text-slate-100 leading-none">IDX Assistant</h1>
-              <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest mt-1">Smart AI Trading</p>
+              <h1 className="font-black tracking-tight leading-none" style={{ fontFamily: SGN.sans, fontWeight: 800, fontSize: '15px', color: SGN.text }}>IDX Assistant</h1>
+              <p className="text-[8px] font-bold uppercase tracking-widest mt-0.5" style={{ color: SGN.muted }}>SahamGue AI</p>
             </div>
           </div>
 
-          <div className="space-y-8">
+          <div className="space-y-6">
             {/* Main Navigation — 5 tabs */}
             <section>
-              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-2">Navigasi</h3>
-              <div className="space-y-1">
-                <SidebarItem icon="🏠" label="Home" viewId="home" view={view} setView={setView} color="indigo" />
-                <SidebarItem icon="📊" label="Market Analysis" viewId="analysis" view={view} setView={setView} color="emerald" />
-                <SidebarItem icon="👁" label="Watchlist" viewId="watchlist" view={view} setView={setView} color="indigo" />
-                <SidebarItem icon="📓" label="Trade Journal" viewId="journal" view={view} setView={setView} color="rose" />
-                <SidebarItem icon="🎓" label="Learning" viewId="learning" view={view} setView={setView} color="amber" />
+              <h3 className="text-[10px] font-bold uppercase mb-2 ml-3" style={{ color: '#334155', letterSpacing: '1px' }}>NAVIGASI</h3>
+              <div className="space-y-0.5">
+                <SidebarItem icon="🏠" label="Home" viewId="home" view={view} setView={setView} />
+                <SidebarItem icon="📊" label="Market Analysis" viewId="analysis" view={view} setView={setView} />
+                <SidebarItem icon="👁" label="Watchlist" viewId="watchlist" view={view} setView={setView} />
+                <SidebarItem icon="📰" label="News" viewId="news" view={view} setView={setView} />
+                <SidebarItem icon="📓" label="Trade Journal" viewId="journal" view={view} setView={setView} />
+                <SidebarItem icon="🎓" label="Learning" viewId="learning" view={view} setView={setView} />
               </div>
             </section>
 
-            {/* Archived menus — hidden via feature flag */}
+            {/* Archived — hidden via feature flag */}
             {!ARCHIVED && (
               <section>
-                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-2">Tools</h3>
-                <div className="space-y-1">
+                <h3 className="text-[10px] font-bold uppercase mb-2 ml-3" style={{ color: '#334155', letterSpacing: '1px' }}>ARSIP</h3>
+                <div className="space-y-0.5">
                   <SidebarItem icon="📅" label="Swing Trading" viewId="swing" view={view} setView={setView} />
-                  <SidebarItem icon="⏱️" label="Scalp Trading" viewId="scalp" view={view} setView={setView} color="violet" />
-                  <SidebarItem icon="⚡" label="Backtester" viewId="backtest" view={view} setView={setView} color="amber" />
-                  <SidebarItem icon="👥" label="Community" viewId="community" view={view} setView={setView} color="blue" />
+                  <SidebarItem icon="⏱️" label="Scalp Trading" viewId="scalp" view={view} setView={setView} />
+                  <SidebarItem icon="⚡" label="Backtester" viewId="backtest" view={view} setView={setView} />
+                  <SidebarItem icon="👥" label="Community" viewId="community" view={view} setView={setView} />
                 </div>
               </section>
             )}
 
             {/* System */}
             <section>
-              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 ml-2">Sistem</h3>
-              <div className="space-y-1">
-                <SidebarItem icon="⚙️" label="Admin" viewId="admin" view={view} setView={setView} color="amber" />
+              <h3 className="text-[10px] font-bold uppercase mb-2 ml-3" style={{ color: '#334155', letterSpacing: '1px' }}>SISTEM</h3>
+              <div className="space-y-0.5">
+                <SidebarItem icon="⚙️" label="Admin" viewId="admin" view={view} setView={setView} />
                 <button
                   onClick={() => setSettingsView(settingsView === 'mfa' ? null : 'mfa')}
-                  className={`flex items-center gap-3 w-full px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${settingsView === 'mfa'
-                    ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400'
-                    : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800'
-                    }`}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold transition-colors"
+                  style={{
+                    color: settingsView === 'mfa' ? SGN.green : SGN.muted,
+                    fontFamily: SGN.sans, fontWeight: 600, fontSize: '13px',
+                    background: settingsView === 'mfa' ? SGN.greenBg : 'transparent',
+                    borderLeft: settingsView === 'mfa' ? `3px solid ${SGN.green}` : '3px solid transparent',
+                    borderRadius: '0 10px 10px 0',
+                  }}
                 >
-                  <span>🔐</span>
-                  <span>MFA Settings</span>
+                  <span>🔐</span><span>MFA Settings</span>
                 </button>
               </div>
             </section>
           </div>
         </div>
-        <div className="mt-auto p-6 space-y-4">
-          <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
-            <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Tema</span>
+        <div className="mt-auto p-5 space-y-3">
+          <div className="flex justify-between items-center p-3 rounded-xl" style={{ background: SGN.surface, border: `1px solid ${SGN.border}` }}>
+            <span className="text-xs font-bold uppercase tracking-wider" style={{ color: SGN.muted }}>Tema</span>
             <ThemeToggle />
           </div>
-          <button onClick={handleLogout} className="w-full bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-black py-3 rounded-xl text-sm transition-all border border-slate-200 dark:border-slate-700">Keluar</button>
+          <button onClick={handleLogout}
+            className="w-full py-2.5 rounded-xl text-sm font-bold transition-all"
+            style={{ background: SGN.surface, border: `1px solid ${SGN.border}`, color: SGN.dim }}>
+            Keluar
+          </button>
         </div>
       </aside>
 
       {/* MAIN CONTENT AREA */}
       <main className="flex-1 overflow-y-auto pb-24 lg:pb-0">
-        {/* Nav Bar */}
-        <nav className="h-16 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 lg:px-8 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-[45] transition-colors">
+        {/* Top Nav Bar */}
+        <nav className="h-14 flex items-center justify-between px-4 lg:px-6 backdrop-blur-md sticky top-0 z-[45] transition-colors"
+          style={{ background: SGN.bg, borderBottom: `1px solid ${SGN.border}` }}>
           <div className="flex items-center gap-3">
             {/* Mobile logo */}
-            <div className="lg:hidden flex items-center gap-2" onClick={() => setView('home')}>
-              <div className="w-8 h-8 bg-gradient-to-tr from-indigo-500 to-indigo-700 rounded-lg flex items-center justify-center">
-                <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M3 3v18h18M7 16l4-4 4 4 6-6" /></svg>
+            <div className="lg:hidden flex items-center gap-2 cursor-pointer" onClick={() => setView('home')}>
+              <div className="w-7 h-7 rounded-[7px] flex items-center justify-center flex-shrink-0"
+                style={{ background: 'linear-gradient(135deg, #22c55e, #16a34a)' }}>
+                <span style={{ fontFamily: SGN.mono, fontWeight: 800, fontSize: '10px', color: '#0a0f10' }}>SG</span>
               </div>
-              <span className="font-black text-sm text-slate-800 dark:text-slate-100 tracking-tight">IDX Assistant</span>
+              <span className="font-black text-sm tracking-tight" style={{ fontFamily: SGN.sans, color: SGN.text }}>IDX Assistant</span>
             </div>
-            <h2 className="hidden lg:block text-xs font-black text-slate-400 uppercase tracking-widest">
-              {view === 'home' ? 'Home' : view === 'analysis' ? 'Market Analysis' : view === 'watchlist' ? 'Watchlist' : view === 'journal' ? 'Trade Journal' : view === 'learning' ? 'Learning' : view.replace('-', ' ')}
+            <h2 className="hidden lg:block text-[11px] font-bold uppercase tracking-widest" style={{ color: SGN.dim }}>
+              {view === 'home' ? 'Home' : view === 'analysis' ? 'Market Analysis' : view === 'watchlist' ? 'Watchlist' : view === 'news' ? 'Berita & Analisis' : view === 'journal' ? 'Trade Journal' : view === 'learning' ? 'Learning' : view.replace('-', ' ')}
             </h2>
           </div>
           <div className="flex items-center gap-3">
             <ThemeToggle />
             <div className="text-right hidden sm:block">
-              <p className="text-xs font-black text-slate-800 dark:text-slate-100 leading-none">{user.name}</p>
-              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Trader Pro</p>
+              <p className="text-xs font-black leading-none" style={{ color: SGN.text }}>{user.name}</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest mt-0.5" style={{ color: SGN.muted }}>Trader Pro</p>
             </div>
-            <div className="w-9 h-9 bg-indigo-500 rounded-xl flex items-center justify-center text-white font-black text-sm shadow-md shadow-indigo-100">{user.name[0].toUpperCase()}</div>
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center text-[13px] font-black"
+              style={{ background: 'rgba(34,197,94,0.15)', color: '#22c55e' }}>
+              {user.name[0].toUpperCase()}
+            </div>
           </div>
         </nav>
 
@@ -1198,7 +1240,13 @@ const App: React.FC = () => {
                     </div>
                   ) : <AnalysisSkeleton />}
                 </div>
-                <div className="lg:col-span-1"><NewsFeed news={news} isLoading={isNewsLoading} /></div>
+                <div className="lg:col-span-1 min-h-[400px]">
+                  <TickerNewsPanel
+                    ticker={selectedStock?.ticker || 'IHSG'}
+                    onTickerClick={(t) => handleSelectStock({ ticker: t, name: t, sector: 'Unknown' })}
+                    onViewAll={() => setView('news')}
+                  />
+                </div>
               </div>
             </div>
           ))}
@@ -1212,32 +1260,47 @@ const App: React.FC = () => {
               <button onClick={() => setView('dashboard')} className="mt-12 px-12 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl transition-all shadow-xl shadow-indigo-100 dark:shadow-none active:scale-95">Back to Dashboard</button>
             </div>
           )}
+          {/* NEWS PAGE */}
+          {view === 'news' && (
+            <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2" style={{borderColor:'#22c55e'}} /></div>}>
+              <NewsPage onTickerClick={(t) => { handleSelectStock({ ticker: t, name: t, sector: 'Unknown' }); setView('analysis'); }} />
+            </Suspense>
+          )}
         </div>
       </main>
 
-      {/* MOBILE BOTTOM NAVIGATION — 5 tabs */}
+      {/* MOBILE BOTTOM NAVIGATION — SahamGue 6 tabs */}
       {view !== 'auth' && (
-        <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 flex justify-around items-end h-[68px] pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_20px_-4px_rgba(0,0,0,0.12)] z-50 transition-colors">
+        <nav className="lg:hidden fixed bottom-0 left-0 right-0 flex justify-around items-end z-50 transition-colors"
+          style={{ background: SGN.bg, borderTop: `1px solid ${SGN.border}`, height: '60px', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
           {[
-            { id: 'home' as const, icon: '🏠', label: 'Home', activeColor: 'text-indigo-600 dark:text-indigo-400' },
-            { id: 'analysis' as const, icon: '📊', label: 'Analisis', activeColor: 'text-emerald-600 dark:text-emerald-400' },
-            { id: 'watchlist' as const, icon: '👁', label: 'Watchlist', activeColor: 'text-indigo-600 dark:text-indigo-400' },
-            { id: 'journal' as const, icon: '📓', label: 'Jurnal', activeColor: 'text-rose-600 dark:text-rose-400' },
-            { id: 'learning' as const, icon: '🎓', label: 'Belajar', activeColor: 'text-amber-600 dark:text-amber-400' },
+            { id: 'home'      as const, icon: '🏠', label: 'Home'     },
+            { id: 'analysis'  as const, icon: '📊', label: 'Analisis' },
+            { id: 'watchlist' as const, icon: '👁',  label: 'Watch'   },
+            { id: 'news'      as const, icon: '📰', label: 'News'     },
+            { id: 'journal'   as const, icon: '📓', label: 'Jurnal'   },
+            { id: 'learning'  as const, icon: '🎓', label: 'Belajar'  },
           ].map((tab) => {
             const isActive = view === tab.id;
             return (
-              <button
-                key={tab.id}
-                onClick={() => setView(tab.id)}
-                className={`flex flex-col items-center justify-center py-2 px-3 min-w-[60px] min-h-[52px] relative touch-manipulation transition-all active:scale-95 ${isActive ? tab.activeColor : 'text-slate-400 dark:text-slate-500'}`}
+              <button key={tab.id} onClick={() => setView(tab.id)}
+                className="flex flex-col items-center justify-center flex-1 py-1.5 min-h-[52px] relative touch-manipulation transition-all active:scale-95"
+                style={{ color: isActive ? SGN.green : SGN.muted }}
               >
-                {/* Active glow dot */}
                 {isActive && (
-                  <span className="absolute top-0 left-1/2 -translate-x-1/2 w-6 h-[3px] rounded-b-full bg-current opacity-90" />
+                  <span className="absolute top-0 left-1/2 -translate-x-1/2 rounded-b-full"
+                    style={{ width: 24, height: 2.5, background: SGN.green }} />
                 )}
-                <span className={`text-[22px] leading-none transition-transform ${isActive ? 'scale-110' : 'scale-100'}`}>{tab.icon}</span>
-                <span className={`text-[9px] mt-1 font-black tracking-wide transition-all ${isActive ? 'opacity-100' : 'opacity-50'}`}>{tab.label}</span>
+                <span className="text-[17px] leading-none" style={{ transform: isActive ? 'scale(1.1)' : 'scale(1)', transition: 'transform 0.15s' }}>
+                  {tab.icon}
+                </span>
+                <span style={{
+                  fontSize: '8.5px', marginTop: '2px', fontFamily: SGN.sans,
+                  fontWeight: isActive ? 700 : 500,
+                  opacity: isActive ? 1 : 0.5, letterSpacing: '0.2px',
+                }}>
+                  {tab.label}
+                </span>
               </button>
             );
           })}

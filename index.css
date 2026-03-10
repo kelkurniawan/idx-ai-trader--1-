@@ -2,12 +2,33 @@
 @tailwind components;
 @tailwind utilities;
 
+/* =============================================
+   SahamGue Design Tokens
+   ============================================= */
+:root {
+  --bg-base:         #0a0f10;
+  --bg-surface:      #151b1e;
+  --bg-header:       #0d1417;
+  --border:          #1e2a2f;
+  --accent-green:    #22c55e;
+  --accent-green-bg: rgba(34,197,94,0.12);
+  --accent-red:      #ef4444;
+  --accent-red-bg:   rgba(239,68,68,0.12);
+  --accent-gold:     #facc15;
+  --text-primary:    #f1f5f9;
+  --text-secondary:  #94a3b8;
+  --text-muted:      #475569;
+  --text-dim:        #64748b;
+}
+
 @layer base {
   body {
     font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
     @apply transition-colors duration-300;
   }
 }
+
+/* Duplicate @layer removed — see :root block above */
 
 /* =============================================
    Font Utilities
@@ -17,9 +38,28 @@
 }
 
 .font-mono-trading {
-  font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+  font-family: 'JetBrains Mono', monospace;
   font-variant-numeric: tabular-nums;
 }
+
+/* =============================================
+   SahamGue Surface + Ticker
+   ============================================= */
+.sg-surface {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+}
+
+@keyframes ticker-scroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.ticker-scroll-inner {
+  animation: ticker-scroll 30s linear infinite;
+  will-change: transform;
+}
+
 
 /* =============================================
    Scrollbar Hidden (for horizontal ticker strip)
