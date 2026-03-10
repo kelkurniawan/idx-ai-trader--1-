@@ -1,0 +1,109 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── NewsSource ───────────────────────────────────────────────
+// Tracks the RSS feed sources the agent scrapes
+model NewsSource {
+  id        String      @id @default(uuid())
+  name      String      @unique           // "REUTERS ID"
+  rssUrl    String      @unique
+  isActive  Boolean     @default(true)
+  createdAt DateTime    @default(now())
+  articles  NewsItem[]
+
+  @@map("news_sources")
+}
+
+// ─── NewsItem ─────────────────────────────────────────────────
+// The core news article record, enriched by AI pipeline
+model NewsItem {
+  id              String    @id @default(uuid())
+  headline        String
+  summary         String?                          // AI-generated (Groq)
+  originalUrl     String    @unique                // dedup key
+  source          String                           // "CNBC INDONESIA"
+  publishedAt     DateTime
+  fetchedAt       DateTime  @default(now())
+  isLive          Boolean   @default(false)
+  isActive        Boolean   @default(true)
+
+  // Classification (from Claude)
+  category        String    // hot | latest | critical | popular
+  impactLevel     String    // breaking | high | medium | low | fundamental | regulatory
+  tickers         String[]  // ["BBCA","BMRI"]
+  aiConfidence    Int       @default(0)            // 0-100
+  views           Int       @default(0)
+  trendRank       Int?
+
+  // AI-generated insight fields (from Claude Sonnet)
+  whyRelevant     String[]  @default([])
+  estimatedImpact Json?     // EstimatedImpact[] JSON blob
+  relevanceReason String?
+
+  // Raw scraped content (stored for audit/reprocessing)
+  rawContent      String?
+
+  // Relations
+  sourceId        String?
+  newsSource      NewsSource? @relation(fields: [sourceId], references: [id])
+  agentRunId      String
+  agentRun        AgentRun    @relation(fields: [agentRunId], references: [id])
+
+  // Indexes for fast frontend queries
+  @@index([publishedAt(sort: Desc)])
+  @@index([category])
+  @@index([impactLevel])
+  @@index([agentRunId])
+  @@index([isActive])
+  // NOTE: Add GIN index for tickers array after migration:
+  // CREATE INDEX idx_news_tickers_gin ON news_items USING GIN (tickers);
+
+  @@map("news_items")
+}
+
+// ─── AgentRun ─────────────────────────────────────────────────
+// Tracks every automated or manual agent execution for cost tracing
+model AgentRun {
+  id              String    @id @default(uuid())
+  startedAt       DateTime  @default(now())
+  finishedAt      DateTime?
+  status          String    @default("running")   // running | success | failed | skipped
+  agentType       String                           // scheduled | manual_trigger | seed
+
+  // Results summary
+  articlesFound   Int       @default(0)
+  articlesSaved   Int       @default(0)
+  articlesDuped   Int       @default(0)
+  errorMessage    String?
+
+  // Token & cost tracking per run (COST RULE: log everything)
+  groqTokensUsed      Int   @default(0)
+  claudeInputTokens   Int   @default(0)
+  claudeOutputTokens  Int   @default(0)
+  estimatedCostUsd    Float @default(0.0)
+
+  articles NewsItem[]
+
+  @@map("agent_runs")
+}
+
+// ─── UserPersonalization ──────────────────────────────────────
+// Stores user watchlist for personalized news queries
+model UserPersonalization {
+  id               String   @id @default(uuid())
+  userId           String   @unique
+  watchlistTickers String[] @default([])   // ["BBCA", "GOTO", "TLKM"]
+  preferredSources String[] @default([])   // ["REUTERS ID", "KONTAN"]
+  updatedAt        DateTime @updatedAt
+
+  @@map("user_personalizations")
+}

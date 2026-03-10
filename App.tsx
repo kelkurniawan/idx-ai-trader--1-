@@ -53,79 +53,89 @@ import { NewsPage, TickerNewsPanel } from './components/NewsPage';
 // Set ARCHIVED = true to hide legacy menus from the UI (routes kept intact)
 const ARCHIVED = true;
 
-// ─── SahamGue Navigation Tokens ───────────────────────────────────────────────
-const SGN = {
-  bg:     '#0d1417',
-  surface:'#151b1e',
-  border: '#1e2a2f',
-  green:  '#22c55e',
-  greenBg:'rgba(34,197,94,0.10)',
-  text:   '#f1f5f9',
-  muted:  '#475569',
-  dim:    '#64748b',
-  mono:   "'JetBrains Mono', monospace",
-  sans:   "'Plus Jakarta Sans', sans-serif",
+// ─── SahamGue Design Tokens ───────────────────────────────────────────────
+const SG = {
+  bg:        '#0d1417',
+  bgBase:    '#0a0f10',
+  bgHeader:  '#0d1417',
+  surface:   '#151b1e',
+  bgSurface: '#151b1e',
+  bgMuted:   '#1e2a2f',
+  border:    '#1e2a2f',
+  green:     '#22c55e',
+  greenBg:   'rgba(34,197,94,0.10)',
+  red:       '#ef4444',
+  text:      '#f1f5f9',
+  textPrimary: '#f1f5f9',
+  textSecond: '#94a3b8',
+  textMuted: '#64748b',
+  muted:     '#475569',
+  dim:       '#64748b',
+  textDim:   '#475569',
+  mono:      "'JetBrains Mono', monospace",
+  sans:      "'Plus Jakarta Sans', sans-serif",
 };
 
 // Helper Components moved to top for hoisting safety
 const FundamentalsCard = ({ data }: { data: FundamentalData }) => (
-  <div className="glass-card rounded-3xl p-6 md:p-8 relative overflow-hidden h-full animate-slide-up">
-    <div className="absolute top-0 left-0 w-1.5 h-full accent-emerald rounded-l-3xl" />
-    <h3 className="text-base md:text-lg font-black text-slate-800 dark:text-slate-100 mb-6 flex items-center gap-3">
-      <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
-        <span className="text-lg">🏛️</span>
+  <div className="sg-surface rounded-2xl md:rounded-3xl p-5 md:p-8 relative overflow-hidden h-full animate-slide-up">
+    <div className="absolute top-0 left-0 w-1.5 h-full rounded-l-2xl md:rounded-l-3xl" style={{background: SG.green}} />
+    <h3 className="text-sm md:text-lg font-black mb-5 md:mb-6 flex items-center gap-2 md:gap-3 font-jakarta" style={{color: SG.textPrimary}}>
+      <div className="w-8 h-8 md:w-9 md:h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{background: SG.greenBg}}>
+        <span className="text-base md:text-lg">🏛️</span>
       </div>
       Fundamental Health
     </h3>
-    <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+    <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
       <div className="space-y-1">
-        <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest truncate">P/E Ratio</p>
-        <p className="text-lg md:text-xl font-mono font-black text-slate-800 dark:text-slate-200 truncate">{data.peRatio?.toFixed(2)}x</p>
+        <p className="text-[10px] font-black uppercase tracking-widest truncate font-jakarta" style={{color: SG.textMuted}}>P/E Ratio</p>
+        <p className="text-lg md:text-xl font-black truncate font-mono-trading" style={{color: SG.textPrimary}}>{data.peRatio?.toFixed(2)}x</p>
       </div>
       <div className="space-y-1">
-        <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest truncate">PBV Ratio</p>
-        <p className="text-lg md:text-xl font-mono font-black text-slate-800 dark:text-slate-200 truncate">{data.pbvRatio?.toFixed(2)}x</p>
+        <p className="text-[10px] font-black uppercase tracking-widest truncate font-jakarta" style={{color: SG.textMuted}}>PBV Ratio</p>
+        <p className="text-lg md:text-xl font-black truncate font-mono-trading" style={{color: SG.textPrimary}}>{data.pbvRatio?.toFixed(2)}x</p>
       </div>
       <div className="space-y-1">
-        <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest truncate">ROE</p>
-        <p className={`text-lg md:text-xl font-mono font-black truncate ${data.roe > 15 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-800 dark:text-slate-200'}`}>{data.roe?.toFixed(2)}%</p>
+        <p className="text-[10px] font-black uppercase tracking-widest truncate font-jakarta" style={{color: SG.textMuted}}>ROE</p>
+        <p className={`text-lg md:text-xl font-black truncate font-mono-trading`} style={{color: data.roe > 15 ? SG.green : SG.textPrimary}}>{data.roe?.toFixed(2)}%</p>
       </div>
       <div className="space-y-1">
-        <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest truncate">DER</p>
-        <p className={`text-lg md:text-xl font-mono font-black truncate ${data.der < 1 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-800 dark:text-slate-200'}`}>{data.der?.toFixed(2)}x</p>
+        <p className="text-[10px] font-black uppercase tracking-widest truncate font-jakarta" style={{color: SG.textMuted}}>DER</p>
+        <p className={`text-lg md:text-xl font-black truncate font-mono-trading`} style={{color: data.der < 1 ? SG.green : SG.textPrimary}}>{data.der?.toFixed(2)}x</p>
       </div>
       <div className="space-y-1">
-        <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest truncate">Div. Yield</p>
-        <p className="text-lg md:text-xl font-mono font-black text-slate-800 dark:text-slate-200 truncate">{data.dividendYield?.toFixed(2)}%</p>
+        <p className="text-[10px] font-black uppercase tracking-widest truncate font-jakarta" style={{color: SG.textMuted}}>Div. Yield</p>
+        <p className="text-lg md:text-xl font-black truncate font-mono-trading" style={{color: SG.textPrimary}}>{data.dividendYield?.toFixed(2)}%</p>
       </div>
       <div className="space-y-1">
-        <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest truncate">Market Cap</p>
-        <p className="text-xs md:text-sm font-mono font-black text-slate-800 dark:text-slate-200 truncate">{data.marketCap}</p>
+        <p className="text-[10px] font-black uppercase tracking-widest truncate font-jakarta" style={{color: SG.textMuted}}>Market Cap</p>
+        <p className="text-xs md:text-sm font-black truncate font-mono-trading" style={{color: SG.textPrimary}}>{data.marketCap}</p>
       </div>
     </div>
   </div>
 );
 
 const VerdictCard = ({ verdict }: { verdict: InvestmentVerdict }) => {
-  const accentClass = verdict.rating === 'Buy' ? 'accent-emerald' : verdict.rating === 'Sell' ? 'accent-rose' : 'accent-amber';
+  const accentColor = verdict.rating === 'Buy' ? SG.green : verdict.rating === 'Sell' ? SG.red : '#facc15';
+  const accentBg = verdict.rating === 'Buy' ? SG.greenBg : verdict.rating === 'Sell' ? 'rgba(239, 68, 68, 0.12)' : 'rgba(250, 204, 21, 0.12)';
   return (
-    <div className="glass-card rounded-3xl p-6 md:p-8 relative overflow-hidden h-full animate-slide-up">
-      <div className={`absolute top-0 left-0 right-0 h-1 ${accentClass} rounded-t-3xl`} />
-      <div className="flex flex-col sm:flex-row sm:justify-between items-start mb-6 md:mb-8 gap-4 sm:gap-0">
+    <div className="sg-surface rounded-2xl md:rounded-3xl p-5 md:p-8 relative overflow-hidden h-full animate-slide-up">
+      <div className={`absolute top-0 left-0 right-0 h-1 rounded-t-2xl md:rounded-t-3xl`} style={{background: accentColor}} />
+      <div className="flex flex-col sm:flex-row sm:justify-between items-start mb-5 md:mb-8 gap-4 sm:gap-0">
         <div>
-          <h3 className="text-base md:text-lg font-black text-slate-800 dark:text-slate-100 mb-2">Investment Verdict</h3>
-          <span className={`px-3 md:px-4 py-1.5 md:py-2 rounded-xl text-xs font-black uppercase tracking-widest ${verdict.rating === 'Buy' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400' : verdict.rating === 'Sell' ? 'bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400' : 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400'}`}>
+          <h3 className="text-sm md:text-lg font-black mb-2 font-jakarta" style={{color: SG.textPrimary}}>Investment Verdict</h3>
+          <span className={`px-3 md:px-4 py-1.5 md:py-2 rounded-xl text-[10px] md:text-xs font-black uppercase tracking-widest font-jakarta`} style={{color: accentColor, background: accentBg}}>
             {verdict.rating}
           </span>
         </div>
-        <div className="text-right w-full sm:w-auto">
+        <div className="text-left w-full sm:text-right sm:w-auto">
           <div className="flex justify-start sm:justify-end gap-2 items-end h-10">
             {['Growth', 'Value', 'Dividend'].map((type) => (
               <div key={type} className="flex flex-col items-center gap-1 group w-4">
-                <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-full relative overflow-hidden">
-                  <div className="absolute bottom-0 w-full bg-indigo-500 rounded-full transition-all duration-1000" style={{ height: `${(verdict.suitability as any)[type.toLowerCase()] || 0}%` }}></div>
+                <div className="w-full rounded-full h-full relative overflow-hidden" style={{background: SG.bgMuted}}>
+                  <div className="absolute bottom-0 w-full rounded-full transition-all duration-1000" style={{ height: `${(verdict.suitability as any)[type.toLowerCase()] || 0}%`, background: SG.textSecond }}></div>
                 </div>
-                <span className="text-[8px] font-black uppercase text-slate-400 dark:text-slate-500">{type[0]}</span>
+                <span className="text-[8px] font-black uppercase font-jakarta" style={{color: SG.textMuted}}>{type[0]}</span>
               </div>
             ))}
           </div>
@@ -134,21 +144,21 @@ const VerdictCard = ({ verdict }: { verdict: InvestmentVerdict }) => {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <h4 className="text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest mb-3">Pros</h4>
+          <h4 className="text-[9px] font-black uppercase tracking-widest mb-3 font-jakarta" style={{color: SG.green}}>Pros</h4>
           <ul className="space-y-2">
             {verdict.pros.slice(0, 3).map((pro, i) => (
-              <li key={i} className="flex items-start gap-2 text-[10px] font-bold text-slate-600 dark:text-slate-400 leading-tight">
-                <span className="text-emerald-500 mt-0.5 flex-shrink-0">✓</span> <span>{pro}</span>
+              <li key={i} className="flex items-start gap-2 text-[10px] font-bold leading-tight font-jakarta" style={{color: SG.textPrimary}}>
+                <span className="mt-0.5 flex-shrink-0" style={{color: SG.green}}>✓</span> <span>{pro}</span>
               </li>
             ))}
           </ul>
         </div>
         <div>
-          <h4 className="text-[9px] font-black text-red-600 dark:text-red-400 uppercase tracking-widest mb-3">Cons</h4>
+          <h4 className="text-[9px] font-black uppercase tracking-widest mb-3 font-jakarta" style={{color: SG.red}}>Cons</h4>
           <ul className="space-y-2">
             {verdict.cons.slice(0, 3).map((con, i) => (
-              <li key={i} className="flex items-start gap-2 text-[10px] font-bold text-slate-600 dark:text-slate-400 leading-tight">
-                <span className="text-red-500 mt-0.5 flex-shrink-0">✕</span> <span>{con}</span>
+              <li key={i} className="flex items-start gap-2 text-[10px] font-bold leading-tight font-jakarta" style={{color: SG.textPrimary}}>
+                <span className="mt-0.5 flex-shrink-0" style={{color: SG.red}}>✕</span> <span>{con}</span>
               </li>
             ))}
           </ul>
@@ -159,15 +169,15 @@ const VerdictCard = ({ verdict }: { verdict: InvestmentVerdict }) => {
 };
 
 const QualitativeCard = ({ data }: { data: QualitativeAnalysis }) => (
-  <div className="glass-card rounded-3xl p-6 md:p-8 relative overflow-hidden animate-slide-up stagger-1 h-full">
-    <div className="absolute top-0 left-0 w-1.5 h-full accent-blue rounded-l-3xl" />
-    <h3 className="text-base md:text-lg font-black text-slate-800 dark:text-slate-100 mb-6 flex items-center gap-3">
-      <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center flex-shrink-0">
-        <span className="text-lg">🎯</span>
+  <div className="sg-surface rounded-2xl md:rounded-3xl p-5 md:p-8 relative overflow-hidden animate-slide-up stagger-1 h-full">
+    <div className="absolute top-0 left-0 w-1.5 h-full rounded-l-2xl md:rounded-l-3xl" style={{background: '#3b82f6'}} />
+    <h3 className="text-sm md:text-lg font-black mb-5 md:mb-6 flex items-center gap-2 md:gap-3 font-jakarta" style={{color: SG.textPrimary}}>
+      <div className="w-8 h-8 md:w-9 md:h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{background: 'rgba(59, 130, 246, 0.1)'}}>
+        <span className="text-base md:text-lg">🎯</span>
       </div>
       Qualitative Analysis
     </h3>
-    <div className="space-y-5">
+    <div className="space-y-4 md:space-y-5">
       {[
         { label: 'Business Model', text: data.businessModel },
         { label: 'Management Quality', text: data.managementQuality },
@@ -175,8 +185,8 @@ const QualitativeCard = ({ data }: { data: QualitativeAnalysis }) => (
         { label: 'Competitive Position', text: data.competitivePosition },
       ].map(({ label, text }) => (
         <div key={label} className="group">
-          <h4 className="text-[10px] md:text-xs font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-1.5">{label}</h4>
-          <p className="text-xs md:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">{text}</p>
+          <h4 className="text-[10px] md:text-xs font-black uppercase tracking-widest mb-1.5 font-jakarta" style={{color: '#60a5fa'}}>{label}</h4>
+          <p className="text-xs md:text-sm leading-relaxed font-jakarta" style={{color: SG.textPrimary}}>{text}</p>
         </div>
       ))}
     </div>
@@ -184,27 +194,27 @@ const QualitativeCard = ({ data }: { data: QualitativeAnalysis }) => (
 );
 
 const QuantitativeCard = ({ data }: { data: QuantitativeAnalysis }) => (
-  <div className="glass-card rounded-3xl p-6 md:p-8 relative overflow-hidden animate-slide-up stagger-2 h-full">
-    <div className="absolute top-0 left-0 w-1.5 h-full accent-violet rounded-l-3xl" />
-    <h3 className="text-base md:text-lg font-black text-slate-800 dark:text-slate-100 mb-6 flex items-center gap-3">
-      <div className="w-9 h-9 rounded-xl bg-violet-50 dark:bg-violet-500/10 flex items-center justify-center flex-shrink-0">
-        <span className="text-lg">📊</span>
+  <div className="sg-surface rounded-2xl md:rounded-3xl p-5 md:p-8 relative overflow-hidden animate-slide-up stagger-2 h-full">
+    <div className="absolute top-0 left-0 w-1.5 h-full rounded-l-2xl md:rounded-l-3xl" style={{background: '#8b5cf6'}} />
+    <h3 className="text-sm md:text-lg font-black mb-5 md:mb-6 flex items-center gap-2 md:gap-3 font-jakarta" style={{color: SG.textPrimary}}>
+      <div className="w-8 h-8 md:w-9 md:h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{background: 'rgba(139, 92, 246, 0.1)'}}>
+        <span className="text-base md:text-lg">📊</span>
       </div>
       Quantitative Analysis
     </h3>
-    <div className="space-y-6">
+    <div className="space-y-5 md:space-y-6">
       {[
-        { label: 'Income Statement', entries: data.incomeStatement, color: 'text-violet-600 dark:text-violet-400' },
-        { label: 'Balance Sheet', entries: data.balanceSheet, color: 'text-violet-600 dark:text-violet-400' },
-        { label: 'Cash Flow', entries: data.cashFlow, color: 'text-violet-600 dark:text-violet-400' },
+        { label: 'Income Statement', entries: data.incomeStatement, color: '#a78bfa' },
+        { label: 'Balance Sheet', entries: data.balanceSheet, color: '#a78bfa' },
+        { label: 'Cash Flow', entries: data.cashFlow, color: '#a78bfa' },
       ].map(({ label, entries, color }) => (
         <div key={label}>
-          <h4 className={`text-[10px] md:text-xs font-black ${color} uppercase tracking-widest mb-3`}>{label}</h4>
+          <h4 className={`text-[10px] md:text-xs font-black uppercase tracking-widest mb-3 font-jakarta`} style={{color}}>{label}</h4>
           <div className="grid grid-cols-2 gap-3 md:gap-4">
             {Object.entries(entries).map(([key, value]) => (
               <div key={key} className="space-y-1">
-                <p className="text-[8px] md:text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest truncate">{key.replace(/_/g, ' ')}</p>
-                <p className="text-sm md:text-base font-mono font-black text-slate-800 dark:text-slate-200 truncate">{value}</p>
+                <p className="text-[8px] md:text-[9px] font-black uppercase tracking-widest truncate font-jakarta" style={{color: SG.textMuted}}>{key.replace(/_/g, ' ')}</p>
+                <p className="text-sm md:text-base font-black truncate font-mono-trading" style={{color: SG.textPrimary}}>{value}</p>
               </div>
             ))}
           </div>
@@ -215,27 +225,27 @@ const QuantitativeCard = ({ data }: { data: QuantitativeAnalysis }) => (
 );
 
 const AnalysisApproachCard = ({ data }: { data: AnalysisApproach }) => (
-  <div className="glass-card rounded-2xl p-5 md:p-6 relative overflow-hidden animate-slide-up h-full">
-    <div className="absolute top-0 left-0 right-0 h-1 accent-indigo rounded-t-2xl" />
-    <h3 className="text-slate-800 dark:text-slate-100 text-xs md:text-sm font-black uppercase tracking-widest mb-4 md:mb-5 flex items-center gap-2.5">
-      <div className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center flex-shrink-0">
+  <div className="sg-surface rounded-2xl p-5 md:p-6 relative overflow-hidden animate-slide-up h-full" style={{border: `1px solid ${SG.border}`}}>
+    <div className="absolute top-0 left-0 right-0 h-1 rounded-t-2xl" style={{background: '#818cf8'}} />
+    <h3 className="text-xs md:text-sm font-black uppercase tracking-widest mb-4 md:mb-5 flex items-center gap-2.5 font-jakarta" style={{color: SG.textPrimary}}>
+      <div className="w-7 h-7 md:w-8 md:h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{background: 'rgba(99, 102, 241, 0.1)'}}>
         <span className="text-sm md:text-base">🔍</span>
       </div>
       Analysis Approach
     </h3>
     <div className="space-y-4">
       <div className="flex items-center gap-3">
-        <span className="px-3 md:px-3.5 py-1 md:py-1.5 rounded-lg text-[9px] md:text-[10px] font-black uppercase tracking-widest bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400">
+        <span className="px-3 md:px-3.5 py-1 md:py-1.5 rounded-lg text-[9px] md:text-[10px] font-black uppercase tracking-widest font-jakarta" style={{background: 'rgba(99, 102, 241, 0.1)', color: '#818cf8'}}>
           {data.methodology}
         </span>
       </div>
-      <p className="text-xs md:text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-medium">{data.description}</p>
+      <p className="text-xs md:text-sm leading-relaxed font-medium font-jakarta" style={{color: SG.textPrimary}}>{data.description}</p>
       <div className="pt-2">
-        <h4 className="text-[10px] md:text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest mb-2 md:mb-3">Key Factors</h4>
+        <h4 className="text-[10px] md:text-xs font-black uppercase tracking-widest mb-2 md:mb-3 font-jakarta" style={{color: '#818cf8'}}>Key Factors</h4>
         <ul className="space-y-2">
           {data.keyFactors.map((factor, i) => (
-            <li key={i} className="flex items-start gap-2 text-xs md:text-sm text-slate-600 dark:text-slate-300 font-medium">
-              <span className="w-4 h-4 md:w-5 md:h-5 rounded-md bg-indigo-50 dark:bg-indigo-500/10 text-indigo-500 flex items-center justify-center text-[9px] md:text-[10px] font-black flex-shrink-0 mt-0.5">{i + 1}</span>
+            <li key={i} className="flex items-start gap-2 text-xs md:text-sm font-medium font-jakarta" style={{color: SG.textPrimary}}>
+              <span className="w-4 h-4 md:w-5 md:h-5 rounded-md flex items-center justify-center text-[9px] md:text-[10px] font-black flex-shrink-0 mt-0.5" style={{background: 'rgba(99, 102, 241, 0.1)', color: '#818cf8'}}>{i + 1}</span>
               <span>{factor}</span>
             </li>
           ))}
@@ -280,11 +290,11 @@ const SidebarItem = ({ icon, label, viewId, view, setView }: { icon: string, lab
       onClick={() => setView(viewId)}
       className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold transition-colors touch-manipulation relative"
       style={{
-        color: isActive ? SGN.green : SGN.muted,
-        background: isActive ? SGN.greenBg : 'transparent',
-        borderLeft: isActive ? `3px solid ${SGN.green}` : '3px solid transparent',
+        color: isActive ? SG.green : SG.muted,
+        background: isActive ? SG.greenBg : 'transparent',
+        borderLeft: isActive ? `3px solid ${SG.green}` : '3px solid transparent',
         borderRadius: '0 10px 10px 0',
-        fontFamily: SGN.sans,
+        fontFamily: SG.sans,
         fontWeight: 600,
         fontSize: '13px',
       }}
@@ -644,17 +654,17 @@ const App: React.FC = () => {
     >
       {/* SIDEBAR — Desktop only */}
       <aside className="w-52 flex-col hidden lg:flex sticky top-0 h-screen z-50 transition-colors"
-        style={{ background: SGN.bg, borderRight: `1px solid ${SGN.border}` }}>
+        style={{ background: SG.bg, borderRight: `1px solid ${SG.border}` }}>
         <div className="p-5">
           {/* SahamGue Logo */}
           <div className="flex items-center gap-3 mb-8 cursor-pointer" onClick={() => setView('home')}>
             <div className="w-8 h-8 rounded-[9px] flex items-center justify-center flex-shrink-0"
               style={{ background: 'linear-gradient(135deg, #22c55e, #16a34a)' }}>
-              <span style={{ fontFamily: SGN.mono, fontWeight: 800, fontSize: '12px', color: '#0a0f10' }}>SG</span>
+              <span style={{ fontFamily: SG.mono, fontWeight: 800, fontSize: '12px', color: '#0a0f10' }}>SG</span>
             </div>
             <div>
-              <h1 className="font-black tracking-tight leading-none" style={{ fontFamily: SGN.sans, fontWeight: 800, fontSize: '15px', color: SGN.text }}>IDX Assistant</h1>
-              <p className="text-[8px] font-bold uppercase tracking-widest mt-0.5" style={{ color: SGN.muted }}>SahamGue AI</p>
+              <h1 className="font-black tracking-tight leading-none" style={{ fontFamily: SG.sans, fontWeight: 800, fontSize: '15px', color: SG.text }}>IDX Assistant</h1>
+              <p className="text-[8px] font-bold uppercase tracking-widest mt-0.5" style={{ color: SG.muted }}>SahamGue AI</p>
             </div>
           </div>
 
@@ -694,10 +704,10 @@ const App: React.FC = () => {
                   onClick={() => setSettingsView(settingsView === 'mfa' ? null : 'mfa')}
                   className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold transition-colors"
                   style={{
-                    color: settingsView === 'mfa' ? SGN.green : SGN.muted,
-                    fontFamily: SGN.sans, fontWeight: 600, fontSize: '13px',
-                    background: settingsView === 'mfa' ? SGN.greenBg : 'transparent',
-                    borderLeft: settingsView === 'mfa' ? `3px solid ${SGN.green}` : '3px solid transparent',
+                    color: settingsView === 'mfa' ? SG.green : SG.muted,
+                    fontFamily: SG.sans, fontWeight: 600, fontSize: '13px',
+                    background: settingsView === 'mfa' ? SG.greenBg : 'transparent',
+                    borderLeft: settingsView === 'mfa' ? `3px solid ${SG.green}` : '3px solid transparent',
                     borderRadius: '0 10px 10px 0',
                   }}
                 >
@@ -708,13 +718,13 @@ const App: React.FC = () => {
           </div>
         </div>
         <div className="mt-auto p-5 space-y-3">
-          <div className="flex justify-between items-center p-3 rounded-xl" style={{ background: SGN.surface, border: `1px solid ${SGN.border}` }}>
-            <span className="text-xs font-bold uppercase tracking-wider" style={{ color: SGN.muted }}>Tema</span>
+          <div className="flex justify-between items-center p-3 rounded-xl" style={{ background: SG.surface, border: `1px solid ${SG.border}` }}>
+            <span className="text-xs font-bold uppercase tracking-wider" style={{ color: SG.muted }}>Tema</span>
             <ThemeToggle />
           </div>
           <button onClick={handleLogout}
             className="w-full py-2.5 rounded-xl text-sm font-bold transition-all"
-            style={{ background: SGN.surface, border: `1px solid ${SGN.border}`, color: SGN.dim }}>
+            style={{ background: SG.surface, border: `1px solid ${SG.border}`, color: SG.dim }}>
             Keluar
           </button>
         </div>
@@ -724,25 +734,25 @@ const App: React.FC = () => {
       <main className="flex-1 overflow-y-auto pb-24 lg:pb-0">
         {/* Top Nav Bar */}
         <nav className="h-14 flex items-center justify-between px-4 lg:px-6 backdrop-blur-md sticky top-0 z-[45] transition-colors"
-          style={{ background: SGN.bg, borderBottom: `1px solid ${SGN.border}` }}>
+          style={{ background: SG.bg, borderBottom: `1px solid ${SG.border}` }}>
           <div className="flex items-center gap-3">
             {/* Mobile logo */}
             <div className="lg:hidden flex items-center gap-2 cursor-pointer" onClick={() => setView('home')}>
               <div className="w-7 h-7 rounded-[7px] flex items-center justify-center flex-shrink-0"
                 style={{ background: 'linear-gradient(135deg, #22c55e, #16a34a)' }}>
-                <span style={{ fontFamily: SGN.mono, fontWeight: 800, fontSize: '10px', color: '#0a0f10' }}>SG</span>
+                <span style={{ fontFamily: SG.mono, fontWeight: 800, fontSize: '10px', color: '#0a0f10' }}>SG</span>
               </div>
-              <span className="font-black text-sm tracking-tight" style={{ fontFamily: SGN.sans, color: SGN.text }}>IDX Assistant</span>
+              <span className="font-black text-sm tracking-tight" style={{ fontFamily: SG.sans, color: SG.text }}>IDX Assistant</span>
             </div>
-            <h2 className="hidden lg:block text-[11px] font-bold uppercase tracking-widest" style={{ color: SGN.dim }}>
+            <h2 className="hidden lg:block text-[11px] font-bold uppercase tracking-widest" style={{ color: SG.dim }}>
               {view === 'home' ? 'Home' : view === 'analysis' ? 'Market Analysis' : view === 'watchlist' ? 'Watchlist' : view === 'news' ? 'Berita & Analisis' : view === 'journal' ? 'Trade Journal' : view === 'learning' ? 'Learning' : view.replace('-', ' ')}
             </h2>
           </div>
           <div className="flex items-center gap-3">
             <ThemeToggle />
             <div className="text-right hidden sm:block">
-              <p className="text-xs font-black leading-none" style={{ color: SGN.text }}>{user.name}</p>
-              <p className="text-[10px] font-bold uppercase tracking-widest mt-0.5" style={{ color: SGN.muted }}>Trader Pro</p>
+              <p className="text-xs font-black leading-none" style={{ color: SG.text }}>{user.name}</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest mt-0.5" style={{ color: SG.muted }}>Trader Pro</p>
             </div>
             <div className="w-8 h-8 rounded-xl flex items-center justify-center text-[13px] font-black"
               style={{ background: 'rgba(34,197,94,0.15)', color: '#22c55e' }}>
@@ -855,25 +865,29 @@ const App: React.FC = () => {
                 <>
                   {/* Browse by Sector */}
                   <div className="max-w-4xl mx-auto px-6 mb-10">
-                    <h3 className="text-left text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-4 flex items-center gap-2">
-                      <span className="w-5 h-px bg-slate-300 dark:bg-slate-700"></span>
+                    <h3 className="text-left text-[10px] font-black uppercase tracking-widest mb-4 flex items-center gap-2 font-jakarta" style={{color: SG.textMuted}}>
+                      <span className="w-5 h-px" style={{background: SG.border}}></span>
                       Browse by Business Sector
                     </h3>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
-                      {IDX_SECTORS.filter(s => s.id !== 'All').map(sector => {
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5">
+                      {IDX_SECTORS.map(sector => {
+                        if (sector.id === 'All') return null; // Skip 'All' sector
                         const count = SAMPLE_IDX_STOCKS.filter(s => s.sector === sector.id).length;
                         return (
                           <button
                             key={sector.id}
                             onClick={() => handleBrowseSector(sector.id)}
-                            className="flex items-center gap-3 px-4 py-3.5 bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl hover:border-indigo-500 hover:shadow-md transition-all active:scale-[0.98] group text-left"
+                            className="flex items-center gap-3 px-4 py-3.5 sg-surface rounded-xl transition-all active:scale-[0.98] group text-left"
+                            style={{border: `1px solid ${SG.border}`}}
+                            onMouseEnter={(e) => e.currentTarget.style.borderColor = SG.green}
+                            onMouseLeave={(e) => e.currentTarget.style.borderColor = SG.border}
                           >
                             <span className="text-xl">{sector.icon}</span>
                             <div className="flex-1 min-w-0">
-                              <span className="text-xs font-bold text-slate-700 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors block truncate">{sector.label}</span>
-                              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">{count} stocks</span>
+                              <span className="text-xs font-bold block truncate font-jakarta" style={{color: SG.textPrimary}}>{sector.label}</span>
+                              <span className="text-[10px] font-medium font-jakarta" style={{color: SG.textDim}}>{count} stocks</span>
                             </div>
-                            <svg className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600 group-hover:text-indigo-500 transition-colors flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" /></svg>
+                            <svg className="w-3.5 h-3.5 transition-colors flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{color: SG.textDim}}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" /></svg>
                           </button>
                         );
                       })}
@@ -882,21 +896,24 @@ const App: React.FC = () => {
 
                   {/* Browse by Index */}
                   <div className="max-w-4xl mx-auto px-6">
-                    <h3 className="text-left text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-4 flex items-center gap-2">
-                      <span className="w-5 h-px bg-slate-300 dark:bg-slate-700"></span>
+                    <h3 className="text-left text-[10px] font-black uppercase tracking-widest mb-4 flex items-center gap-2 font-jakarta" style={{color: SG.textMuted}}>
+                      <span className="w-5 h-px" style={{background: SG.border}}></span>
                       Browse by Stock Index
                     </h3>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5">
                       {IDX_STOCK_INDICES.map(index => (
                         <button
                           key={index.id}
                           onClick={() => handleBrowseIndex(index.id)}
-                          className="flex flex-col items-center gap-2 px-4 py-5 bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl hover:border-indigo-500 hover:shadow-md transition-all active:scale-[0.98] group"
+                          className="flex flex-col items-center gap-2 px-4 py-5 sg-surface rounded-xl transition-all active:scale-[0.98] group"
+                          style={{border: `1px solid ${SG.border}`}}
+                          onMouseEnter={(e) => e.currentTarget.style.borderColor = SG.green}
+                          onMouseLeave={(e) => e.currentTarget.style.borderColor = SG.border}
                         >
                           <span className="text-2xl">{index.icon}</span>
-                          <span className="text-sm font-black text-slate-700 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{index.label}</span>
-                          <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium leading-tight text-center">{index.description}</span>
-                          <span className="text-[10px] mt-1 px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 font-bold">{index.tickers.length} stocks</span>
+                          <span className="text-sm font-black font-jakarta transition-colors" style={{color: SG.textPrimary}}>{index.label}</span>
+                          <span className="text-[10px] font-medium leading-tight text-center font-jakarta" style={{color: SG.textSecond}}>{index.description}</span>
+                          <span className="text-[10px] mt-1 px-2.5 py-0.5 rounded-full font-bold font-jakarta" style={{background: SG.bgMuted, color: SG.textMuted}}>{index.tickers.length} stocks</span>
                         </button>
                       ))}
                     </div>
@@ -909,34 +926,38 @@ const App: React.FC = () => {
                   <div className="flex items-center gap-3 mb-6">
                     <button
                       onClick={handleBrowseBack}
-                      className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                      className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest transition-colors font-jakarta"
+                      style={{color: SG.textMuted}}
                     >
                       <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
                       Back
                     </button>
-                    <span className="text-sm font-black text-slate-700 dark:text-slate-200">
+                    <span className="text-sm font-black font-jakarta" style={{color: SG.textPrimary}}>
                       {browseMode === 'sector'
                         ? `${IDX_SECTORS.find(s => s.id === browseFilter)?.icon || ''} ${browseFilter}`
                         : `${IDX_STOCK_INDICES.find(i => i.id === browseFilter)?.icon || ''} ${browseFilter}`
                       }
                     </span>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 font-bold">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full font-bold font-jakarta" style={{background: SG.greenBg, color: SG.green}}>
                       {filteredStocks.length} stocks
                     </span>
                   </div>
 
                   {/* Filtered stock grid */}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5">
                     {filteredStocks.map(s => (
                       <button
                         key={s.ticker}
                         onClick={() => handleSelectStock(s)}
-                        className="flex flex-col items-start px-4 py-3 bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 hover:border-indigo-500 hover:shadow-md text-left rounded-xl transition-all active:scale-95 group"
+                        className="flex flex-col items-start px-4 py-3 sg-surface text-left rounded-xl transition-all active:scale-95 group hover:-translate-y-0.5"
+                        style={{border: `1px solid ${SG.border}`}}
+                        onMouseEnter={(e) => e.currentTarget.style.borderColor = SG.green}
+                        onMouseLeave={(e) => e.currentTarget.style.borderColor = SG.border}
                       >
-                        <span className="font-black text-sm text-slate-800 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{s.ticker}</span>
-                        <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium leading-tight mt-0.5 line-clamp-1">{s.name}</span>
+                        <span className="font-black text-sm font-mono-trading transition-colors" style={{color: SG.textPrimary}}>{s.ticker}</span>
+                        <span className="text-[10px] font-medium leading-tight mt-0.5 line-clamp-1 font-jakarta" style={{color: SG.textSecond}}>{s.name}</span>
                         {s.subsector && (
-                          <span className="text-[8px] mt-1.5 px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">{s.subsector}</span>
+                          <span className="text-[8px] mt-1.5 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider font-jakarta" style={{background: SG.bgMuted, color: SG.textDim}}>{s.subsector}</span>
                         )}
                       </button>
                     ))}
@@ -1005,12 +1026,12 @@ const App: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-4">
-                    <h1 className="text-5xl font-black text-slate-800 dark:text-slate-100 tracking-tighter">{selectedStock.ticker}</h1>
-                    <span className="bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 text-xs px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 font-black uppercase">IDX</span>
-                    {realTimeData && <span className="flex items-center gap-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-[10px] px-3 py-1.5 rounded-full border border-red-100 dark:border-red-900/50 animate-pulse font-black"><span className="w-2 h-2 bg-red-500 rounded-full"></span> LIVE</span>}
+                  <div className="flex items-center gap-2 md:gap-4 flex-wrap">
+                    <h1 className="text-3xl md:text-5xl font-black tracking-tighter font-mono-trading" style={{color: SG.textPrimary}}>{selectedStock.ticker}</h1>
+                    <span className="text-[10px] md:text-xs px-2 md:px-3 py-1 md:py-1.5 rounded-lg border font-black uppercase font-jakarta" style={{background: SG.bgMuted, color: SG.textMuted, borderColor: SG.border}}>IDX</span>
+                    {realTimeData && <span className="flex items-center gap-1.5 md:gap-2 text-[9px] md:text-[10px] px-2 md:px-3 py-1 md:py-1.5 rounded-full border animate-pulse font-black font-jakarta" style={{background: 'rgba(239, 68, 68, 0.1)', color: SG.red, borderColor: 'rgba(239, 68, 68, 0.2)'}}><span className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full" style={{background: SG.red}}></span> LIVE</span>}
                   </div>
-                  <p className="text-slate-500 dark:text-slate-400 mt-2 text-xl font-bold">{selectedStock.name}</p>
+                  <p className="mt-1 md:mt-2 text-base md:text-xl font-bold font-jakarta" style={{color: SG.textSecond}}>{selectedStock.name}</p>
 
                   {/* Sector & Index Tags */}
                   <div className="flex flex-wrap items-center gap-2 mt-3">
@@ -1018,7 +1039,8 @@ const App: React.FC = () => {
                     {selectedStock.sector && selectedStock.sector !== 'Unknown' && (
                       <button
                         onClick={() => { setSelectedStock(null); handleBrowseSector(selectedStock.sector); }}
-                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 text-[10px] font-bold border border-indigo-100 dark:border-indigo-900/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition-colors cursor-pointer"
+                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-colors cursor-pointer font-jakarta"
+                        style={{background: 'rgba(99, 102, 241, 0.1)', color: '#818cf8', borderColor: 'rgba(99, 102, 241, 0.2)'}}
                       >
                         <span>{IDX_SECTORS.find(s => s.id === selectedStock.sector)?.icon || '📁'}</span>
                         <span>#{selectedStock.sector}</span>
@@ -1042,16 +1064,16 @@ const App: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="flex flex-col items-end gap-6 w-full md:w-auto">
-                  <div className="text-right">
+                <div className="flex flex-col items-start md:items-end gap-4 md:gap-6 w-full md:w-auto mt-6 md:mt-0 pt-6 md:pt-0 border-t md:border-none" style={{borderColor: SG.border}}>
+                  <div className="text-left md:text-right">
                     {(realTimeData || fullStockData.length > 0) ? <>
-                      <div className="text-5xl font-mono font-black text-indigo-600 dark:text-indigo-400 tracking-tighter">Rp {(realTimeData?.price || fullStockData[fullStockData.length - 1]?.price || 0).toLocaleString('id-ID')}</div>
+                      <div className="text-4xl md:text-5xl font-black tracking-tighter font-mono-trading" style={{color: SG.green}}>Rp {(realTimeData?.price || fullStockData[fullStockData.length - 1]?.price || 0).toLocaleString('id-ID')}</div>
                       {realTimeData ? (
-                        <div className={`text-sm font-black mt-3 flex items-center md:justify-end gap-2 ${realTimeData.change >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                        <div className={`text-xs md:text-sm font-black mt-2 md:mt-3 flex items-center md:justify-end gap-2 font-mono-trading`} style={{color: realTimeData.change >= 0 ? SG.green : SG.red}}>
                           <span>{realTimeData.change >= 0 ? '+' : ''}{realTimeData.changePercent}%</span>
-                          <span className="text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase tracking-[0.15em] bg-slate-50 dark:bg-slate-800 px-2.5 py-1 rounded">Today</span>
+                          <span className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.15em] px-2 py-0.5 md:px-2.5 md:py-1 rounded font-jakarta" style={{background: SG.bgMuted, color: SG.textSecond}}>Today</span>
                         </div>
-                      ) : <div className="text-sm text-slate-400 dark:text-slate-500 mt-3 font-black uppercase tracking-widest opacity-50">Historical View</div>}
+                      ) : <div className="text-xs md:text-sm mt-2 md:mt-3 font-black uppercase tracking-widest opacity-50 font-jakarta" style={{color: SG.textMuted}}>Historical View</div>}
                     </> : <HeaderPriceSkeleton />}
                   </div>
 
@@ -1116,60 +1138,70 @@ const App: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+              <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 md:gap-8">
                 <div className="lg:col-span-1">
                   {analysis ? (
-                    <div className="glass-card rounded-3xl p-6 relative overflow-hidden animate-slide-up">
-                      <div className="absolute top-0 left-0 right-0 h-1 accent-indigo rounded-t-3xl" />
-                      <h2 className="text-[10px] font-black text-slate-400 dark:text-slate-500 mb-8 uppercase tracking-[0.2em]">Signal Core</h2>
-                      <Gauge signal={analysis.signal} confidence={analysis.confidence} />
-                      <div className="mt-10 space-y-4 pt-6 border-t border-slate-200/40 dark:border-slate-700/40">
-                        <div className="flex justify-between items-center text-sm"><span className="text-slate-400 dark:text-slate-500 font-black uppercase tracking-widest text-[9px]">Supp Level</span><span className="text-emerald-600 dark:text-emerald-400 font-mono font-black">Rp {analysis.supportLevel.toLocaleString('id-ID')}</span></div>
-                        <div className="flex justify-between items-center text-sm"><span className="text-slate-400 dark:text-slate-500 font-black uppercase tracking-widest text-[9px]">Resi Level</span><span className="text-red-600 dark:text-red-400 font-mono font-black">Rp {analysis.resistanceLevel.toLocaleString('id-ID')}</span></div>
+                    <div className="sg-surface rounded-2xl md:rounded-3xl p-5 md:p-6 relative overflow-hidden animate-slide-up flex flex-col justify-center h-full">
+                      <div className="absolute top-0 left-0 right-0 h-1 rounded-t-2xl md:rounded-t-3xl" style={{background: '#818cf8'}} />
+                      <h2 className="text-[9px] md:text-[10px] font-black mb-4 md:mb-8 uppercase tracking-[0.2em] font-jakarta text-center md:text-left" style={{color: SG.textMuted}}>Signal Core</h2>
+                      <div className="flex-1 flex items-center justify-center">
+                        <Gauge signal={analysis.signal} confidence={analysis.confidence} />
+                      </div>
+                      <div className="mt-6 md:mt-10 space-y-3 md:space-y-4 pt-4 md:pt-6 border-t" style={{borderColor: SG.border}}>
+                        <div className="flex justify-between items-center text-xs md:text-sm"><span className="font-black uppercase tracking-widest text-[8px] md:text-[9px] font-jakarta" style={{color: SG.textMuted}}>Supp Level</span><span className="font-black font-mono-trading" style={{color: SG.green}}>Rp {analysis.supportLevel.toLocaleString('id-ID')}</span></div>
+                        <div className="flex justify-between items-center text-xs md:text-sm"><span className="font-black uppercase tracking-widest text-[8px] md:text-[9px] font-jakarta" style={{color: SG.textMuted}}>Resi Level</span><span className="font-black font-mono-trading" style={{color: SG.red}}>Rp {analysis.resistanceLevel.toLocaleString('id-ID')}</span></div>
                       </div>
                     </div>
                   ) : <GaugeSkeleton />}
                 </div>
-                <div className="lg:col-span-3 space-y-8">
-                  <div className="relative group glass-card p-6 rounded-3xl overflow-hidden">
-                    <Chart data={chartData} timeFrame={timeFrame} chartMode={chartMode} ohlcData={ohlcChartData} onChartModeChange={setChartMode} />
-                    <div className="absolute top-10 right-10 flex items-center bg-white/95 dark:bg-slate-900/95 rounded-2xl p-1 backdrop-blur-sm border border-slate-200 dark:border-slate-800 shadow-2xl gap-1">
-                      {/* Chart Mode Toggle */}
-                      <button
-                        onClick={() => setChartMode('line')}
-                        className={`flex items-center gap-1 px-3 py-2 rounded-xl text-[9px] font-black tracking-widest uppercase transition-all ${chartMode === 'line'
-                          ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100'
-                          : 'text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-slate-100'
-                          }`}
-                        title="Line Chart"
-                      >
-                        <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                          <path d="M3 17l6-6 4 4 8-8" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                        Line
-                      </button>
-                      <button
-                        onClick={() => setChartMode('candle')}
-                        className={`flex items-center gap-1 px-3 py-2 rounded-xl text-[9px] font-black tracking-widest uppercase transition-all ${chartMode === 'candle'
-                          ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100'
-                          : 'text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-slate-100'
-                          }`}
-                        title="Candlestick Chart"
-                      >
-                        <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                          <line x1="9" y1="2" x2="9" y2="22" />
-                          <rect x="6" y="6" width="6" height="10" rx="1" fill="currentColor" />
-                          <line x1="17" y1="4" x2="17" y2="20" />
-                          <rect x="14" y="8" width="6" height="8" rx="1" />
-                        </svg>
-                        Candle
-                      </button>
-                      {/* Divider */}
-                      <div className="w-px h-5 bg-slate-200 dark:bg-slate-700 mx-1"></div>
-                      {/* Timeframe Buttons */}
-                      {(['1D', '1W', '1M', '3M', '6M', '1Y', 'YTD'] as TimeFrame[]).map(tf => <button key={tf} onClick={() => setTimeFrame(tf)} className={`px-4 py-2 text-[9px] font-black tracking-widest uppercase rounded-xl transition-all ${timeFrame === tf ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100 scale-105' : 'text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-slate-100'}`}>{tf}</button>)}
+                <div className="lg:col-span-3 space-y-4 md:space-y-8">
+                  <div className="relative group sg-surface p-3 sm:p-5 md:p-6 rounded-2xl md:rounded-3xl overflow-hidden h-full flex flex-col">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 z-10 w-full relative">
+                      <h3 className="text-xs md:text-sm font-black uppercase tracking-widest font-jakarta" style={{color: SG.textMuted}}>Price Action</h3>
+                      
+                      <div className="flex items-center bg-white/5 dark:bg-slate-900/50 rounded-xl md:rounded-2xl p-1 backdrop-blur-md border shadow-lg gap-0.5 md:gap-1 overflow-x-auto max-w-full" style={{borderColor: `rgba(255,255,255,0.05)`}}>
+                        {/* Chart Mode Toggle */}
+                        <button
+                          onClick={() => setChartMode('line')}
+                          className={`flex items-center gap-1 px-2 md:px-3 py-1.5 md:py-2 rounded-lg md:rounded-xl text-[8px] md:text-[9px] font-black tracking-widest uppercase transition-all whitespace-nowrap ${chartMode === 'line'
+                            ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100'
+                            : 'text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-slate-100'
+                            }`}
+                          title="Line Chart"
+                        >
+                          <svg className="w-2.5 h-2.5 md:w-3 md:h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <path d="M3 17l6-6 4 4 8-8" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                          Line
+                        </button>
+                        <button
+                          onClick={() => setChartMode('candle')}
+                          className={`flex items-center gap-1 px-2 md:px-3 py-1.5 md:py-2 rounded-lg md:rounded-xl text-[8px] md:text-[9px] font-black tracking-widest uppercase transition-all whitespace-nowrap ${chartMode === 'candle'
+                            ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100'
+                            : 'text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-slate-100'
+                            }`}
+                          title="Candlestick Chart"
+                        >
+                          <svg className="w-2.5 h-2.5 md:w-3 md:h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <line x1="9" y1="2" x2="9" y2="22" />
+                            <rect x="6" y="6" width="6" height="10" rx="1" fill="currentColor" />
+                            <line x1="17" y1="4" x2="17" y2="20" />
+                            <rect x="14" y="8" width="6" height="8" rx="1" />
+                          </svg>
+                          Candle
+                        </button>
+                        {/* Divider */}
+                        <div className="w-px h-4 md:h-5 mx-0.5 md:mx-1" style={{background: 'rgba(255,255,255,0.1)'}}></div>
+                        {/* Timeframe Buttons */}
+                        {(['1D', '1W', '1M', '3M', '6M', '1Y', 'YTD'] as TimeFrame[]).map(tf => <button key={tf} onClick={() => setTimeFrame(tf)} className={`px-2 md:px-4 py-1.5 md:py-2 text-[8px] md:text-[9px] font-black tracking-widest uppercase rounded-lg md:rounded-xl transition-all whitespace-nowrap ${timeFrame === tf ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100 scale-105' : 'text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-slate-100'}`}>{tf}</button>)}
+                      </div>
+                    </div>
+                    
+                    <div className="flex-1 min-h-[250px] md:min-h-[350px] mt-2 relative z-0">
+                      <Chart data={chartData} timeFrame={timeFrame} chartMode={chartMode} ohlcData={ohlcChartData} onChartModeChange={setChartMode} />
                     </div>
                   </div>
+
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                     {technicals && <>
                       <IndicatorCard label="RSI" value={technicals.rsi} trend={technicals.rsi > 70 ? 'down' : technicals.rsi < 30 ? 'up' : 'neutral'} />
@@ -1224,16 +1256,16 @@ const App: React.FC = () => {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pb-12">
                 <div className="lg:col-span-2">
                   {analysis ? (
-                    <div className="glass-card rounded-3xl p-6 md:p-8 relative overflow-hidden h-full animate-slide-up">
-                      <div className="absolute top-0 left-0 right-0 h-1 accent-violet rounded-t-3xl" />
+                    <div className="sg-surface rounded-3xl p-6 md:p-8 relative overflow-hidden h-full animate-slide-up">
+                      <div className="absolute top-0 left-0 right-0 h-1 rounded-t-3xl" style={{background: '#8b5cf6'}} />
                       <div className="absolute top-0 right-0 p-4 opacity-[0.03] pointer-events-none"><svg className="w-32 h-32 md:w-48 md:h-48" fill="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z" /></svg></div>
-                      <h2 className="text-xl md:text-2xl font-black text-slate-800 dark:text-slate-100 mb-6 md:mb-8 flex items-center gap-3 md:gap-4"><span className="text-3xl md:text-4xl">🤖</span> AI Engine Insight</h2>
-                      <p className="text-slate-500 dark:text-slate-400 text-base md:text-lg font-bold leading-relaxed mb-8 md:mb-12">{analysis.summary}</p>
+                      <h2 className="text-xl md:text-2xl font-black mb-6 md:mb-8 flex items-center gap-3 md:gap-4 font-jakarta" style={{color: SG.textPrimary}}><span className="text-3xl md:text-4xl">🤖</span> AI Engine Insight</h2>
+                      <p className="text-base md:text-lg font-bold leading-relaxed mb-8 md:mb-12 font-jakarta" style={{color: SG.textSecond}}>{analysis.summary}</p>
                       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
                         {analysis.reasoning.map((point, idx) => (
-                          <div key={idx} className="glass-card p-5 md:p-6 rounded-2xl hover:scale-[1.02] transition-all group flex flex-col h-full active:scale-[0.98]">
-                            <div className="w-8 h-8 md:w-9 md:h-9 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xs font-black mb-4 md:mb-6 group-hover:scale-110 transition-transform flex-shrink-0">{idx + 1}</div>
-                            <p className="text-[10px] md:text-[11px] text-slate-500 dark:text-slate-400 font-black uppercase tracking-wider leading-relaxed flex-grow">{point}</p>
+                          <div key={idx} className="sg-surface p-5 md:p-6 rounded-2xl hover:scale-[1.02] transition-all group flex flex-col h-full active:scale-[0.98]" style={{border: `1px solid ${SG.border}`}}>
+                            <div className="w-8 h-8 rounded-full mb-4 flex items-center justify-center text-xs font-black transition-colors" style={{background: '#8b5cf6', color: '#fff'}}>{idx + 1}</div>
+                            <p className="text-xs md:text-sm font-bold flex-1 font-jakarta" style={{color: SG.textPrimary}}>{point}</p>
                           </div>
                         ))}
                       </div>
@@ -1272,7 +1304,7 @@ const App: React.FC = () => {
       {/* MOBILE BOTTOM NAVIGATION — SahamGue 6 tabs */}
       {view !== 'auth' && (
         <nav className="lg:hidden fixed bottom-0 left-0 right-0 flex justify-around items-end z-50 transition-colors"
-          style={{ background: SGN.bg, borderTop: `1px solid ${SGN.border}`, height: '60px', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+          style={{ background: SG.bg, borderTop: `1px solid ${SG.border}`, height: '60px', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
           {[
             { id: 'home'      as const, icon: '🏠', label: 'Home'     },
             { id: 'analysis'  as const, icon: '📊', label: 'Analisis' },
@@ -1285,17 +1317,17 @@ const App: React.FC = () => {
             return (
               <button key={tab.id} onClick={() => setView(tab.id)}
                 className="flex flex-col items-center justify-center flex-1 py-1.5 min-h-[52px] relative touch-manipulation transition-all active:scale-95"
-                style={{ color: isActive ? SGN.green : SGN.muted }}
+                style={{ color: isActive ? SG.green : SG.muted }}
               >
                 {isActive && (
                   <span className="absolute top-0 left-1/2 -translate-x-1/2 rounded-b-full"
-                    style={{ width: 24, height: 2.5, background: SGN.green }} />
+                    style={{ width: 24, height: 2.5, background: SG.green }} />
                 )}
                 <span className="text-[17px] leading-none" style={{ transform: isActive ? 'scale(1.1)' : 'scale(1)', transition: 'transform 0.15s' }}>
                   {tab.icon}
                 </span>
                 <span style={{
-                  fontSize: '8.5px', marginTop: '2px', fontFamily: SGN.sans,
+                  fontSize: '8.5px', marginTop: '2px', fontFamily: SG.sans,
                   fontWeight: isActive ? 700 : 500,
                   opacity: isActive ? 1 : 0.5, letterSpacing: '0.2px',
                 }}>
