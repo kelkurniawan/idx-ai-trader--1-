@@ -37,6 +37,7 @@ import ProfileSetup from './components/ProfileSetup';
 import MfaVerify from './components/MfaVerify';
 import MfaSetup from './components/MfaSetup';
 import { checkAuthStatus, logout as apiLogout, getMe } from './services/authApi';
+import type { ProfileUser } from './services/profileApi';
 
 // Lazy-loaded components (only loaded when their tab/view is active)
 const ChartAnalyzer = React.lazy(() => import('./components/ChartAnalyzer'));
@@ -46,6 +47,8 @@ const LearningCenter = React.lazy(() => import('./components/LearningCenter'));
 const Community = React.lazy(() => import('./components/Community'));
 const Watchlist = React.lazy(() => import('./components/Watchlist'));
 const AdminDashboard = React.lazy(() => import('./components/admin/AdminDashboard'));// RESTYLED: SahamGue Design System
+const ProfilePageLazy = React.lazy(() => import('./pages/ProfilePage'));
+const ProfileMenuLazy = React.lazy(() => import('./components/profile/ProfileMenu'));
 import HomeDashboard from './components/HomeDashboard';
 import { NewsPage, TickerNewsPanel } from './components/NewsPage';
 
@@ -327,7 +330,10 @@ const App: React.FC = () => {
   const [mfaMessage, setMfaMessage] = useState('');
   // Settings sub-view
   const [settingsView, setSettingsView] = useState<'mfa' | null>(null);
-  const [view, setView] = useState<'home' | 'analysis' | 'swing' | 'scalp' | 'backtest' | 'review' | 'journal' | 'learning' | 'community' | 'watchlist' | 'admin'>('home');
+  const [view, setView] = useState<'home' | 'analysis' | 'swing' | 'scalp' | 'backtest' | 'review' | 'journal' | 'learning' | 'community' | 'watchlist' | 'admin' | 'profile'>('home');
+  // Profile menu dropdown state
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [profileUser, setProfileUser] = useState<ProfileUser | null>(null);
   const [selectedStock, setSelectedStock] = useState<StockProfile | null>(null);
   const [timeFrame, setTimeFrame] = useState<TimeFrame>('3M');
   const [chartMode, setChartMode] = useState<ChartMode>('line');
@@ -639,6 +645,43 @@ const App: React.FC = () => {
     );
   }
 
+  // Profile — full-page takeover (no sidebar)
+  if (view === 'profile') {
+    const profileAuth = {
+      id: user.id,
+      email: user.email,
+      display_name: user.name,
+      avatar_url: user.avatar ?? null,
+      phone: user.phone_number ?? null,
+      bio: null,
+      plan: (user as any).plan || 'FREE',
+      plan_expires_at: null,
+      theme_preference: (user as any).theme_preference || 'dark',
+      mfa_enabled: user.mfa_enabled || false,
+      mfa_type: user.mfa_type ?? null,
+      auth_provider: user.auth_provider || 'local',
+      profile_complete: user.profile_complete || false,
+      created_at: new Date().toISOString(),
+    };
+    return (
+      <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div></div>}>
+        <ProfilePageLazy
+          authUser={profileAuth}
+          onBack={() => setView('home')}
+          onUserUpdate={(updated) => {
+            setUser({
+              ...user,
+              name: updated.display_name,
+              email: updated.email,
+              avatar: updated.avatar_url ?? undefined,
+              phone_number: updated.phone ?? undefined,
+            });
+          }}
+        />
+      </Suspense>
+    );
+  }
+
   // Admin Dashboard — full-page takeover (no sidebar)
   if (view === 'admin') {
     return (
@@ -751,12 +794,34 @@ const App: React.FC = () => {
           <div className="flex items-center gap-3">
             <ThemeToggle />
             <div className="text-right hidden sm:block">
-              <p className="text-xs font-black leading-none" style={{ color: SG.text }}>{user.name}</p>
+              <p className="text-xs font-black leading-none" style={{ color: SG.text }}>{user.name || 'User'}</p>
               <p className="text-[10px] font-bold uppercase tracking-widest mt-0.5" style={{ color: SG.muted }}>Trader Pro</p>
             </div>
-            <div className="w-8 h-8 rounded-xl flex items-center justify-center text-[13px] font-black"
-              style={{ background: 'rgba(34,197,94,0.15)', color: '#22c55e' }}>
-              {user.name[0].toUpperCase()}
+            {/* Avatar button — opens ProfileMenu */}
+            <div style={{ position: 'relative' }}>
+              <button
+                onClick={() => setProfileMenuOpen(v => !v)}
+                className="w-8 h-8 rounded-xl flex items-center justify-center text-[13px] font-black transition-all hover:scale-110"
+                style={{ background: 'rgba(34,197,94,0.15)', color: '#22c55e', border: 'none', cursor: 'pointer' }}
+                title="Profile"
+              >
+                {(user.name?.charAt(0) || '?').toUpperCase()}
+              </button>
+              <Suspense fallback={null}>
+                <ProfileMenuLazy
+                  userName={user.name || 'User'}
+                  userEmail={user.email}
+                  userInitial={(user.name?.charAt(0) || '?').toUpperCase()}
+                  plan={(user as any).plan || 'FREE'}
+                  isOpen={profileMenuOpen}
+                  onClose={() => setProfileMenuOpen(false)}
+                  onNavigateProfile={() => { setView('profile'); setProfileMenuOpen(false); }}
+                  onNavigateSecurity={() => { setView('profile'); setProfileMenuOpen(false); }}
+                  onNavigateNotifications={() => { setView('profile'); setProfileMenuOpen(false); }}
+                  onNavigatePlan={() => { setView('profile'); setProfileMenuOpen(false); }}
+                  onLogout={handleLogout}
+                />
+              </Suspense>
             </div>
           </div>
         </nav>

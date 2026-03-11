@@ -9,8 +9,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import get_settings
-from .database import init_db
-from .routers import stocks, market_analyzer, predictions, auth
+from .database import engine, Base
+from . import models  # noqa: F401
+from .routers import stocks, market_analyzer, predictions, auth, profile
 
 settings = get_settings()
 
@@ -22,7 +23,11 @@ async def lifespan(app: FastAPI):
     print(f"🚀 Starting IDX AI Trader Backend ({settings.ENVIRONMENT} mode)")
     print(f"📊 Mock data: {'enabled' if settings.use_mock_data else 'disabled'}")
     print(f"🤖 AI calls: {'enabled' if settings.enable_ai_calls else 'disabled (dev mode)'}")
-    init_db()
+    
+    # Initialize DB async
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+        
     yield
     # Shutdown
     print("👋 Shutting down IDX AI Trader Backend")
@@ -62,6 +67,7 @@ app.add_middleware(
 
 # Include Routers
 app.include_router(auth.router, prefix="/api/auth", tags=["Auth"])
+app.include_router(profile.router, prefix="/api/profile", tags=["Profile"])
 app.include_router(stocks.router, prefix="/api/stocks", tags=["Stocks"])
 app.include_router(market_analyzer.router, prefix="/api/analyze", tags=["Market Analyzer"])
 app.include_router(predictions.router, prefix="/api/predict", tags=["Predictions"])

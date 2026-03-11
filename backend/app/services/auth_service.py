@@ -14,7 +14,8 @@ import jwt
 import bcrypt
 from fastapi import Depends, HTTPException, status, Response, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
 from ..config import get_settings
 from ..database import get_db
@@ -169,7 +170,7 @@ def _hash_remember_token(raw_token: str) -> str:
     return hashlib.sha256(raw_token.encode()).hexdigest()
 
 
-def create_remember_me_token(db: Session, user_id: str) -> str:
+async def create_remember_me_token(db: AsyncSession, user_id: str) -> str:
     """
     Create a new remember-me token, store its hash in DB, return the raw token.
     
@@ -184,33 +185,39 @@ def create_remember_me_token(db: Session, user_id: str) -> str:
         expires_at=datetime.utcnow() + timedelta(days=settings.JWT_REMEMBER_ME_EXPIRE_DAYS),
     )
     db.add(db_token)
-    db.commit()
+    await db.commit()
     
     return raw_token
 
 
-def validate_remember_me_token(db: Session, raw_token: str) -> Optional[User]:
+async def validate_remember_me_token(db: AsyncSession, raw_token: str) -> Optional[User]:
     """
     Validate a remember-me cookie token.
     
     Returns the User if valid, None if expired or not found.
     """
     token_hash = _hash_remember_token(raw_token)
-    db_token = db.query(RememberMeToken).filter(
+    
+    stmt = select(RememberMeToken).where(
         RememberMeToken.token_hash == token_hash,
         RememberMeToken.expires_at > datetime.utcnow(),
-    ).first()
+    )
+    result = await db.execute(stmt)
+    db_token = result.scalar_one_or_none()
     
     if not db_token:
         return None
     
-    return db.query(User).filter(User.id == db_token.user_id).first()
+    user_stmt = select(User).where(User.id == db_token.user_id)
+    user_result = await db.execute(user_stmt)
+    return user_result.scalar_one_or_none()
 
 
-def revoke_remember_me_tokens(db: Session, user_id: str) -> None:
+async def revoke_remember_me_tokens(db: AsyncSession, user_id: str) -> None:
     """Revoke all remember-me tokens for a user (e.g., on logout or password change)."""
-    db.query(RememberMeToken).filter(RememberMeToken.user_id == user_id).delete()
-    db.commit()
+    from sqlalchemy import delete
+    await db.execute(delete(RememberMeToken).where(RememberMeToken.user_id == user_id))
+    await db.commit()
 
 
 # ===========================
@@ -234,7 +241,7 @@ def _extract_token_from_request(request: Request, credentials: Optional[HTTPAuth
 async def get_current_user(
     request: Request,
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ) -> User:
     """
     FastAPI dependency: extract and validate the current user from the request.
@@ -252,7 +259,7 @@ async def get_current_user(
         # Try remember-me cookie as last resort
         remember_token = request.cookies.get(REMEMBER_ME_COOKIE)
         if remember_token:
-            user = validate_remember_me_token(db, remember_token)
+            user = await validate_remember_me_token(db, remember_token)
             if user:
                 return user
         
@@ -271,7 +278,10 @@ async def get_current_user(
             detail="Invalid token payload.",
         )
     
-    user = db.query(User).filter(User.id == user_id).first()
+    stmt = select(User).where(User.id == user_id)
+    result = await db.execute(stmt)
+    user = result.scalar_one_or_none()
+    
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

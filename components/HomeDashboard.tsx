@@ -96,7 +96,7 @@ const pct = (n: number) => (n >= 0 ? `+${n.toFixed(2)}%` : `${n.toFixed(2)}%`);
 const getGreeting = (name: string) => {
   const h = new Date().getHours();
   const salam = h < 11 ? 'Selamat pagi' : h < 15 ? 'Selamat siang' : h < 18 ? 'Selamat sore' : 'Selamat malam';
-  return `${salam}, ${name.split(' ')[0]}! 👋`;
+  return `${salam}, ${(name || 'Trader').split(' ')[0]}! 👋`;
 };
 
 const getDateID = () =>

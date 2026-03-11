@@ -3,22 +3,93 @@
 @tailwind utilities;
 
 /* =============================================
-   SahamGue Design Tokens
+   SahamGue Design Tokens — Full System
    ============================================= */
 :root {
-  --bg-base:         #0a0f10;
-  --bg-surface:      #151b1e;
-  --bg-header:       #0d1417;
-  --border:          #1e2a2f;
-  --accent-green:    #22c55e;
-  --accent-green-bg: rgba(34,197,94,0.12);
-  --accent-red:      #ef4444;
-  --accent-red-bg:   rgba(239,68,68,0.12);
-  --accent-gold:     #facc15;
-  --text-primary:    #f1f5f9;
-  --text-secondary:  #94a3b8;
-  --text-muted:      #475569;
-  --text-dim:        #64748b;
+  /* Fonts */
+  --font-sans: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  /* Backgrounds */
+  --bg-base:      #0f1117;
+  --bg-surface:   #1a1d27;
+  --bg-muted:     #22263a;
+  --bg-raised:    #2a2f45;
+  --bg-header:    #0d1117;
+
+  /* Borders */
+  --border:        rgba(255,255,255,0.08);
+  --border-strong: rgba(255,255,255,0.14);
+
+  /* Text scale */
+  --text-primary:  #f1f5f9;
+  --text-second:   #94a3b8;
+  --text-muted:    #64748b;
+  --text-dim:      #475569;
+  --text-dimmer:   #334155;
+
+  /* Legacy aliases kept for backward compat */
+  --text-secondary: #94a3b8;
+
+  /* Accent — green */
+  --accent-green:        #22c55e;
+  --accent-green-bg:     rgba(34,197,94,0.12);
+  --accent-green-border: rgba(34,197,94,0.33);
+
+  /* Semantic — red/error */
+  --accent-red:        #ef4444;
+  --accent-red-bg:     rgba(239,68,68,0.12);
+  --accent-red-border: rgba(239,68,68,0.33);
+
+  /* Semantic — gold/warning */
+  --accent-gold:        #f59e0b;
+  --accent-gold-bg:     rgba(245,158,11,0.10);
+  --accent-gold-border: rgba(245,158,11,0.30);
+  --accent-gold-text:   #b45309;
+
+  /* Semantic — purple/AI */
+  --accent-purple:        #a855f7;
+  --accent-purple-bg:     rgba(168,85,247,0.12);
+  --accent-purple-border: rgba(168,85,247,0.30);
+
+  /* Nav */
+  --nav-bg:          rgba(15,17,23,0.82);
+  --nav-border:      rgba(255,255,255,0.07);
+  --nav-icon:        #64748b;
+  --nav-icon-active: #22c55e;
+}
+
+/* ── LIGHT MODE ── */
+[data-theme="light"] {
+  --bg-base:    #f8fafc;
+  --bg-surface: #ffffff;
+  --bg-muted:   #f1f5f9;
+  --bg-raised:  #e2e8f0;
+
+  --border:        rgba(0,0,0,0.08);
+  --border-strong: rgba(0,0,0,0.14);
+
+  --text-primary: #0f172a;
+  --text-second:  #334155;
+  --text-muted:   #64748b;
+  --text-dim:     #94a3b8;
+  --text-dimmer:  #cbd5e1;
+  --text-secondary: #334155;
+
+  --accent-green-bg:     rgba(34,197,94,0.09);
+  --accent-green-border: rgba(34,197,94,0.25);
+
+  --accent-red-bg:     rgba(239,68,68,0.08);
+  --accent-red-border: rgba(239,68,68,0.22);
+
+  --accent-gold-bg:    rgba(245,158,11,0.08);
+  --accent-gold-text:  #92400e;
+
+  --accent-purple-bg: rgba(168,85,247,0.08);
+
+  --nav-bg:     rgba(248,250,252,0.90);
+  --nav-border: rgba(0,0,0,0.07);
+  --nav-icon:   #94a3b8;
 }
 
 @layer base {

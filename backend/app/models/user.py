@@ -44,8 +44,20 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+    # ── Profile extensions (added for profile feature) ──────────────────────
+    bio = Column(Text, nullable=True)
+    plan = Column(String(20), default="FREE", nullable=False)
+    plan_expires_at = Column(DateTime, nullable=True)
+    theme_preference = Column(String(20), default="dark", nullable=False)
+    # Stored as JSON string: list of bcrypt-hashed backup codes
+    mfa_backup_codes = Column(Text, nullable=True)
+    # Soft-delete timestamp
+    deleted_at = Column(DateTime, nullable=True)
+
     # Relationships
     remember_me_tokens = relationship("RememberMeToken", back_populates="user", cascade="all, delete-orphan")
+    notification_preferences = relationship("NotificationPreference", back_populates="user", uselist=False, cascade="all, delete-orphan")
+    user_sessions = relationship("UserSession", back_populates="user", cascade="all, delete-orphan")
 
 
 class RememberMeToken(Base):

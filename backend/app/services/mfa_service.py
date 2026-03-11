@@ -8,14 +8,20 @@ OTP Storage:
 - Production: Redis (set OTP_STORE_BACKEND=redis and REDIS_URL in .env)
 """
 
+import os
+import base64
+import hashlib
+import json
 import random
+import secrets
 import string
 import smtplib
 from datetime import datetime, timedelta
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from typing import Optional
+from typing import Optional, List
 
+import bcrypt
 import pyotp
 import httpx
 
@@ -253,3 +259,128 @@ async def send_otp_whatsapp(phone_number: str, code: str) -> bool:
     except Exception as e:
         print(f"❌ WhatsApp send failed: {e}")
         return False
+
+
+# ===========================
+# AES-256-CBC Secret Encryption
+# ===========================
+# TOTP secrets are encrypted at rest using AES-256-CBC.
+# Key comes from MFA_ENCRYPTION_KEY env var (32-byte hex string).
+
+def _get_encryption_key() -> bytes:
+    """Return 32-byte AES key from env. Raises if not set in production."""
+    raw = getattr(settings, "MFA_ENCRYPTION_KEY", "")
+    if raw:
+        key_bytes = bytes.fromhex(raw)
+        if len(key_bytes) == 32:
+            return key_bytes
+    # Dev fallback — deterministic but NOT secure
+    if settings.is_development:
+        return hashlib.sha256(b"dev-insecure-key-CHANGE-IN-PROD").digest()
+    raise RuntimeError("MFA_ENCRYPTION_KEY must be a 32-byte hex string in production")
+
+
+def encrypt_totp_secret(plaintext: str) -> str:
+    """Encrypt a TOTP secret using AES-256-CBC. Returns base64-encoded ciphertext."""
+    try:
+        from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+        from cryptography.hazmat.backends import default_backend
+        from cryptography.hazmat.primitives import padding
+    except ImportError:
+        # cryptography not installed — store plain (dev only)
+        print("⚠️  cryptography library not installed; storing TOTP secret unencrypted (dev mode)")
+        return plaintext
+
+    key = _get_encryption_key()
+    iv = os.urandom(16)
+    padder = padding.PKCS7(128).padder()
+    padded = padder.update(plaintext.encode()) + padder.finalize()
+
+    cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend())
+    encryptor = cipher.encryptor()
+    ciphertext = encryptor.update(padded) + encryptor.finalize()
+
+    # Encode as "iv:ciphertext" in base64
+    payload = base64.b64encode(iv + ciphertext).decode()
+    return f"enc:{payload}"
+
+
+def decrypt_totp_secret(stored: str) -> str:
+    """Decrypt an AES-256-CBC encrypted TOTP secret. Returns plaintext."""
+    if not stored.startswith("enc:"):
+        # Legacy plain-text secret (or dev mode without cryptography)
+        return stored
+
+    try:
+        from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+        from cryptography.hazmat.backends import default_backend
+        from cryptography.hazmat.primitives import padding
+    except ImportError:
+        return stored.removeprefix("enc:")
+
+    key = _get_encryption_key()
+    raw = base64.b64decode(stored[4:])
+    iv, ciphertext = raw[:16], raw[16:]
+
+    cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend())
+    decryptor = cipher.decryptor()
+    padded = decryptor.update(ciphertext) + decryptor.finalize()
+
+    unpadder = padding.PKCS7(128).unpadder()
+    return (unpadder.update(padded) + unpadder.finalize()).decode()
+
+
+# ===========================
+# Backup Codes
+# ===========================
+
+BACKUP_CODE_COUNT = 8
+BACKUP_CODE_LENGTH = 8
+
+
+def generate_backup_codes() -> tuple[List[str], str]:
+    """
+    Generate 8 one-time backup codes.
+
+    Returns:
+        (plaintext_codes, json_of_bcrypt_hashes)
+        — plaintext codes are shown ONCE to the user and never stored raw.
+    """
+    plaintext_codes: List[str] = []
+    hashed_codes: List[str] = []
+
+    for _ in range(BACKUP_CODE_COUNT):
+        code = secrets.token_urlsafe(BACKUP_CODE_LENGTH)[:BACKUP_CODE_LENGTH].upper()
+        plaintext_codes.append(code)
+        hashed = bcrypt.hashpw(code.encode(), bcrypt.gensalt()).decode()
+        hashed_codes.append(hashed)
+
+    return plaintext_codes, json.dumps(hashed_codes)
+
+
+def verify_backup_code(user_backup_codes_json: Optional[str], input_code: str) -> Optional[str]:
+    """
+    Check if inputCode matches any hashed backup code.
+
+    Returns the updated JSON (with used code removed) on success, None on failure.
+    """
+    if not user_backup_codes_json:
+        return None
+
+    try:
+        hashed_codes: List[str] = json.loads(user_backup_codes_json)
+    except (json.JSONDecodeError, TypeError):
+        return None
+
+    remaining = []
+    matched = False
+    for hc in hashed_codes:
+        if not matched and bcrypt.checkpw(input_code.upper().encode(), hc.encode()):
+            matched = True  # consume this code
+        else:
+            remaining.append(hc)
+
+    if not matched:
+        return None
+
+    return json.dumps(remaining)

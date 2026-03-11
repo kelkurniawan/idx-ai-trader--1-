@@ -9,7 +9,8 @@ from datetime import datetime
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
 from ..config import get_settings
 from ..database import get_db
@@ -89,7 +90,7 @@ async def _handle_mfa_challenge(user: User, db: Session) -> AuthResponse:
     )
 
 
-def _complete_login(response: Response, user: User, db: Session, remember_me: bool = False) -> AuthResponse:
+async def _complete_login(response: Response, user: User, db: AsyncSession, remember_me: bool = False) -> AuthResponse:
     """
     Complete login: set access token cookie, optionally set remember-me cookie.
     """
@@ -97,7 +98,7 @@ def _complete_login(response: Response, user: User, db: Session, remember_me: bo
     set_access_token_cookie(response, access_token)
     
     if remember_me:
-        raw_token = create_remember_me_token(db, user.id)
+        raw_token = await create_remember_me_token(db, user.id)
         set_remember_me_cookie(response, raw_token)
     
     return AuthResponse(
@@ -115,7 +116,7 @@ def _complete_login(response: Response, user: User, db: Session, remember_me: bo
 async def register(
     request: RegisterRequest,
     response: Response,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Register a new user with email and password.
@@ -133,7 +134,9 @@ async def register(
         )
     
     # Check existing user
-    existing = db.query(User).filter(User.email == request.email).first()
+    stmt = select(User).where(User.email == request.email)
+    result = await db.execute(stmt)
+    existing = result.scalar_one_or_none()
     if existing:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -149,11 +152,11 @@ async def register(
         profile_complete=False,  # Will need to complete profile setup
     )
     db.add(user)
-    db.commit()
-    db.refresh(user)
+    await db.commit()
+    await db.refresh(user)
     
     # Issue token
-    return _complete_login(response, user, db)
+    return await _complete_login(response, user, db)
 
 
 # ===========================
@@ -164,7 +167,7 @@ async def register(
 async def login(
     request: LoginRequest,
     response: Response,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Login with email and password.
@@ -184,7 +187,9 @@ async def login(
         )
     
     # Find user
-    user = db.query(User).filter(User.email == request.email).first()
+    stmt = select(User).where(User.email == request.email)
+    result = await db.execute(stmt)
+    user = result.scalar_one_or_none()
     if not user or not user.password_hash:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -203,7 +208,7 @@ async def login(
         return await _handle_mfa_challenge(user, db)
     
     # No MFA → complete login
-    return _complete_login(response, user, db, remember_me=request.remember_me)
+    return await _complete_login(response, user, db, remember_me=request.remember_me)
 
 
 # ===========================
@@ -214,7 +219,7 @@ async def login(
 async def google_auth(
     request: GoogleAuthRequest,
     response: Response,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Login/Register via Google OAuth.
@@ -276,18 +281,22 @@ async def google_auth(
             )
     
     # Find or create user
-    user = db.query(User).filter(User.google_id == google_user_info["sub"]).first()
+    stmt = select(User).where(User.google_id == google_user_info["sub"])
+    result = await db.execute(stmt)
+    user = result.scalar_one_or_none()
     
     if not user:
         # Check if email exists with local auth (link accounts)
-        user = db.query(User).filter(User.email == google_user_info["email"]).first()
+        email_stmt = select(User).where(User.email == google_user_info["email"])
+        email_result = await db.execute(email_stmt)
+        user = email_result.scalar_one_or_none()
         if user:
             # Link Google to existing account
             user.google_id = google_user_info["sub"]
             user.auth_provider = "google"
             if not user.profile_picture_url and google_user_info.get("picture"):
                 user.profile_picture_url = google_user_info["picture"]
-            db.commit()
+            await db.commit()
         else:
             # Create new user
             user = User(
@@ -299,14 +308,14 @@ async def google_auth(
                 profile_complete=False,
             )
             db.add(user)
-            db.commit()
-            db.refresh(user)
+            await db.commit()
+            await db.refresh(user)
     
     # Check MFA
     if user.mfa_enabled:
         return await _handle_mfa_challenge(user, db)
     
-    return _complete_login(response, user, db)
+    return await _complete_login(response, user, db)
 
 
 # ===========================
@@ -317,7 +326,7 @@ async def google_auth(
 async def mfa_verify(
     request: MfaVerifyRequest,
     response: Response,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Verify MFA code during login.
@@ -329,7 +338,9 @@ async def mfa_verify(
     payload = decode_token(request.temp_token, expected_type="mfa_challenge")
     user_id = payload.get("sub")
     
-    user = db.query(User).filter(User.id == user_id).first()
+    stmt = select(User).where(User.id == user_id)
+    result = await db.execute(stmt)
+    user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -357,7 +368,7 @@ async def mfa_verify(
         )
     
     # MFA passed → complete login
-    return _complete_login(response, user, db)
+    return await _complete_login(response, user, db)
 
 
 # ===========================
@@ -368,7 +379,7 @@ async def mfa_verify(
 async def mfa_setup(
     request: MfaSetupRequest,
     user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Enable MFA for the current user.
@@ -392,7 +403,7 @@ async def mfa_setup(
         user.mfa_secret = secret
         user.mfa_type = "totp"
         user.mfa_enabled = True
-        db.commit()
+        await db.commit()
         
         return MfaSetupResponse(
             mfa_type="totp",
@@ -405,7 +416,7 @@ async def mfa_setup(
         user.mfa_type = "email_otp"
         user.mfa_enabled = True
         user.mfa_secret = None  # Not needed for email OTP
-        db.commit()
+        await db.commit()
         
         return MfaSetupResponse(
             mfa_type="email_otp",
@@ -422,7 +433,7 @@ async def mfa_setup(
         user.mfa_type = "whatsapp_otp"
         user.mfa_enabled = True
         user.mfa_secret = None
-        db.commit()
+        await db.commit()
         
         return MfaSetupResponse(
             mfa_type="whatsapp_otp",
@@ -443,7 +454,7 @@ async def mfa_setup(
 async def mfa_disable(
     request: MfaDisableRequest,
     user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Disable MFA for the current user.
@@ -468,7 +479,7 @@ async def mfa_disable(
     user.mfa_enabled = False
     user.mfa_type = None
     user.mfa_secret = None
-    db.commit()
+    await db.commit()
     
     return MessageResponse(message="MFA has been disabled.", success=True)
 
@@ -491,7 +502,7 @@ async def get_me(user: User = Depends(get_current_user)):
 async def update_profile(
     request: ProfileUpdateRequest,
     user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Update user profile.
@@ -510,8 +521,8 @@ async def update_profile(
     user.profile_complete = True
     user.updated_at = datetime.utcnow()
     
-    db.commit()
-    db.refresh(user)
+    await db.commit()
+    await db.refresh(user)
     
     return _user_to_response(user)
 
@@ -524,14 +535,14 @@ async def update_profile(
 async def logout(
     response: Response,
     request: Request,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     user: Optional[User] = Depends(get_current_user),
 ):
     """
     Logout: clear all auth cookies and revoke remember-me tokens.
     """
     if user:
-        revoke_remember_me_tokens(db, user.id)
+        await revoke_remember_me_tokens(db, user.id)
     
     clear_auth_cookies(response)
     
@@ -543,7 +554,7 @@ async def logout(
 # ===========================
 
 @router.get("/status")
-async def auth_status(request: Request, db: Session = Depends(get_db)):
+async def auth_status(request: Request, db: AsyncSession = Depends(get_db)):
     """
     Check if the user is currently authenticated.
     
@@ -561,7 +572,9 @@ async def auth_status(request: Request, db: Session = Depends(get_db)):
         try:
             payload = decode_token(access_token, expected_type="access")
             user_id = payload.get("sub")
-            user = db.query(User).filter(User.id == user_id).first()
+            stmt = select(User).where(User.id == user_id)
+            result = await db.execute(stmt)
+            user = result.scalar_one_or_none()
             if user:
                 return {"authenticated": True, "user": _user_to_response(user)}
         except Exception:
@@ -570,7 +583,7 @@ async def auth_status(request: Request, db: Session = Depends(get_db)):
     # Try remember-me cookie
     remember_token = request.cookies.get(REMEMBER_ME_COOKIE)
     if remember_token:
-        user = validate_remember_me_token(db, remember_token)
+        user = await validate_remember_me_token(db, remember_token)
         if user:
             return {"authenticated": True, "user": _user_to_response(user)}
     

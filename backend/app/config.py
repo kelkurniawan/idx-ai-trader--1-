@@ -99,6 +99,25 @@ class Settings(BaseSettings):
     # REDIS_URL: Full Redis connection URL
     # Example: redis://localhost:6379/0 or redis://:password@redis-host:6379/1
     REDIS_URL: str = "redis://localhost:6379/0"
+
+    # ===========================
+    # MFA Encryption
+    # ===========================
+    # AES-256-CBC key for encrypting TOTP secrets at rest.
+    # Generate: python -c "import secrets; print(secrets.token_hex(32))"
+    # Leave empty in dev — uses an insecure deterministic fallback.
+    MFA_ENCRYPTION_KEY: str = ""
+    # Issuer name displayed in authenticator apps (e.g. "sahamgue")
+    TOTP_ISSUER: str = "sahamgue"
+
+    # ===========================
+    # Twilio SMS (for SMS OTP MFA)
+    # ===========================
+    # Dev: Leave empty — SMS OTPs will be printed to console
+    # Prod: Register at https://twilio.com and set the vars below
+    TWILIO_ACCOUNT_SID: str = ""
+    TWILIO_AUTH_TOKEN: str = ""
+    TWILIO_PHONE_NUMBER: str = ""  # Your Twilio phone number, e.g. +12345678900
     
     @property
     def is_development(self) -> bool:
@@ -143,6 +162,7 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
+        extra = "ignore"
 
 
 @lru_cache()
