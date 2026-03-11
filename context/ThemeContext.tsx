@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { updateTheme } from '../services/profileApi';
 
 type Theme = 'light' | 'dark' | 'system';
 
@@ -32,26 +33,45 @@ export function ThemeProvider({
   useEffect(() => {
     const root = window.document.documentElement;
 
-    root.classList.remove('light', 'dark');
+    const applyTheme = (currentTheme: Theme) => {
+      root.classList.remove('dark');
+      if (currentTheme === 'dark') {
+        root.classList.add('dark');
+      } else if (currentTheme === 'system') {
+        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (systemPrefersDark) {
+          root.classList.add('dark');
+        }
+      }
+    };
 
+    applyTheme(theme);
+
+    // Optional: listen to system theme changes if set to system
     if (theme === 'system') {
-      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)')
-        .matches
-        ? 'dark'
-        : 'light';
-
-      root.classList.add(systemTheme);
-      return;
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      const handleChange = () => applyTheme('system');
+      mediaQuery.addEventListener('change', handleChange);
+      return () => mediaQuery.removeEventListener('change', handleChange);
     }
-
-    root.classList.add(theme);
   }, [theme]);
 
   const value = {
     theme,
-    setTheme: (theme: Theme) => {
-      localStorage.setItem(storageKey, theme);
-      setTheme(theme);
+    setTheme: async (newTheme: Theme) => {
+      localStorage.setItem(storageKey, newTheme);
+      setTheme(newTheme);
+
+      // Attempt to persist to backend
+      try {
+        const resolvedTheme = newTheme === 'system' 
+          ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+          : newTheme;
+        
+        await updateTheme(resolvedTheme);
+      } catch (e) {
+        // Silently ignore if user is not logged in (401)
+      }
     },
   };
 

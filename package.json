@@ -10,7 +10,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@google/genai": "^1.38.0",
     "lightweight-charts": "^5.1.0",
     "lucide-react": "^0.574.0",
     "react": "^19.2.3",

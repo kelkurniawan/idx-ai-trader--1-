@@ -400,7 +400,7 @@ export const CATEGORY_COLORS: Record<string, string> = {
 - `background: var(--color-accent-bg)`, `border: 1px solid var(--color-accent-border)`
 - Text: `font: 600 10px/1.4 var(--font-sans)`, color = `var(--color-accent)`.
 - Content: `"🔔 Alert set at Rp {targetPrice}" ` with IDR format.
-- Visibility: tied to `targetPrice !== undefined` condition (pre-existing in `PortfolioRow`).
+- Visibility: tied to `targetPrice !== undefined` condition (pre-existing in [PortfolioRow](file:///c:/Users/kurni/OneDrive/Documents/idx-ai-trader%20%281%29/components/PortfolioRow.tsx#14-134)).
 
 > **Production gap**: No alert confirmation strip exists yet. Wrap the existing `isEditing` render block in a parent that adds this strip below when `targetPrice` is defined and the card is not in edit mode.
 
@@ -414,7 +414,7 @@ export const CATEGORY_COLORS: Record<string, string> = {
 - **Cancel button**: `background: var(--color-bg-muted)`, `border: 1px solid var(--color-border)`, `border-radius: 10px`, `padding: 10px 16px`, `font: 700 12px var(--font-sans)`, color = `var(--color-text-muted)`. Hover: border → `var(--color-border-strong)`.
 - **Set Alert button**: `background: var(--color-accent-bg)`, `border: 1px solid var(--color-accent-border)`, color = `var(--color-accent)`, same padding/radius. Hover: `background` → solid `var(--color-accent)`, color → `#0f1117`.
 
-> **Production gap**: Current production has an inline edit field directly on the card row instead of a modal. Wrap existing `handleSaveTarget` + `onUpdateTarget` call inside a new modal shell per the spec above. Zero changes to the handler functions themselves.
+> **Production gap**: Current production has an inline edit field directly on the card row instead of a modal. Wrap existing [handleSaveTarget](file:///c:/Users/kurni/OneDrive/Documents/idx-ai-trader%20%281%29/components/PortfolioRow.tsx#43-48) + `onUpdateTarget` call inside a new modal shell per the spec above. Zero changes to the handler functions themselves.
 
 ---
 
@@ -467,7 +467,7 @@ export const CATEGORY_COLORS: Record<string, string> = {
 - **Strategy chip (inactive)**: transparent bg, `border: 1px solid var(--color-border)`, color = `var(--color-text-muted)`.
 - **"Simpan Trade" button**: Full-width, `background: var(--color-accent)`, color `#0f1117`, `border-radius: 12px`, `padding: 14px`, `font: 800 13px var(--font-sans)`. Hover: opacity 0.88.
 
-> **Production gap**: Form currently renders inline (in-page panel). The existing `showForm` flag and `handleSubmit` / all field state stay untouched. Wrap the form `<div>` in the overlay + sheet container defined above. Field names change: the production form uses LONG/SHORT — these map directly to BUY/SELL pills visually (confirm label text with product owner, as this may differ intentionally). The submit button label changes from "Save Trade" → "Simpan Trade".
+> **Production gap**: Form currently renders inline (in-page panel). The existing `showForm` flag and [handleSubmit](file:///c:/Users/kurni/OneDrive/Documents/idx-ai-trader%20%281%29/components/TradeJournal.tsx#57-79) / all field state stay untouched. Wrap the form `<div>` in the overlay + sheet container defined above. Field names change: the production form uses LONG/SHORT — these map directly to BUY/SELL pills visually (confirm label text with product owner, as this may differ intentionally). The submit button label changes from "Save Trade" → "Simpan Trade".
 
 #### 4.8 — Trade Card
 
@@ -601,7 +601,7 @@ export const CATEGORY_COLORS: Record<string, string> = {
 | 6 | **Price font** | system sans | JetBrains Mono 14px 800 | None |
 | 7 | **Page header icon block** | grey solid fill | green-tinted gradient `§4.1` | None |
 | 8 | **Alert confirmation strip** | no element | add strip below card when `targetPrice` defined | **Wrap existing render** — no logic change inside |
-| 9 | **Set-price → modal** | inline edit-in-row | full overlay modal per §4.4 | **Wrap** `handleSaveTarget` in new modal shell |
+| 9 | **Set-price → modal** | inline edit-in-row | full overlay modal per §4.4 | **Wrap** [handleSaveTarget](file:///c:/Users/kurni/OneDrive/Documents/idx-ai-trader%20%281%29/components/PortfolioRow.tsx#43-48) in new modal shell |
 | 10 | **Font family** | system-ui / Tailwind default | Import `Plus Jakarta Sans` + `JetBrains Mono` | None |
 
 ### ✦ TRADE JOURNAL (Jurnal)

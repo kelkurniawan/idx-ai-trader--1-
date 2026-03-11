@@ -5,91 +5,166 @@
 /* =============================================
    SahamGue Design Tokens — Full System
    ============================================= */
-:root {
-  /* Fonts */
-  --font-sans: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
-
-  /* Backgrounds */
-  --bg-base:      #0f1117;
-  --bg-surface:   #1a1d27;
-  --bg-muted:     #22263a;
-  --bg-raised:    #2a2f45;
-  --bg-header:    #0d1117;
-
-  /* Borders */
-  --border:        rgba(255,255,255,0.08);
-  --border-strong: rgba(255,255,255,0.14);
-
-  /* Text scale */
-  --text-primary:  #f1f5f9;
-  --text-second:   #94a3b8;
-  --text-muted:    #64748b;
-  --text-dim:      #475569;
-  --text-dimmer:   #334155;
-
-  /* Legacy aliases kept for backward compat */
-  --text-secondary: #94a3b8;
-
-  /* Accent — green */
-  --accent-green:        #22c55e;
-  --accent-green-bg:     rgba(34,197,94,0.12);
-  --accent-green-border: rgba(34,197,94,0.33);
-
-  /* Semantic — red/error */
-  --accent-red:        #ef4444;
-  --accent-red-bg:     rgba(239,68,68,0.12);
-  --accent-red-border: rgba(239,68,68,0.33);
-
-  /* Semantic — gold/warning */
-  --accent-gold:        #f59e0b;
-  --accent-gold-bg:     rgba(245,158,11,0.10);
-  --accent-gold-border: rgba(245,158,11,0.30);
-  --accent-gold-text:   #b45309;
-
-  /* Semantic — purple/AI */
-  --accent-purple:        #a855f7;
-  --accent-purple-bg:     rgba(168,85,247,0.12);
-  --accent-purple-border: rgba(168,85,247,0.30);
-
-  /* Nav */
-  --nav-bg:          rgba(15,17,23,0.82);
-  --nav-border:      rgba(255,255,255,0.07);
-  --nav-icon:        #64748b;
-  --nav-icon-active: #22c55e;
+@theme {
+  --color-bg-base: var(--bg-base);
+  --color-bg-header: var(--bg-header);
+  --color-bg-surface: var(--bg-surface);
+  --color-bg-surface-2: var(--bg-surface-2);
+  --color-bg-muted: var(--bg-muted);
+  --color-border: var(--border);
+  
+  --color-accent: var(--accent);
+  --color-accent-deep: var(--accent-deep);
+  --color-accent-bg: var(--accent-bg);
+  --color-accent-border: var(--accent-border);
+  
+  --color-semantic-red: var(--semantic-red);
+  --color-semantic-red-bg: var(--semantic-red-bg);
+  --color-semantic-gold: var(--semantic-gold);
+  
+  --color-text-primary: var(--text-primary);
+  --color-text-second: var(--text-second);
+  --color-text-muted: var(--text-muted);
+  --color-text-dim: var(--text-dim);
+  --color-text-dimmer: var(--text-dimmer);
+  
+  --color-nav-bg: var(--nav-bg);
+  --color-nav-border: var(--nav-border);
+  --color-card-border: var(--card-border);
+  --color-glow: var(--glow-color);
+  
+  --color-live-chip: var(--live-chip);
+  --color-live-text: var(--live-text);
+  
+  --color-tab-pill-active: var(--tab-pill-active);
+  --color-tab-pill-text: var(--tab-pill-text);
+  --color-tab-pill-inact: var(--tab-pill-inact);
+  --color-tab-pill-txt2: var(--tab-pill-txt2);
+  
+  --color-ai: var(--ai);
+  --color-ai-bg: var(--ai-bg);
+  --color-ai-border: var(--ai-border);
+  --color-ai-text: var(--ai-text);
+  
+  --color-cyan: var(--cyan);
+  --color-cyan-bg: var(--cyan-bg);
+  --color-cyan-border: var(--cyan-border);
 }
 
-/* ── LIGHT MODE ── */
-[data-theme="light"] {
-  --bg-base:    #f8fafc;
-  --bg-surface: #ffffff;
-  --bg-muted:   #f1f5f9;
-  --bg-raised:  #e2e8f0;
+:root {
+  /* LIGHT MODE TOKENS (Prototype Source) */
+  --bg-base: #d4dde6;
+  --bg-header: #c2cdd8;
+  --bg-surface: #dce5ee;
+  --bg-surface-2: #d0dae4;
+  --bg-muted: #c8d3de;
+  --border: #b2bfcc;
+  
+  --accent: #166534;
+  --accent-deep: #14532d;
+  --accent-bg: rgba(22,101,52,0.11);
+  --accent-border: rgba(22,101,52,0.24);
+  
+  --semantic-red: #b91c1c;
+  --semantic-red-bg: rgba(185,28,28,0.10);
+  --semantic-gold: #92400e;
+  
+  --text-primary: #0c1b26;
+  --text-second: #1e3a4f;
+  --text-muted: #3d5a6e;
+  --text-dim: #526d7e;
+  --text-dimmer: #6a8494;
+  
+  --nav-bg: #c2cdd8;
+  --nav-border: #aab5c2;
+  
+  --card-grad: linear-gradient(135deg, #dce5ee 0%, #d2dce7 100%);
+  --card-border: #a8c4b2;
+  --glow-color: rgba(22,101,52,0.07);
+  
+  --live-chip: #166534;
+  --live-text: #ffffff;
+  
+  --avatar-grad: linear-gradient(135deg, #b8cfc3, rgba(22,101,52,0.13));
+  
+  --tab-pill-active: #166534;
+  --tab-pill-text: #ffffff;
+  --tab-pill-inact: #c8d3de;
+  --tab-pill-txt2: #3d5a6e;
+  
+  --placeholder-chip-bg: rgba(22,101,52,0.10);
+  --placeholder-chip-border: rgba(22,101,52,0.24);
+  --critical-bg: rgba(185,28,28,0.06);
+  --hot-border: #b91c1c;
+  
+  --ai: #6d28d9;
+  --ai-bg: rgba(109,40,217,0.10);
+  --ai-border: rgba(109,40,217,0.20);
+  --ai-text: #7c3aed;
+  
+  --cyan: #0891b2;
+  --cyan-bg: rgba(8,145,178,0.10);
+  --cyan-border: rgba(8,145,178,0.20);
+  
+  --scanner-icon: linear-gradient(135deg, #6d28d9, #4338ca);
+}
 
-  --border:        rgba(0,0,0,0.08);
-  --border-strong: rgba(0,0,0,0.14);
-
-  --text-primary: #0f172a;
-  --text-second:  #334155;
-  --text-muted:   #64748b;
-  --text-dim:     #94a3b8;
-  --text-dimmer:  #cbd5e1;
-  --text-secondary: #334155;
-
-  --accent-green-bg:     rgba(34,197,94,0.09);
-  --accent-green-border: rgba(34,197,94,0.25);
-
-  --accent-red-bg:     rgba(239,68,68,0.08);
-  --accent-red-border: rgba(239,68,68,0.22);
-
-  --accent-gold-bg:    rgba(245,158,11,0.08);
-  --accent-gold-text:  #92400e;
-
-  --accent-purple-bg: rgba(168,85,247,0.08);
-
-  --nav-bg:     rgba(248,250,252,0.90);
-  --nav-border: rgba(0,0,0,0.07);
-  --nav-icon:   #94a3b8;
+.dark {
+  /* DARK MODE TOKENS (Extrapolated for symmetry) */
+  --bg-base: #0f1117;
+  --bg-header: #0d1117;
+  --bg-surface: #1a1d27;
+  --bg-surface-2: #22263a;
+  --bg-muted: #2a2f45;
+  --border: rgba(255,255,255,0.08);
+  
+  --accent: #22c55e;
+  --accent-deep: #16a34a;
+  --accent-bg: rgba(34,197,94,0.12);
+  --accent-border: rgba(34,197,94,0.33);
+  
+  --semantic-red: #ef4444;
+  --semantic-red-bg: rgba(239,68,68,0.12);
+  --semantic-gold: #f59e0b;
+  
+  --text-primary: #f1f5f9;
+  --text-second: #94a3b8;
+  --text-muted: #64748b;
+  --text-dim: #475569;
+  --text-dimmer: #334155;
+  
+  --nav-bg: rgba(15,17,23,0.82);
+  --nav-border: rgba(255,255,255,0.07);
+  
+  --card-grad: linear-gradient(135deg, #1a1d27 0%, #22263a 100%);
+  --card-border: rgba(255,255,255,0.08);
+  --glow-color: rgba(34,197,94,0.15);
+  
+  --live-chip: #22c55e;
+  --live-text: #0f1117;
+  
+  --avatar-grad: linear-gradient(135deg, #2a2f45, rgba(34,197,94,0.15));
+  
+  --tab-pill-active: #22c55e;
+  --tab-pill-text: #0f1117;
+  --tab-pill-inact: #22263a;
+  --tab-pill-txt2: #94a3b8;
+  
+  --placeholder-chip-bg: rgba(34,197,94,0.10);
+  --placeholder-chip-border: rgba(34,197,94,0.25);
+  --critical-bg: rgba(239,68,68,0.10);
+  --hot-border: #ef4444;
+  
+  --ai: #a855f7;
+  --ai-bg: rgba(168,85,247,0.12);
+  --ai-border: rgba(168,85,247,0.30);
+  --ai-text: #c084fc;
+  
+  --cyan: #06b6d4;
+  --cyan-bg: rgba(6,182,212,0.12);
+  --cyan-border: rgba(6,182,212,0.30);
+  
+  --scanner-icon: linear-gradient(135deg, #a855f7, #6366f1);
 }
 
 @layer base {

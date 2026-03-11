@@ -17,7 +17,7 @@ import {
 } from '../types';
 
 // Backend API base URL - configurable for different environments
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
 // Track backend availability
 let backendAvailable = true;

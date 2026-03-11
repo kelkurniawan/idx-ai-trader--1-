@@ -51,6 +51,7 @@ const ProfilePageLazy = React.lazy(() => import('./pages/ProfilePage'));
 const ProfileMenuLazy = React.lazy(() => import('./components/profile/ProfileMenu'));
 import HomeDashboard from './components/HomeDashboard';
 import { NewsPage, TickerNewsPanel } from './components/NewsPage';
+import { ThemeToggle } from './components/ThemeToggle';
 
 // ─── Feature Flags ───────────────────────────────────────────────────────────
 // Set ARCHIVED = true to hide legacy menus from the UI (routes kept intact)
@@ -58,23 +59,23 @@ const ARCHIVED = true;
 
 // ─── SahamGue Design Tokens ───────────────────────────────────────────────
 const SG = {
-  bg:        '#0d1417',
-  bgBase:    '#0a0f10',
-  bgHeader:  '#0d1417',
-  surface:   '#151b1e',
-  bgSurface: '#151b1e',
-  bgMuted:   '#1e2a2f',
-  border:    '#1e2a2f',
-  green:     '#22c55e',
-  greenBg:   'rgba(34,197,94,0.10)',
-  red:       '#ef4444',
-  text:      '#f1f5f9',
-  textPrimary: '#f1f5f9',
-  textSecond: '#94a3b8',
-  textMuted: '#64748b',
-  muted:     '#475569',
-  dim:       '#64748b',
-  textDim:   '#475569',
+  bg:        'var(--bg-header)',
+  bgBase:    'var(--bg-base)',
+  bgHeader:  'var(--bg-header)',
+  surface:   'var(--bg-surface)',
+  bgSurface: 'var(--bg-surface)',
+  bgMuted:   'var(--bg-muted)',
+  border:    'var(--border)',
+  green:     'var(--accent)',
+  greenBg:   'var(--accent-bg)',
+  red:       'var(--semantic-red)',
+  text:      'var(--text-primary)',
+  textPrimary: 'var(--text-primary)',
+  textSecond: 'var(--text-second)',
+  textMuted: 'var(--text-muted)',
+  muted:     'var(--text-muted)',
+  dim:       'var(--text-dim)',
+  textDim:   'var(--text-dimmer)',
   mono:      "'JetBrains Mono', monospace",
   sans:      "'Plus Jakarta Sans', sans-serif",
 };
@@ -304,19 +305,6 @@ const SidebarItem = ({ icon, label, viewId, view, setView }: { icon: string, lab
     >
       <span className="text-base group-hover:scale-110 transition-transform">{icon}</span>
       <span>{label}</span>
-    </button>
-  );
-};
-
-const ThemeToggle = () => {
-  const { theme, setTheme } = useTheme();
-  return (
-    <button
-      onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-      className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
-      title="Toggle Theme"
-    >
-      {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
     </button>
   );
 };
@@ -693,7 +681,7 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen text-slate-50 font-sans flex overflow-hidden transition-colors duration-300"
-      style={{ background: '#0a0f10' }}
+      style={{ background: SG.bgBase }}
     >
       {/* SIDEBAR — Desktop only */}
       <aside className="w-52 flex-col hidden lg:flex sticky top-0 h-screen z-50 transition-colors"
@@ -703,7 +691,7 @@ const App: React.FC = () => {
           <div className="flex items-center gap-3 mb-8 cursor-pointer" onClick={() => setView('home')}>
             <div className="w-8 h-8 rounded-[9px] flex items-center justify-center flex-shrink-0"
               style={{ background: 'linear-gradient(135deg, #22c55e, #16a34a)' }}>
-              <span style={{ fontFamily: SG.mono, fontWeight: 800, fontSize: '12px', color: '#0a0f10' }}>SG</span>
+              <span style={{ fontFamily: SG.mono, fontWeight: 800, fontSize: '12px', color: SG.bgBase }}>SG</span>
             </div>
             <div>
               <h1 className="font-black tracking-tight leading-none" style={{ fontFamily: SG.sans, fontWeight: 800, fontSize: '15px', color: SG.text }}>IDX Assistant</h1>
@@ -714,7 +702,7 @@ const App: React.FC = () => {
           <div className="space-y-6">
             {/* Main Navigation — 5 tabs */}
             <section>
-              <h3 className="text-[10px] font-bold uppercase mb-2 ml-3" style={{ color: '#334155', letterSpacing: '1px' }}>NAVIGASI</h3>
+              <h3 className="text-[10px] font-bold uppercase mb-2 ml-3" style={{ color: SG.textMuted, letterSpacing: '1px' }}>NAVIGASI</h3>
               <div className="space-y-0.5">
                 <SidebarItem icon="🏠" label="Home" viewId="home" view={view} setView={setView} />
                 <SidebarItem icon="📊" label="Market Analysis" viewId="analysis" view={view} setView={setView} />
@@ -728,7 +716,7 @@ const App: React.FC = () => {
             {/* Archived — hidden via feature flag */}
             {!ARCHIVED && (
               <section>
-                <h3 className="text-[10px] font-bold uppercase mb-2 ml-3" style={{ color: '#334155', letterSpacing: '1px' }}>ARSIP</h3>
+                <h3 className="text-[10px] font-bold uppercase mb-2 ml-3" style={{ color: SG.textMuted, letterSpacing: '1px' }}>ARSIP</h3>
                 <div className="space-y-0.5">
                   <SidebarItem icon="📅" label="Swing Trading" viewId="swing" view={view} setView={setView} />
                   <SidebarItem icon="⏱️" label="Scalp Trading" viewId="scalp" view={view} setView={setView} />
@@ -740,7 +728,7 @@ const App: React.FC = () => {
 
             {/* System */}
             <section>
-              <h3 className="text-[10px] font-bold uppercase mb-2 ml-3" style={{ color: '#334155', letterSpacing: '1px' }}>SISTEM</h3>
+              <h3 className="text-[10px] font-bold uppercase mb-2 ml-3" style={{ color: SG.textMuted, letterSpacing: '1px' }}>SISTEM</h3>
               <div className="space-y-0.5">
                 <SidebarItem icon="⚙️" label="Admin" viewId="admin" view={view} setView={setView} />
                 <button
@@ -783,7 +771,7 @@ const App: React.FC = () => {
             <div className="lg:hidden flex items-center gap-2 cursor-pointer" onClick={() => setView('home')}>
               <div className="w-7 h-7 rounded-[7px] flex items-center justify-center flex-shrink-0"
                 style={{ background: 'linear-gradient(135deg, #22c55e, #16a34a)' }}>
-                <span style={{ fontFamily: SG.mono, fontWeight: 800, fontSize: '10px', color: '#0a0f10' }}>SG</span>
+                <span style={{ fontFamily: SG.mono, fontWeight: 800, fontSize: '10px', color: SG.bgBase }}>SG</span>
               </div>
               <span className="font-black text-sm tracking-tight" style={{ fontFamily: SG.sans, color: SG.text }}>IDX Assistant</span>
             </div>

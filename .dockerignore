@@ -1,0 +1,19 @@
+# Frontend/Node
+node_modules/
+dist/
+dist-ssr/
+npm-debug.log*
+yarn-debug.log*
+
+# Backend directory (already has its own Dockerfiles/build context)
+backend/
+
+# IDE/Misc
+.vscode/
+.idea/
+.DS_Store
+
+# Environment configurations
+.env
+.env.local
+.env.*.local

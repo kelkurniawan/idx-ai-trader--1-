@@ -1,0 +1,47 @@
+# ────────────────────────────────────────────────────────────────────────────
+# Local Development API Gateway (Caddy)
+# ────────────────────────────────────────────────────────────────────────────
+# Usage:
+#   caddy run --config Caddyfile
+#
+# This file provides a single entry point (http://localhost:8080) for the
+# frontend, proxying requests to the correct backend service.
+# ────────────────────────────────────────────────────────────────────────────
+
+{
+	# Disable admin API and automatic HTTPS for local development
+	admin off
+	auto_https off
+}
+
+http://localhost:8080 {
+	# 1. Node.js backend (News & Agents)
+	# Handles /api/news/*, /api/agent/*
+	handle_path /api/news* {
+		reverse_proxy localhost:3001 {
+			header_up Host {host}
+			header_up X-Real-IP {remote}
+		}
+	}
+	handle_path /api/agent* {
+		reverse_proxy localhost:3001 {
+			header_up Host {host}
+			header_up X-Real-IP {remote}
+		}
+	}
+
+	# 2. Python backend (Auth, Profiles, AI Proxy, Stocks)
+	# Handles all other /api/* routes
+	handle_path /api* {
+		reverse_proxy localhost:8000 {
+			header_up Host {host}
+			header_up X-Real-IP {remote}
+		}
+	}
+
+	# 3. Frontend (Vite Dev Server)
+	# Handles everything else
+	handle {
+		reverse_proxy localhost:3000
+	}
+}

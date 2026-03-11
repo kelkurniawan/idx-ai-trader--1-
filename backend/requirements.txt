@@ -11,6 +11,10 @@ pydantic[email]>=2.0.0
 
 # Database
 sqlalchemy>=2.0.0
+asyncpg>=0.29.0              # Async PostgreSQL driver — used by the running application
+alembic>=1.13.0              # Database migration framework
+psycopg2-binary>=2.9.9       # Sync PostgreSQL driver — used ONLY by Alembic migration runner
+aiosqlite>=0.19.0            # Async SQLite driver — used for local development fallback
 
 # AI Integration (optional, only needed for production)
 google-generativeai>=0.3.0

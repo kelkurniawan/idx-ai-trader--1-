@@ -1,0 +1,33 @@
+# ────────────────────────────────────────────────────────────────────────────
+# Frontend React + Vite Dockerfile
+# ────────────────────────────────────────────────────────────────────────────
+
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Copy package files from the monorepo root
+COPY package.json package-lock.json* ./
+
+# Install dependencies
+RUN npm install
+
+# Copy all frontend source files
+COPY . .
+
+# Build the Vite application
+RUN npm run build
+
+# --- Production Image (Caddy) ---
+FROM caddy:2-alpine
+
+# Copy built static files from builder
+COPY --from=builder /app/dist /srv/dist
+
+# Copy the production Caddyfile
+COPY Caddyfile.production /etc/caddy/Caddyfile
+
+# Caddy automatically uses Caddyfile inside /etc/caddy/
+EXPOSE 8080
+
+CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile"]

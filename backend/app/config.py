@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     
     # AI Configuration
     GEMINI_API_KEY: str = ""
+    GEMINI_DEFAULT_MODEL: str = "gemini-2.0-flash"
+    GEMINI_PRO_MODEL: str = "gemini-2.5-pro"
     
     # Database
     DATABASE_URL: str = "sqlite:///./idx_trader.db"
@@ -43,12 +45,12 @@ class Settings(BaseSettings):
     # ===========================
     
     # JWT Configuration
-    # IMPORTANT: Change this to a random 256-bit key in production!
-    # Generate with: python -c "import secrets; print(secrets.token_hex(32))"
-    JWT_SECRET_KEY: str = "dev-secret-key-CHANGE-THIS-IN-PRODUCTION-12345"
+    # REQUIRED in production — generate: python -c "import secrets; print(secrets.token_hex(32))"
+    # App will crash immediately if this is missing from .env
+    JWT_SECRET_KEY: str
     JWT_ALGORITHM: str = "HS256"
-    JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30  # Short-lived access token
-    JWT_REMEMBER_ME_EXPIRE_DAYS: int = 30      # Persistent "Remember Me" cookie lifetime
+    JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    JWT_REMEMBER_ME_EXPIRE_DAYS: int = 30
     
     # reCAPTCHA v2 (Invisible)
     # Dev: Google's official test keys — always pass verification
@@ -105,8 +107,8 @@ class Settings(BaseSettings):
     # ===========================
     # AES-256-CBC key for encrypting TOTP secrets at rest.
     # Generate: python -c "import secrets; print(secrets.token_hex(32))"
-    # Leave empty in dev — uses an insecure deterministic fallback.
-    MFA_ENCRYPTION_KEY: str = ""
+    # Leave empty in dev .env ("") — uses an insecure deterministic fallback.
+    MFA_ENCRYPTION_KEY: str
     # Issuer name displayed in authenticator apps (e.g. "sahamgue")
     TOTP_ISSUER: str = "sahamgue"
 

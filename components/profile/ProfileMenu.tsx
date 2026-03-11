@@ -17,9 +17,9 @@ interface ProfileMenuProps {
 }
 
 const SG = {
-    bg: '#0d1417', surface: '#151b1e', bgMuted: '#1e2a2f', border: '#1e2a2f',
-    green: '#22c55e', greenBg: 'rgba(34,197,94,0.10)', text: '#f1f5f9',
-    textSecond: '#94a3b8', muted: '#64748b', red: '#ef4444', redBg: 'rgba(239,68,68,0.08)',
+    bg: 'var(--bg-header)', surface: 'var(--bg-surface)', bgMuted: 'var(--bg-muted)', border: 'var(--border)',
+    green: 'var(--accent)', greenBg: 'var(--accent-bg)', text: 'var(--text-primary)',
+    textSecond: 'var(--text-second)', muted: 'var(--text-muted)', red: 'var(--semantic-red)', redBg: 'var(--semantic-red-bg)',
     sans: "'Plus Jakarta Sans', sans-serif",
 };
 

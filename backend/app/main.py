@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from .config import get_settings
 from .database import engine, Base
 from . import models  # noqa: F401
-from .routers import stocks, market_analyzer, predictions, auth, profile
+from .routers import stocks, market_analyzer, predictions, auth, profile, ai
 
 settings = get_settings()
 
@@ -71,6 +71,7 @@ app.include_router(profile.router, prefix="/api/profile", tags=["Profile"])
 app.include_router(stocks.router, prefix="/api/stocks", tags=["Stocks"])
 app.include_router(market_analyzer.router, prefix="/api/analyze", tags=["Market Analyzer"])
 app.include_router(predictions.router, prefix="/api/predict", tags=["Predictions"])
+app.include_router(ai.router, prefix="/api/ai", tags=["AI Proxy"])
 
 # Serve uploaded avatar files
 import os

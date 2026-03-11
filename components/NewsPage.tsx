@@ -6,10 +6,10 @@ import React, { useState, useCallback } from 'react';
 // DESIGN TOKENS
 // ─────────────────────────────────────────────────────────
 const SG = {
-  bgBase:    '#0a0f10', bgHeader:  '#0d1417', bgSurface: '#151b1e',
-  bgMuted:   '#1e2a2f', border:    '#1e2a2f', accent:    '#22c55e',
-  red:       '#ef4444', gold:      '#facc15', textPrimary:'#f1f5f9',
-  textSecond:'#94a3b8', textMuted: '#64748b', textDim:   '#475569',
+  bgBase:    'var(--bg-base)', bgHeader:  'var(--bg-header)', bgSurface: 'var(--bg-surface)',
+  bgMuted:   'var(--bg-muted)', border:    'var(--border)', accent:    'var(--accent)',
+  red:       'var(--semantic-red)', gold:      'var(--semantic-gold)', textPrimary:'var(--text-primary)',
+  textSecond:'var(--text-second)', textMuted: 'var(--text-muted)', textDim:   'var(--text-dim)',
   mono: "'JetBrains Mono',monospace",
   sans: "'Plus Jakarta Sans',sans-serif",
 };

@@ -16,20 +16,21 @@ interface HomeDashboardProps {
 // Design tokens (mirrors index.css :root)
 // ────────────────────────────────────────────────
 const SG = {
-  bgBase:       '#0a0f10',
-  bgSurface:    '#151b1e',
-  bgHeader:     '#0d1417',
-  border:       '#1e2a2f',
-  green:        '#22c55e',
-  greenBg:      'rgba(34,197,94,0.12)',
-  greenBgStrong:'rgba(34,197,94,0.18)',
-  red:          '#ef4444',
-  redBg:        'rgba(239,68,68,0.12)',
-  gold:         '#facc15',
-  textPrimary:  '#f1f5f9',
-  textSecondary:'#94a3b8',
-  textMuted:    '#475569',
-  textDim:      '#64748b',
+  bgBase:       'var(--bg-base)',
+  bgSurface:    'var(--bg-surface)',
+  bgHeader:     'var(--bg-header)',
+  bgMuted:      'var(--bg-muted)',
+  border:       'var(--border)',
+  green:        'var(--accent)',
+  greenBg:      'var(--accent-bg)',
+  greenBgStrong:'var(--accent-bg)',
+  red:          'var(--semantic-red)',
+  redBg:        'var(--semantic-red-bg)',
+  gold:         'var(--semantic-gold)',
+  textPrimary:  'var(--text-primary)',
+  textSecondary:'var(--text-second)',
+  textMuted:    'var(--text-muted)',
+  textDim:      'var(--text-dim)',
   mono:         "'JetBrains Mono', monospace",
   sans:         "'Plus Jakarta Sans', sans-serif",
 };
@@ -203,8 +204,8 @@ const PortfolioSnapshot = () => {
 
   return (
     <div className="rounded-2xl p-5 relative overflow-hidden"
-      style={{ background: 'linear-gradient(135deg, #151b1e 0%, #0f1a1d 100%)',
-               border: `1px solid ${up ? '#1e3a2f' : '#3a1e1e'}` }}
+      style={{ background: 'var(--card-grad)',
+               border: `1px solid ${up ? 'var(--accent-border)' : 'var(--semantic-red-border)'}` }}
     >
       {/* Green radial glow  */}
       <div className="absolute top-0 right-0 w-36 h-36 pointer-events-none"
@@ -252,7 +253,7 @@ const MarketSummary = () => {
   const map = {
     BULLISH:  { badgeBg: SG.green,  badgeText: SG.bgBase, icon: '🐂', desc: 'Tren naik, mayoritas saham hijau. Momentum beli masih kuat.' },
     BEARISH:  { badgeBg: SG.red,    badgeText: '#fff',    icon: '🐻', desc: 'Tekanan jual mendominasi. Waspada level support kritis.' },
-    SIDEWAYS: { badgeBg: '#f59e0b', badgeText: SG.bgBase, icon: '↔️', desc: 'Konsolidasi. Pasar menunggu katalis baru.' },
+    SIDEWAYS: { badgeBg: SG.gold, badgeText: SG.bgBase, icon: '↔️', desc: 'Konsolidasi. Pasar menunggu katalis baru.' },
   };
   const s = map[sentiment];
 
@@ -280,7 +281,7 @@ const MarketSummary = () => {
         {MOCK_INDICES.slice(0, 3).map((idx) => {
           const up = idx.change >= 0;
           return (
-            <div key={idx.id} className="rounded-xl p-2.5 text-center" style={{ background: '#1e2a2f' }}>
+            <div key={idx.id} className="rounded-xl p-2.5 text-center" style={{ background: SG.bgMuted }}>
               <p className="text-[9px] font-bold uppercase mb-0.5" style={{ color: SG.textMuted }}>{idx.label}</p>
               <p className="text-sm font-black mt-0.5" style={{ fontFamily: SG.mono, color: SG.textPrimary }}>
                 {idx.price.toLocaleString('id-ID', { minimumFractionDigits: 0 })}
@@ -373,7 +374,7 @@ const TopMovers = ({ onSelectStock }: { onSelectStock: (ticker: string) => void 
             <button key={t.id} onClick={() => setTab(t.id)}
               className="flex-1 py-2 px-2 rounded-xl text-[11px] font-bold touch-manipulation transition-all"
               style={{
-                background: tab === t.id ? SG.green : '#1e2a2f',
+                background: tab === t.id ? SG.green : SG.bgMuted,
                 color: tab === t.id ? SG.bgBase : SG.textDim,
                 fontWeight: tab === t.id ? 700 : 500,
               }}>
@@ -389,7 +390,7 @@ const TopMovers = ({ onSelectStock }: { onSelectStock: (ticker: string) => void 
             <button key={s.ticker} onClick={() => onSelectStock(s.ticker)}
               className="w-full flex items-center gap-3 px-5 py-3 touch-manipulation active:opacity-70 transition-colors text-left"
               style={{ borderTop: `1px solid ${SG.border}` }}>
-              <span className="text-[10px] font-black w-4 text-center flex-shrink-0" style={{ color: '#334155' }}>{i + 1}</span>
+              <span className="text-[10px] font-black w-4 text-center flex-shrink-0" style={{ color: SG.textMuted }}>{i + 1}</span>
               <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
                 style={{ background: up ? SG.greenBg : SG.redBg }}>
                 <span style={{ fontFamily: SG.mono, fontWeight: 800, fontSize: '11px', color: up ? SG.green : SG.red }}>
@@ -438,7 +439,7 @@ const NewsFeedHome = () => (
           style={{ background: SG.bgSurface, border: `1px solid ${SG.border}`, borderRadius: '14px' }}
         >
           <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
-            style={{ background: '#1e2a2f' }}>
+            style={{ background: SG.bgMuted }}>
             {n.emoji}
           </div>
           <div className="flex-1 min-w-0">

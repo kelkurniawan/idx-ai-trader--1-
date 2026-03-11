@@ -1,0 +1,34 @@
+# ────────────────────────────────────────────────────────────────────────────
+# Production API Gateway (Caddy for Docker/Railway)
+# ────────────────────────────────────────────────────────────────────────────
+# This configuration is used in the multi-container Docker deployment.
+# It serves the built frontend static files from /srv and proxies API calls.
+# ────────────────────────────────────────────────────────────────────────────
+
+{
+	# Admin off, Railway handles HTTPS termination
+	admin off
+	auto_https off
+}
+
+:8080 {
+	# 1. Node.js backend (News & Agents)
+	handle_path /api/news* {
+		reverse_proxy node_backend:3001
+	}
+	handle_path /api/agent* {
+		reverse_proxy node_backend:3001
+	}
+
+	# 2. Python backend (Auth, Profiles, AI Proxy, Stocks)
+	handle_path /api* {
+		reverse_proxy python_backend:8000
+	}
+
+	# 3. Frontend static files
+	handle {
+		root * /srv/dist
+		try_files {path} /index.html
+		file_server
+	}
+}
