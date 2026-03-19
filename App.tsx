@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect, useCallback, useMemo, useRef, Suspense } from 'react';
-import { useTheme } from './context/ThemeContext';
-import { Sun, Moon } from 'lucide-react';
+
 import {
   SAMPLE_IDX_STOCKS,
   IDX_SECTORS,
@@ -51,7 +50,7 @@ const ProfilePageLazy = React.lazy(() => import('./pages/ProfilePage'));
 const ProfileMenuLazy = React.lazy(() => import('./components/profile/ProfileMenu'));
 import HomeDashboard from './components/HomeDashboard';
 import { NewsPage, TickerNewsPanel } from './components/NewsPage';
-import { ThemeToggle } from './components/ThemeToggle';
+
 
 // ─── Feature Flags ───────────────────────────────────────────────────────────
 // Set ARCHIVED = true to hide legacy menus from the UI (routes kept intact)
@@ -749,10 +748,6 @@ const App: React.FC = () => {
           </div>
         </div>
         <div className="mt-auto p-5 space-y-3">
-          <div className="flex justify-between items-center p-3 rounded-xl" style={{ background: SG.surface, border: `1px solid ${SG.border}` }}>
-            <span className="text-xs font-bold uppercase tracking-wider" style={{ color: SG.muted }}>Tema</span>
-            <ThemeToggle />
-          </div>
           <button onClick={handleLogout}
             className="w-full py-2.5 rounded-xl text-sm font-bold transition-all"
             style={{ background: SG.surface, border: `1px solid ${SG.border}`, color: SG.dim }}>
@@ -780,7 +775,6 @@ const App: React.FC = () => {
             </h2>
           </div>
           <div className="flex items-center gap-3">
-            <ThemeToggle />
             <div className="text-right hidden sm:block">
               <p className="text-xs font-black leading-none" style={{ color: SG.text }}>{user.name || 'User'}</p>
               <p className="text-[10px] font-bold uppercase tracking-widest mt-0.5" style={{ color: SG.muted }}>Trader Pro</p>
