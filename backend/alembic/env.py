@@ -26,7 +26,7 @@ from app.config import get_settings
 # ─── Import ALL SQLAlchemy models so autogenerate can detect them ─────────────
 # Import Base first, then ALL model modules so metadata is populated.
 from app.database import Base  # noqa: F401
-from app.models import user, profile, analysis, stock  # noqa: F401
+from app.models import user, profile, analysis, stock, portfolio  # noqa: F401
 
 # ─── Alembic Config object ───────────────────────────────────────────────────
 config = context.config

@@ -1,6 +1,7 @@
 // RESTYLED: SahamGue Design System
 // AI News Feature — Production-ready with dummy data stubs
 import React, { useState, useCallback } from 'react';
+import { Home, LineChart, Eye, Newspaper, ClipboardList, BookOpen } from 'lucide-react';
 
 // ─────────────────────────────────────────────────────────
 // DESIGN TOKENS
@@ -54,12 +55,12 @@ const IMPACT_TAGS: Record<ImpactLevel,{label:string;bg:string;text:string}> = {
 // NAV ITEMS (with News at position 4)
 // ─────────────────────────────────────────────────────────
 export const NAV_ITEMS = [
-  { id:'home',     icon:'🏠', label:'Home'     },
-  { id:'analysis', icon:'📊', label:'Analisis' },
-  { id:'watchlist',icon:'👁', label:'Watchlist'},
-  { id:'news',     icon:'📰', label:'News'     },
-  { id:'journal',  icon:'📓', label:'Jurnal'   },
-  { id:'learning', icon:'🎓', label:'Belajar'  },
+  { id:'home',     icon:<Home className="w-5 h-5"/>, label:'Home'     },
+  { id:'analysis', icon:<LineChart className="w-5 h-5"/>, label:'Analisis' },
+  { id:'watchlist',icon:<Eye className="w-5 h-5"/>, label:'Watchlist'},
+  { id:'news',     icon:<Newspaper className="w-5 h-5"/>, label:'News'     },
+  { id:'journal',  icon:<ClipboardList className="w-5 h-5"/>, label:'Jurnal'   },
+  { id:'learning', icon:<BookOpen className="w-5 h-5"/>, label:'Belajar'  },
 ];
 
 // ─────────────────────────────────────────────────────────

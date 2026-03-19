@@ -1,5 +1,6 @@
 // RESTYLED: SahamGue Design System
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { portfolioApi, PortfolioSummary } from '../services/portfolioApi';
 
 // ────────────────────────────────────────────────
 // Types
@@ -8,6 +9,7 @@ interface HomeDashboardProps {
   user: { name: string; email: string };
   onNavigateAnalysis: () => void;
   onNavigateWatchlist: () => void;
+  onNavigateJournal: () => void;
   onSelectStock: (ticker: string) => void;
   onLogout: () => void;
 }
@@ -194,54 +196,91 @@ const MarketPulseBar = () => {
 };
 
 // ────────────────────────────────────────────────
-// 2. Portfolio Snapshot
+// 2. Portfolio Snapshot (Live API)
 // ────────────────────────────────────────────────
-const PortfolioSnapshot = () => {
-  const totalAsset = 285_450_000;
-  const dailyPnL = +3_250_000;
-  const dailyPct = +1.15;
-  const up = dailyPnL >= 0;
+const PortfolioSnapshot = ({ onNavigate }: { onNavigate: () => void }) => {
+  const [summary, setSummary] = useState<PortfolioSummary | null>(null);
+  const [loadingP, setLoadingP] = useState(true);
+
+  useEffect(() => {
+    portfolioApi.getSummary()
+      .then(setSummary)
+      .catch(() => setSummary(null))
+      .finally(() => setLoadingP(false));
+  }, []);
+
+  // Loading skeleton
+  if (loadingP) {
+    return (
+      <div className="rounded-2xl p-5 relative overflow-hidden animate-pulse"
+        style={{ background: 'var(--card-grad)', border: `1px solid ${SG.border}`, minHeight: 140 }}>
+        <div className="h-3 w-24 rounded" style={{ background: SG.bgMuted }} />
+        <div className="h-7 w-40 rounded mt-3" style={{ background: SG.bgMuted }} />
+        <div className="h-4 w-32 rounded mt-3" style={{ background: SG.bgMuted }} />
+      </div>
+    );
+  }
+
+  const isEmpty = !summary || (summary.total_portfolio === 0 && summary.holdings.length === 0);
+  const up = summary ? summary.unrealized_pnl >= 0 : true;
 
   return (
-    <div className="rounded-2xl p-5 relative overflow-hidden"
+    <button onClick={onNavigate} className="w-full text-left rounded-2xl p-5 relative overflow-hidden transition-all active:scale-[0.99]"
       style={{ background: 'var(--card-grad)',
-               border: `1px solid ${up ? 'var(--accent-border)' : 'var(--semantic-red-border)'}` }}
+               border: `1px solid ${isEmpty ? SG.border : up ? 'var(--accent-border)' : 'var(--semantic-red-border)'}`, cursor: 'pointer' }}
     >
-      {/* Green radial glow  */}
+      {/* Radial glow */}
       <div className="absolute top-0 right-0 w-36 h-36 pointer-events-none"
         style={{ background: 'radial-gradient(circle at top right, rgba(34,197,94,0.09), transparent 70%)' }} />
       {/* Top accent line */}
       <div className="absolute top-0 left-0 right-0 h-[2px] rounded-t-2xl"
-        style={{ background: up ? SG.green : SG.red }} />
+        style={{ background: isEmpty ? SG.gold : up ? SG.green : SG.red }} />
 
-      <div className="flex items-start justify-between gap-4 relative">
-        <div className="flex-1 min-w-0">
-          <p className="text-[9px] font-bold uppercase mb-2" style={{ color: SG.textMuted, letterSpacing: '1.5px' }}>
-            Portofolio Saya
-          </p>
+      <p className="text-[9px] font-bold uppercase mb-2" style={{ color: SG.textMuted, letterSpacing: '1.5px' }}>
+        Portofolio Saya
+      </p>
+
+      {isEmpty ? (
+        <>
           <p className="tracking-tight" style={{ fontFamily: SG.mono, fontWeight: 800, fontSize: '24px', color: SG.textPrimary }}>
-            {formatIDR(totalAsset)}
+            Rp 0
           </p>
-          <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold"
-            style={{ fontFamily: SG.mono, background: up ? SG.greenBg : SG.redBg, color: up ? SG.green : SG.red }}
-          >
-            {up ? '▲' : '▼'} {formatIDR(Math.abs(dailyPnL))} ({pct(dailyPct)})
-            <span style={{ color: SG.textMuted, fontSize: '9px', marginLeft: 4 }}>hari ini</span>
+          <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold"
+            style={{ background: SG.greenBg, color: SG.green }}>
+            + Input portofoliomu sekarang
           </div>
-        </div>
-        <div className="flex flex-col items-end gap-1">
-          <Sparkline positive={up} />
-          <span className="text-[9px] font-bold uppercase" style={{ color: SG.textMuted, letterSpacing: '1px' }}>7 hari</span>
-        </div>
-      </div>
+        </>
+      ) : (
+        <>
+          <p className="tracking-tight" style={{ fontFamily: SG.mono, fontWeight: 800, fontSize: '24px', color: SG.textPrimary }}>
+            {formatIDR(summary!.total_portfolio)}
+          </p>
+          {/* Mini tiles */}
+          <div className="mt-3 grid grid-cols-3 gap-2">
+            {[
+              { label: 'Saham', val: formatIDR(summary!.holdings_value) },
+              { label: 'Kas', val: formatIDR(summary!.cash_balance) },
+              { label: 'Unrealized', val: `${summary!.unrealized_pnl >= 0 ? '+' : ''}${formatIDR(summary!.unrealized_pnl)}`, color: up ? SG.green : SG.red },
+            ].map(t => (
+              <div key={t.label} className="rounded-lg p-2 text-center" style={{ background: SG.bgMuted }}>
+                <p className="text-[8px] font-bold uppercase" style={{ color: SG.textMuted }}>{t.label}</p>
+                <p className="text-[11px] font-bold mt-0.5" style={{ fontFamily: SG.mono, color: t.color || SG.textPrimary }}>{t.val}</p>
+              </div>
+            ))}
+          </div>
+          <p className="text-[9px] font-bold mt-2" style={{ color: SG.textMuted }}>
+            {summary!.holdings.length} saham · Unrealized {summary!.unrealized_pct >= 0 ? '+' : ''}{summary!.unrealized_pct.toFixed(2)}%
+          </p>
+        </>
+      )}
 
       <div className="mt-3 pt-3 flex items-center gap-1.5" style={{ borderTop: `1px solid ${SG.border}` }}>
         <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: SG.gold }} />
         <p className="text-[9px] font-bold" style={{ color: SG.textMuted }}>
-          Data simulasi — hubungkan broker untuk sinkronisasi portofolio
+          {isEmpty ? 'Tap untuk mulai input portofolio manual' : 'Update harga secara berkala untuk akurasi terbaik'}
         </p>
       </div>
-    </div>
+    </button>
   );
 };
 
@@ -479,7 +518,7 @@ const FloatingCTA = ({ onClick }: { onClick: () => void }) => (
 // ────────────────────────────────────────────────
 // Main Component
 // ────────────────────────────────────────────────
-const HomeDashboard: React.FC<HomeDashboardProps> = ({ user, onNavigateAnalysis, onNavigateWatchlist, onSelectStock }) => {
+const HomeDashboard: React.FC<HomeDashboardProps> = ({ user, onNavigateAnalysis, onNavigateWatchlist, onNavigateJournal, onSelectStock }) => {
   const [greeting] = useState(() => getGreeting(user.name));
   const [dateStr]  = useState(() => getDateID());
 
@@ -503,7 +542,7 @@ const HomeDashboard: React.FC<HomeDashboardProps> = ({ user, onNavigateAnalysis,
 
       {/* Portfolio + Sentiment — side by side on md+ */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-        <PortfolioSnapshot />
+        <PortfolioSnapshot onNavigate={onNavigateJournal} />
         <MarketSummary />
       </div>
 

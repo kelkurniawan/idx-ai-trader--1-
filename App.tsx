@@ -50,6 +50,10 @@ const ProfilePageLazy = React.lazy(() => import('./pages/ProfilePage'));
 const ProfileMenuLazy = React.lazy(() => import('./components/profile/ProfileMenu'));
 import HomeDashboard from './components/HomeDashboard';
 import { NewsPage, TickerNewsPanel } from './components/NewsPage';
+import { 
+  Home, LineChart, Eye, Newspaper, ClipboardList, BookOpen, 
+  Settings, ShieldCheck, CalendarDays, Timer, Zap, Users 
+} from 'lucide-react';
 
 
 // ─── Feature Flags ───────────────────────────────────────────────────────────
@@ -286,7 +290,7 @@ const ToolGridCard = ({ icon, label, sub, badge, onClick }: any) => (
   </div>
 );
 
-const SidebarItem = ({ icon, label, viewId, view, setView }: { icon: string, label: string, viewId: any, view: string, setView: any }) => {
+const SidebarItem = ({ icon, label, viewId, view, setView }: { icon: React.ReactNode, label: string, viewId: any, view: string, setView: any }) => {
   const isActive = view === viewId;
   return (
     <button
@@ -703,12 +707,12 @@ const App: React.FC = () => {
             <section>
               <h3 className="text-[10px] font-bold uppercase mb-2 ml-3" style={{ color: SG.textMuted, letterSpacing: '1px' }}>NAVIGASI</h3>
               <div className="space-y-0.5">
-                <SidebarItem icon="🏠" label="Home" viewId="home" view={view} setView={setView} />
-                <SidebarItem icon="📊" label="Market Analysis" viewId="analysis" view={view} setView={setView} />
-                <SidebarItem icon="👁" label="Watchlist" viewId="watchlist" view={view} setView={setView} />
-                <SidebarItem icon="📰" label="News" viewId="news" view={view} setView={setView} />
-                <SidebarItem icon="📓" label="Trade Journal" viewId="journal" view={view} setView={setView} />
-                <SidebarItem icon="🎓" label="Learning" viewId="learning" view={view} setView={setView} />
+                <SidebarItem icon={<Home className="w-4 h-4" />} label="Home" viewId="home" view={view} setView={setView} />
+                <SidebarItem icon={<LineChart className="w-4 h-4" />} label="Market Analysis" viewId="analysis" view={view} setView={setView} />
+                <SidebarItem icon={<Eye className="w-4 h-4" />} label="Watchlist" viewId="watchlist" view={view} setView={setView} />
+                <SidebarItem icon={<Newspaper className="w-4 h-4" />} label="News" viewId="news" view={view} setView={setView} />
+                <SidebarItem icon={<ClipboardList className="w-4 h-4" />} label="Trade Journal" viewId="journal" view={view} setView={setView} />
+                <SidebarItem icon={<BookOpen className="w-4 h-4" />} label="Learning" viewId="learning" view={view} setView={setView} />
               </div>
             </section>
 
@@ -717,10 +721,10 @@ const App: React.FC = () => {
               <section>
                 <h3 className="text-[10px] font-bold uppercase mb-2 ml-3" style={{ color: SG.textMuted, letterSpacing: '1px' }}>ARSIP</h3>
                 <div className="space-y-0.5">
-                  <SidebarItem icon="📅" label="Swing Trading" viewId="swing" view={view} setView={setView} />
-                  <SidebarItem icon="⏱️" label="Scalp Trading" viewId="scalp" view={view} setView={setView} />
-                  <SidebarItem icon="⚡" label="Backtester" viewId="backtest" view={view} setView={setView} />
-                  <SidebarItem icon="👥" label="Community" viewId="community" view={view} setView={setView} />
+                  <SidebarItem icon={<CalendarDays className="w-4 h-4" />} label="Swing Trading" viewId="swing" view={view} setView={setView} />
+                  <SidebarItem icon={<Timer className="w-4 h-4" />} label="Scalp Trading" viewId="scalp" view={view} setView={setView} />
+                  <SidebarItem icon={<Zap className="w-4 h-4" />} label="Backtester" viewId="backtest" view={view} setView={setView} />
+                  <SidebarItem icon={<Users className="w-4 h-4" />} label="Community" viewId="community" view={view} setView={setView} />
                 </div>
               </section>
             )}
@@ -729,7 +733,7 @@ const App: React.FC = () => {
             <section>
               <h3 className="text-[10px] font-bold uppercase mb-2 ml-3" style={{ color: SG.textMuted, letterSpacing: '1px' }}>SISTEM</h3>
               <div className="space-y-0.5">
-                <SidebarItem icon="⚙️" label="Admin" viewId="admin" view={view} setView={setView} />
+                <SidebarItem icon={<Settings className="w-4 h-4" />} label="Admin" viewId="admin" view={view} setView={setView} />
                 <button
                   onClick={() => setSettingsView(settingsView === 'mfa' ? null : 'mfa')}
                   className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold transition-colors"
@@ -741,7 +745,7 @@ const App: React.FC = () => {
                     borderRadius: '0 10px 10px 0',
                   }}
                 >
-                  <span>🔐</span><span>MFA Settings</span>
+                  <span className="text-base group-hover:scale-110 transition-transform"><ShieldCheck className="w-4 h-4" /></span><span>MFA Settings</span>
                 </button>
               </div>
             </section>
@@ -837,6 +841,7 @@ const App: React.FC = () => {
               user={user}
               onNavigateAnalysis={() => setView('analysis')}
               onNavigateWatchlist={() => setView('watchlist')}
+              onNavigateJournal={() => setView('journal')}
               onSelectStock={(ticker) => handleSelectStock({ ticker, name: ticker, sector: 'Unknown' })}
               onLogout={handleLogout}
             />
@@ -1353,12 +1358,12 @@ const App: React.FC = () => {
         <nav className="lg:hidden fixed bottom-0 left-0 right-0 flex justify-around items-end z-50 transition-colors"
           style={{ background: SG.bg, borderTop: `1px solid ${SG.border}`, height: '60px', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
           {[
-            { id: 'home'      as const, icon: '🏠', label: 'Home'     },
-            { id: 'analysis'  as const, icon: '📊', label: 'Analisis' },
-            { id: 'watchlist' as const, icon: '👁',  label: 'Watch'   },
-            { id: 'news'      as const, icon: '📰', label: 'News'     },
-            { id: 'journal'   as const, icon: '📓', label: 'Jurnal'   },
-            { id: 'learning'  as const, icon: '🎓', label: 'Belajar'  },
+            { id: 'home'      as const, icon: <Home className="w-[22px] h-[22px] stroke-[2]" />, label: 'Home'     },
+            { id: 'analysis'  as const, icon: <LineChart className="w-[22px] h-[22px] stroke-[2]" />, label: 'Analisis' },
+            { id: 'watchlist' as const, icon: <Eye className="w-[22px] h-[22px] stroke-[2]" />,  label: 'Watch'   },
+            { id: 'news'      as const, icon: <Newspaper className="w-[22px] h-[22px] stroke-[2]" />, label: 'News'     },
+            { id: 'journal'   as const, icon: <ClipboardList className="w-[22px] h-[22px] stroke-[2]" />, label: 'Jurnal'   },
+            { id: 'learning'  as const, icon: <BookOpen className="w-[22px] h-[22px] stroke-[2]" />, label: 'Belajar'  },
           ].map((tab) => {
             const isActive = view === tab.id;
             return (
