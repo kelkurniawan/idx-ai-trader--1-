@@ -147,48 +147,94 @@ const Sparkline = ({ positive }: { positive: boolean }) => {
   );
 };
 
+import { useStripData } from '../hooks/useStripData';
+
 // ────────────────────────────────────────────────
-// 1. Market Pulse Bar — auto-scroll + LIVE badge
+// 1. Market Pulse Bar — auto-scroll strip
 // ────────────────────────────────────────────────
 const MarketPulseBar = () => {
-  const open = isMarketOpen();
-  const items = [...MOCK_INDICES, ...MOCK_INDICES]; // duplicate for seamless loop
+  const { data, loading } = useStripData();
+  const scrollerRef = React.useRef<HTMLDivElement>(null);
+  const contentRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    let animationFrameId: number;
+    let scrollPos = 0;
+    const speed = 0.18;
+
+    const scroll = () => {
+      if (scrollerRef.current && contentRef.current) {
+        scrollPos += speed;
+        // The content is doubled, so we reset at half the total width
+        const halfWidth = contentRef.current.scrollWidth / 2;
+        if (scrollPos >= halfWidth) {
+          scrollPos -= halfWidth;
+        }
+        contentRef.current.style.transform = `translateX(-${scrollPos}px)`;
+      }
+      animationFrameId = requestAnimationFrame(scroll);
+    };
+
+    animationFrameId = requestAnimationFrame(scroll);
+    return () => cancelAnimationFrame(animationFrameId);
+  }, [data]);
+
+  const items = [
+    ...data.movers.map(m => ({ type: 'mover' as const, ...m })),
+    ...data.headlines.map(h => ({ type: 'news' as const, ...h })),
+  ];
+  
+  // Double array for seamless loop
+  const displayItems = [...items, ...items];
 
   return (
     <div style={{ background: SG.bgSurface, borderBottom: `1px solid ${SG.border}` }}
       className="flex items-center gap-3 py-2.5 overflow-hidden"
     >
-      {/* Badge */}
-      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded text-[10px] font-bold flex-shrink-0 ml-4"
-        style={{ background: open ? 'rgba(34,197,94,0.15)' : 'rgba(245,158,11,0.15)',
-                 color: open ? SG.green : '#f59e0b' }}
-      >
-        <span className="w-1.5 h-1.5 rounded-full animate-pulse inline-block"
-          style={{ background: open ? SG.green : '#f59e0b' }} />
-        <span className="uppercase">{open ? 'LIVE' : 'CLOSED'}</span>
-      </div>
-
       {/* Auto-scroll strip */}
       <div className="flex-1 overflow-hidden relative"
         style={{ maskImage: 'linear-gradient(to right, transparent, black 4%, black 96%, transparent)' }}
+        ref={scrollerRef}
       >
-        <div className="ticker-scroll-inner flex gap-10" style={{ width: 'max-content' }}>
-          {items.map((idx, i) => {
-            const up = idx.change >= 0;
-            return (
-              <span key={i} className="inline-flex items-center gap-2 flex-shrink-0">
-                <span style={{ fontFamily: SG.mono, fontWeight: 700, fontSize: '11px', color: SG.textSecondary }}>
-                  {idx.label}
-                </span>
-                <span style={{ fontFamily: SG.mono, fontWeight: 600, fontSize: '11px', color: '#e2e8f0' }}>
-                  {idx.price.toLocaleString('id-ID', { minimumFractionDigits: 2 })}
-                </span>
-                <span style={{ fontFamily: SG.mono, fontWeight: 700, fontSize: '11px', color: up ? SG.green : SG.red }}>
-                  {up ? '▲' : '▼'} {Math.abs(idx.change).toFixed(2)}%
-                </span>
-              </span>
-            );
-          })}
+        <div ref={contentRef} className="flex gap-10" style={{ width: 'max-content', willChange: 'transform' }}>
+          {loading ? (
+            <div style={{padding:"6px 16px", opacity:0.4}}>
+              <span style={{fontFamily:"'JetBrains Mono',monospace", fontSize:10, color:"#64748b"}}>loading...</span>
+            </div>
+          ) : (
+            displayItems.map((item, i) => {
+              if (item.type === 'mover') {
+                const up = item.dir === 'up';
+                return (
+                  <span key={i} className="inline-flex items-center gap-2 flex-shrink-0">
+                    <span style={{ fontFamily: SG.mono, fontWeight: 700, fontSize: '11px', color: SG.textSecondary }}>
+                      {item.code}
+                    </span>
+                    <span style={{ fontFamily: SG.mono, fontWeight: 600, fontSize: '11px', color: '#e2e8f0' }}>
+                      {item.price.toLocaleString('id-ID')}
+                    </span>
+                    <span style={{ fontFamily: SG.mono, fontWeight: 700, fontSize: '11px', color: up ? SG.green : SG.red }}>
+                      {up ? '▲' : '▼'} {Math.abs(item.pct).toFixed(2)}%
+                    </span>
+                  </span>
+                );
+              } else {
+                return (
+                  <span key={i} className="inline-flex items-center gap-2 flex-shrink-0" style={{ background: 'rgba(255,255,255,0.03)', padding: '2px 8px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <span style={{ color: item.color }}>{item.label}</span>
+                    <span style={{ fontFamily: SG.sans, fontSize: '11px', fontWeight: 600, color: '#e2e8f0' }}>{item.text}</span>
+                    {item.tickers && item.tickers.length > 0 && (
+                      <span className="flex gap-1 ml-1">
+                        {item.tickers.map((t: string) => (
+                          <span key={t} style={{ fontFamily: SG.mono, fontSize: '9px', background: 'var(--bg-muted)', padding: '1px 4px', borderRadius: 4, color: 'var(--text-muted)' }}>{t}</span>
+                        ))}
+                      </span>
+                    )}
+                  </span>
+                )
+              }
+            })
+          )}
         </div>
       </div>
     </div>
