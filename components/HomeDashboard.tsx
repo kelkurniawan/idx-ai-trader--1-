@@ -1,6 +1,8 @@
 // RESTYLED: SahamGue Design System
 import React, { useState, useEffect } from 'react';
 import { portfolioApi, PortfolioSummary } from '../services/portfolioApi';
+import { getRealTimeStockData } from '../services/geminiService';
+import { SAMPLE_IDX_STOCKS, PortfolioItem } from '../types';
 
 // ────────────────────────────────────────────────
 // Types
@@ -49,13 +51,7 @@ const MOCK_INDICES = [
   { id: 'HIDIV20',  label: 'HIDIV20', price: 611.20,   change: -0.15 },
 ];
 
-const MOCK_WATCHLIST = [
-  { ticker: 'BBCA', name: 'Bank Central Asia',      price: 10_150, change: +1.50 },
-  { ticker: 'TLKM', name: 'Telkom Indonesia',       price: 3_870,  change: -0.77 },
-  { ticker: 'GOTO', name: 'GoTo Gojek Tokopedia',   price: 71,     change: +4.41 },
-  { ticker: 'BBRI', name: 'Bank Rakyat Indonesia',  price: 4_240,  change: +0.48 },
-  { ticker: 'ASII', name: 'Astra International',    price: 4_800,  change: -0.21 },
-];
+// MOCK_WATCHLIST removed, loaded dynamically now.
 
 const MOCK_GAINERS = [
   { ticker: 'GOTO', name: 'GoTo Gojek Tokopedia',      price: 71,     change: +4.41 },
@@ -389,51 +385,124 @@ interface WatchlistPreviewProps {
   onNavigateWatchlist: () => void;
   onSelectStock: (ticker: string) => void;
 }
-const WatchlistPreview = ({ onNavigateWatchlist, onSelectStock }: WatchlistPreviewProps) => (
-  <div className="rounded-2xl overflow-hidden" style={{ background: SG.bgSurface, border: `1px solid ${SG.border}` }}>
-    <div className="flex items-center justify-between px-5 pt-5 pb-3">
-      <div>
-        <p className="text-[9px] font-bold uppercase mb-0.5" style={{ color: SG.textMuted, letterSpacing: '1.5px' }}>Watchlist</p>
-        <h3 className="text-base font-bold" style={{ color: SG.textPrimary }}>Saham Pantauan</h3>
+
+const WatchlistPreview = ({ onNavigateWatchlist, onSelectStock }: WatchlistPreviewProps) => {
+  const [items, setItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadWatchlist = async () => {
+      // 1. Get from localStorage
+      const saved = localStorage.getItem('idx_watchlist');
+      let tickers: string[] = [];
+      if (saved) {
+        try { 
+          const parsed = JSON.parse(saved) as PortfolioItem[];
+          tickers = parsed.map(p => p.ticker);
+        } catch (e) { console.error(e); }
+      } else {
+        tickers = ['BBCA', 'GOTO']; // Default exactly as in Watchlist.tsx
+      }
+      
+      // Limit to max 5 for preview
+      const topTickers = tickers.slice(0, 5);
+
+      // 2. Fetch real-time data
+      const fetched = await Promise.all(
+        topTickers.map(async (ticker) => {
+          let price = 0, change = 0;
+          try {
+            const data = await getRealTimeStockData(ticker);
+            price = data.price;
+            change = data.changePercent;
+          } catch (e) {
+            console.warn(e);
+          }
+          const profile = SAMPLE_IDX_STOCKS.find(s => s.ticker === ticker);
+          return {
+            ticker,
+            name: profile?.name || 'IDX Market',
+            price,
+            change
+          };
+        })
+      );
+
+      if (isMounted) {
+        setItems(fetched);
+        setLoading(false);
+      }
+    };
+
+    loadWatchlist();
+    const interval = setInterval(loadWatchlist, 60000); // refresh every 1 min
+    return () => { isMounted = false; clearInterval(interval); };
+  }, []);
+
+  return (
+    <div className="rounded-2xl overflow-hidden" style={{ background: SG.bgSurface, border: `1px solid ${SG.border}` }}>
+      <div className="flex items-center justify-between px-5 pt-5 pb-3">
+        <div>
+          <p className="text-[9px] font-bold uppercase mb-0.5" style={{ color: SG.textMuted, letterSpacing: '1.5px' }}>Watchlist</p>
+          <h3 className="text-base font-bold" style={{ color: SG.textPrimary }}>Saham Pantauan</h3>
+        </div>
+        <button onClick={onNavigateWatchlist} className="text-[10px] font-bold transition-opacity hover:opacity-70"
+          style={{ color: SG.green }}>
+          Lihat Semua →
+        </button>
       </div>
-      <button onClick={onNavigateWatchlist} className="text-[10px] font-bold transition-opacity hover:opacity-70"
-        style={{ color: SG.green }}>
-        Lihat Semua →
-      </button>
-    </div>
-    <div>
-      {MOCK_WATCHLIST.map((s, i) => {
-        const up = s.change >= 0;
-        return (
-          <button key={s.ticker} onClick={() => onSelectStock(s.ticker)}
-            className="w-full flex items-center justify-between px-5 py-3 touch-manipulation active:opacity-70 transition-colors text-left"
-            style={{ borderTop: i > 0 ? `1px solid ${SG.border}` : 'none' }}
-          >
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                style={{ background: up ? SG.greenBg : SG.redBg }}>
-                <span style={{ fontFamily: SG.mono, fontWeight: 800, fontSize: '11px', color: up ? SG.green : SG.red }}>
-                  {s.ticker.slice(0, 2)}
+      <div>
+        {loading ? (
+          <div className="px-5 py-4 flex flex-col gap-3">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="animate-pulse flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl flex-shrink-0" style={{ background: SG.bgMuted }}></div>
+                <div className="flex-1">
+                  <div className="h-3 w-16 mb-2 rounded" style={{ background: SG.bgMuted }}></div>
+                  <div className="h-2 w-24 rounded" style={{ background: SG.bgMuted }}></div>
+                </div>
+                <div className="w-16 h-4 rounded" style={{ background: SG.bgMuted }}></div>
+              </div>
+            ))}
+          </div>
+        ) : items.length === 0 ? (
+          <div className="px-5 py-6 text-center">
+             <p className="text-xs font-bold text-gray-400">Belum ada saham pantauan</p>
+          </div>
+        ) : items.map((s, i) => {
+          const up = s.change >= 0;
+          return (
+            <button key={s.ticker} onClick={() => onSelectStock(s.ticker)}
+              className="w-full flex items-center justify-between px-5 py-3 touch-manipulation active:opacity-70 transition-colors text-left"
+              style={{ borderTop: i > 0 ? `1px solid ${SG.border}` : 'none' }}
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{ background: up ? SG.greenBg : SG.redBg }}>
+                  <span style={{ fontFamily: SG.mono, fontWeight: 800, fontSize: '11px', color: up ? SG.green : SG.red }}>
+                    {s.ticker.slice(0, 2)}
+                  </span>
+                </div>
+                <div className="min-w-0">
+                  <p style={{ fontFamily: SG.mono, fontWeight: 700, fontSize: '13px', color: SG.textPrimary }}>{s.ticker}</p>
+                  <p className="truncate" style={{ fontFamily: SG.sans, fontSize: '10px', color: SG.textDim, maxWidth: 140 }}>{s.name}</p>
+                </div>
+              </div>
+              <div className="text-right flex-shrink-0 ml-2">
+                <p style={{ fontFamily: SG.mono, fontWeight: 700, fontSize: '13px', color: SG.textPrimary }}>{formatIDR(s.price)}</p>
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold"
+                  style={{ fontFamily: SG.mono, background: up ? SG.greenBg : SG.redBg, color: up ? SG.green : SG.red }}>
+                  {pct(s.change)}
                 </span>
               </div>
-              <div className="min-w-0">
-                <p style={{ fontFamily: SG.mono, fontWeight: 700, fontSize: '13px', color: SG.textPrimary }}>{s.ticker}</p>
-                <p className="truncate" style={{ fontFamily: SG.sans, fontSize: '10px', color: SG.textDim, maxWidth: 140 }}>{s.name}</p>
-              </div>
-            </div>
-            <div className="text-right flex-shrink-0 ml-2">
-              <p style={{ fontFamily: SG.mono, fontWeight: 700, fontSize: '13px', color: SG.textPrimary }}>{formatIDR(s.price)}</p>
-              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold"
-                style={{ fontFamily: SG.mono, background: up ? SG.greenBg : SG.redBg, color: up ? SG.green : SG.red }}>
-                {pct(s.change)}
-              </span>
-            </div>
-          </button>
-        );
-      })}
+            </button>
+          );
+        })}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 // ────────────────────────────────────────────────
 // 5. Top Movers
