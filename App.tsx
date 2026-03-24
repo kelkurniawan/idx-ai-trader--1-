@@ -683,7 +683,7 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen text-slate-50 font-sans flex overflow-hidden transition-colors duration-300"
+    <div className="h-screen w-full text-slate-50 font-sans flex overflow-hidden transition-colors duration-300"
       style={{ background: SG.bgBase }}
     >
       {/* SIDEBAR — Desktop only */}
