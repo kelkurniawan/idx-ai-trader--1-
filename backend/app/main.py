@@ -24,9 +24,24 @@ async def lifespan(app: FastAPI):
     print(f"📊 Mock data: {'enabled' if settings.use_mock_data else 'disabled'}")
     print(f"🤖 AI calls: {'enabled' if settings.enable_ai_calls else 'disabled (dev mode)'}")
     
-    # Initialize DB async
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    # Initialize DB async with retries
+    import asyncio
+    from sqlalchemy.exc import OperationalError
+    max_retries = 5
+    retry_delay = 2
+    for attempt in range(max_retries):
+        try:
+            async with engine.begin() as conn:
+                await conn.run_sync(Base.metadata.create_all)
+            print("✅ Successfully connected to the database.")
+            break
+        except Exception as e:
+            if attempt < max_retries - 1:
+                print(f"⚠️ Database connection failed ({e}). Retrying in {retry_delay} seconds (Attempt {attempt+1}/{max_retries})...")
+                await asyncio.sleep(retry_delay)
+            else:
+                print(f"❌ Failed to connect to database after {max_retries} attempts.")
+                raise e
         
     yield
     # Shutdown
