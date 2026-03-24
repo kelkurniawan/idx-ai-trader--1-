@@ -1216,7 +1216,7 @@ const App: React.FC = () => {
                         <button
                           onClick={() => setChartMode('line')}
                           className={`flex items-center gap-1 px-2 md:px-3 py-1.5 md:py-2 rounded-lg md:rounded-xl text-[8px] md:text-[9px] font-black tracking-widest uppercase transition-all whitespace-nowrap ${chartMode === 'line'
-                            ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100'
+                            ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200/50 dark:shadow-none'
                             : 'text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-slate-100'
                             }`}
                           title="Line Chart"
@@ -1229,7 +1229,7 @@ const App: React.FC = () => {
                         <button
                           onClick={() => setChartMode('candle')}
                           className={`flex items-center gap-1 px-2 md:px-3 py-1.5 md:py-2 rounded-lg md:rounded-xl text-[8px] md:text-[9px] font-black tracking-widest uppercase transition-all whitespace-nowrap ${chartMode === 'candle'
-                            ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100'
+                            ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200/50 dark:shadow-none'
                             : 'text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-slate-100'
                             }`}
                           title="Candlestick Chart"
@@ -1245,7 +1245,7 @@ const App: React.FC = () => {
                         {/* Divider */}
                         <div className="w-px h-4 md:h-5 mx-0.5 md:mx-1" style={{background: 'rgba(255,255,255,0.1)'}}></div>
                         {/* Timeframe Buttons */}
-                        {(['1D', '1W', '1M', '3M', '6M', '1Y', 'YTD'] as TimeFrame[]).map(tf => <button key={tf} onClick={() => setTimeFrame(tf)} className={`px-2 md:px-4 py-1.5 md:py-2 text-[8px] md:text-[9px] font-black tracking-widest uppercase rounded-lg md:rounded-xl transition-all whitespace-nowrap ${timeFrame === tf ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100 scale-105' : 'text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-slate-100'}`}>{tf}</button>)}
+                        {(['1D', '1W', '1M', '3M', '6M', '1Y', 'YTD'] as TimeFrame[]).map(tf => <button key={tf} onClick={() => setTimeFrame(tf)} className={`px-2 md:px-4 py-1.5 md:py-2 text-[8px] md:text-[9px] font-black tracking-widest uppercase rounded-lg md:rounded-xl transition-all whitespace-nowrap ${timeFrame === tf ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200/50 dark:shadow-none scale-105' : 'text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-slate-100'}`}>{tf}</button>)}
                       </div>
                     </div>
                     

@@ -46,10 +46,10 @@ const Chart: React.FC<ChartProps> = ({ data, timeFrame = '3M', markers, chartMod
   };
 
   return (
-    <div className="w-full h-[300px] md:h-[350px] bg-slate-800/50 rounded-xl p-3 md:p-4 border border-slate-700 backdrop-blur-sm transition-all duration-500 flex flex-col">
+    <div className="w-full h-[300px] md:h-[350px] bg-slate-100/50 dark:bg-slate-800/50 rounded-xl p-3 md:p-4 border border-slate-200 dark:border-slate-700 backdrop-blur-sm transition-all duration-500 flex flex-col text-slate-800 dark:text-slate-200">
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Price Action</h3>
-        <span className="text-xs text-slate-500 font-mono">{timeFrame}</span>
+        <h3 className="text-slate-500 dark:text-slate-400 text-xs font-semibold uppercase tracking-wider">Price Action</h3>
+        <span className="text-xs text-slate-400 dark:text-slate-500 font-mono">{timeFrame}</span>
       </div>
 
       {/* Conditional Chart Rendering */}
@@ -64,10 +64,10 @@ const Chart: React.FC<ChartProps> = ({ data, timeFrame = '3M', markers, chartMod
                 <stop offset="95%" stopColor={color} stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.15} vertical={false} />
             <XAxis
               dataKey="date"
-              tick={{ fill: '#94a3b8', fontSize: 10 }}
+              tick={{ fill: 'currentColor', fontSize: 10, opacity: 0.6 }}
               axisLine={false}
               tickLine={false}
               minTickGap={30}
@@ -75,15 +75,15 @@ const Chart: React.FC<ChartProps> = ({ data, timeFrame = '3M', markers, chartMod
             />
             <YAxis
               domain={['auto', 'auto']}
-              tick={{ fill: '#94a3b8', fontSize: 10 }}
+              tick={{ fill: 'currentColor', fontSize: 10, opacity: 0.6 }}
               axisLine={false}
               tickLine={false}
               tickFormatter={(val) => `Rp${val}`}
               width={60}
             />
             <Tooltip
-              contentStyle={{ backgroundColor: '#1e293b', borderColor: '#475569', color: '#f8fafc' }}
-              itemStyle={{ color: '#f8fafc' }}
+              contentStyle={{ backgroundColor: 'var(--bg-surface, #1e293b)', borderColor: 'var(--border, #475569)', color: 'currentColor' }}
+              itemStyle={{ color: 'currentColor' }}
               formatter={(value: number) => [`Rp ${value.toLocaleString('id-ID')}`, 'Price']}
               labelFormatter={formatTooltipDate}
             />
