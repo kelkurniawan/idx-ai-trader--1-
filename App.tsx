@@ -1206,8 +1206,8 @@ const App: React.FC = () => {
                     </div>
                   ) : <GaugeSkeleton />}
                 </div>
-                <div className="lg:col-span-3 space-y-4 md:space-y-8">
-                  <div className="relative group sg-surface p-3 sm:p-5 md:p-6 rounded-2xl md:rounded-3xl overflow-hidden h-full flex flex-col">
+                <div className="lg:col-span-3 space-y-4 md:space-y-8 flex flex-col">
+                  <div className="relative group sg-surface p-3 sm:p-5 md:p-6 rounded-2xl md:rounded-3xl overflow-hidden flex-1 flex flex-col">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 z-10 w-full relative">
                       <h3 className="text-xs md:text-sm font-black uppercase tracking-widest font-jakarta" style={{color: SG.textMuted}}>Price Action</h3>
                       
