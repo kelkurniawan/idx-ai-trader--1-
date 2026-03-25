@@ -6,6 +6,9 @@
    SahamGue Design Tokens — Full System
    ============================================= */
 @theme {
+  --font-sans: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
   --color-bg-base: var(--bg-base);
   --color-bg-header: var(--bg-header);
   --color-bg-surface: var(--bg-surface);

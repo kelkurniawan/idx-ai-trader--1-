@@ -106,14 +106,18 @@ const Watchlist: React.FC<WatchlistProps> = ({ onAnalyze }) => {
                     <button
                         type="submit"
                         style={{
-                            background: 'var(--bg-elevated)', color: 'var(--text-primary)',
-                            border: '1px solid var(--border)', borderRadius: 10, padding: '10px 24px',
-                            fontFamily: 'var(--font-sans)', fontSize: 13, fontWeight: 700,
+                            background: 'linear-gradient(180deg, #64748b 0%, #334155 100%)', color: '#ffffff',
+                            border: '1px solid #1e293b', borderRadius: 8, padding: '10px 28px',
+                            fontFamily: 'var(--font-sans)', fontSize: 13, fontWeight: 800,
                             cursor: 'pointer', whiteSpace: 'nowrap',
-                            transition: 'background 0.15s',
+                            transition: 'transform 0.15s, opacity 0.15s',
+                            boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.1)',
+                            textShadow: '0 1px 2px rgba(0,0,0,0.5)'
                         }}
-                        onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-muted)')}
-                        onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-elevated)')}
+                        onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.opacity = '0.9')}
+                        onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.opacity = '1')}
+                        onMouseDown={e => ((e.currentTarget as HTMLButtonElement).style.transform = 'scale(0.96)')}
+                        onMouseUp={e => ((e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)')}
                     >
                         Add
                     </button>

@@ -17,6 +17,10 @@ const config: Config = {
             '2xl': '1536px', // Ultra-wide
         },
         extend: {
+            fontFamily: {
+                sans: ['"Plus Jakarta Sans"', 'Inter', 'system-ui', 'sans-serif'],
+                mono: ['"JetBrains Mono"', 'monospace'],
+            },
             fontSize: {
                 'fluid-h1': ['clamp(2rem, 5vw, 3.5rem)', '1.1'],
                 'fluid-h2': ['clamp(1.5rem, 4vw, 2.5rem)', '1.2'],

@@ -222,15 +222,15 @@ const PortfolioRow: React.FC<PortfolioRowProps> = ({
                 </span>
                 <span style={{
                   fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700,
-                  color: data.change >= 0 ? 'var(--accent-green)' : 'var(--accent-red)', lineHeight: 1,
+                  color: data.change >= 0 ? 'var(--accent)' : 'var(--semantic-red)', lineHeight: 1,
                 }}>
                   {data.change >= 0 ? '+' : ''}{data.changePercent}%
                 </span>
               </div>
             ) : (
               <span style={{
-                fontSize: 11, fontWeight: 700, color: 'var(--accent-red)',
-                background: 'var(--accent-red-bg)', padding: '4px 8px', borderRadius: 6,
+                fontSize: 11, fontWeight: 700, color: 'var(--semantic-red)',
+                background: 'var(--semantic-red-bg)', padding: '4px 8px', borderRadius: 6,
               }}>Offline</span>
             )}
           </div>
@@ -256,9 +256,9 @@ const PortfolioRow: React.FC<PortfolioRowProps> = ({
               {indices.map(idx => (
                 <span key={idx.id} style={{
                   background: 'var(--bg-muted)',
-                  border: '1px solid var(--border-strong)',
+                  border: 'none',
                   color: 'var(--text-dim)',
-                  padding: '3px 8px', borderRadius: 6,
+                  padding: '3px 10px', borderRadius: 12,
                   fontFamily: 'var(--font-sans)', fontSize: 10, fontWeight: 700,
                   letterSpacing: '0.5px', textTransform: 'uppercase' as const,
                   display: 'inline-flex', alignItems: 'center',
@@ -275,7 +275,7 @@ const PortfolioRow: React.FC<PortfolioRowProps> = ({
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
                 <span style={{
                   fontFamily: 'var(--font-sans)', fontSize: 9, fontWeight: 800,
-                  color: 'var(--text-dim)', letterSpacing: '0.5px', textTransform: 'uppercase' as const, lineHeight: 1,
+                  color: 'var(--text-primary)', letterSpacing: '0.5px', textTransform: 'uppercase' as const, lineHeight: 1,
                 }}>Signal Alert</span>
                 <div
                   onClick={() => setShowModal(true)}
@@ -283,15 +283,16 @@ const PortfolioRow: React.FC<PortfolioRowProps> = ({
                 >
                   <span style={{
                     fontFamily: 'var(--font-sans)', fontSize: 12, fontWeight: 600,
-                    color: isAlert ? 'var(--accent-gold)' : targetPrice ? 'var(--accent-green)' : 'var(--text-dim)',
+                    color: isAlert ? 'var(--semantic-gold)' : targetPrice ? 'var(--accent)' : 'var(--text-dim)',
                     animation: isAlert ? 'pulse 1.5s ease-in-out infinite' : undefined, lineHeight: 1,
                   }}>
                     {targetPrice ? `Rp ${targetPrice.toLocaleString('id-ID')}` : 'Set Price'}
                   </span>
                   <svg width="14" height="14" fill="none" viewBox="0 0 24 24"
-                    stroke={isAlert ? 'var(--accent-gold)' : targetPrice ? 'var(--accent-green)' : 'var(--accent-red)'} strokeWidth={2}>
+                    stroke={isAlert ? 'var(--semantic-gold)' : targetPrice ? 'var(--accent)' : 'var(--semantic-gold)'} strokeWidth={1.5}>
+                    {/* Bell off icon pattern */}
                     <path strokeLinecap="round" strokeLinejoin="round"
-                      d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                      d="M13.73 21a2 2 0 01-3.46 0m.73-16a3 3 0 013 3v2m1.23 4.23L16 11V8a5 5 0 00-9-3.27M4 4l16 16M6.27 6.27A5 5 0 006 8v9l-2 2h14" />
                   </svg>
                 </div>
               </div>
@@ -302,32 +303,32 @@ const PortfolioRow: React.FC<PortfolioRowProps> = ({
                   onClick={() => onAnalyze(ticker)}
                   title="Analyze"
                   style={{
-                    width: 36, height: 36, borderRadius: 10,
-                    background: 'transparent', border: '1px solid var(--accent-green-border)',
+                    width: 38, height: 38, borderRadius: 10,
+                    background: 'var(--accent-bg)', border: '1px solid var(--accent-border)',
                     cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: 'var(--accent-green)', transition: 'background 0.15s',
+                    color: 'var(--accent)', transition: 'transform 0.15s, opacity 0.15s',
                   }}
-                  onMouseEnter={e => e.currentTarget.style.background = 'var(--accent-green-bg)'}
-                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                  onMouseEnter={e => e.currentTarget.style.opacity = '0.8'}
+                  onMouseLeave={e => e.currentTarget.style.opacity = '1'}
                 >
-                  <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 17l6-6 4 4 8-8" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M14 7h7v7" />
+                  <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    {/* Pulse line chart icon */}
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 12h4l3-9 5 18 3-9h3" />
                   </svg>
                 </button>
                 <button
                   onClick={() => onRemove(ticker)}
                   title="Remove"
                   style={{
-                    width: 36, height: 36, borderRadius: 10,
-                    background: 'transparent', border: '1px solid var(--accent-red-border)',
+                    width: 38, height: 38, borderRadius: 10,
+                    background: 'var(--semantic-red-bg)', border: '1px solid var(--hot-border)',
                     cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: 'var(--accent-red)', transition: 'background 0.15s',
+                    color: 'var(--semantic-red)', transition: 'transform 0.15s, opacity 0.15s',
                   }}
-                  onMouseEnter={e => e.currentTarget.style.background = 'var(--accent-red-bg)'}
-                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                  onMouseEnter={e => e.currentTarget.style.opacity = '0.8'}
+                  onMouseLeave={e => e.currentTarget.style.opacity = '1'}
                 >
-                  <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                   </svg>
                 </button>

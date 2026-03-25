@@ -203,10 +203,10 @@ const MarketPulseBar = () => {
                 const up = item.dir === 'up';
                 return (
                   <span key={i} className="inline-flex items-center gap-2 flex-shrink-0">
-                    <span style={{ fontFamily: SG.mono, fontWeight: 700, fontSize: '11px', color: SG.textSecondary }}>
+                    <span style={{ fontFamily: SG.mono, fontWeight: 700, fontSize: '11px', color: 'var(--text-second)' }}>
                       {item.code}
                     </span>
-                    <span style={{ fontFamily: SG.mono, fontWeight: 600, fontSize: '11px', color: '#e2e8f0' }}>
+                    <span style={{ fontFamily: SG.mono, fontWeight: 600, fontSize: '11px', color: 'var(--text-primary)' }}>
                       {item.price.toLocaleString('id-ID')}
                     </span>
                     <span style={{ fontFamily: SG.mono, fontWeight: 700, fontSize: '11px', color: up ? SG.green : SG.red }}>
@@ -216,13 +216,13 @@ const MarketPulseBar = () => {
                 );
               } else {
                 return (
-                  <span key={i} className="inline-flex items-center gap-2 flex-shrink-0" style={{ background: 'rgba(255,255,255,0.03)', padding: '2px 8px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.05)' }}>
+                  <span key={i} className="inline-flex items-center gap-2 flex-shrink-0" style={{ background: 'var(--bg-muted)', padding: '2px 8px', borderRadius: 6, border: '1px solid var(--border)' }}>
                     <span style={{ color: item.color }}>{item.label}</span>
-                    <span style={{ fontFamily: SG.sans, fontSize: '11px', fontWeight: 600, color: '#e2e8f0' }}>{item.text}</span>
+                    <span style={{ fontFamily: SG.sans, fontSize: '11px', fontWeight: 600, color: 'var(--text-primary)' }}>{item.text}</span>
                     {item.tickers && item.tickers.length > 0 && (
                       <span className="flex gap-1 ml-1">
                         {item.tickers.map((t: string) => (
-                          <span key={t} style={{ fontFamily: SG.mono, fontSize: '9px', background: 'var(--bg-muted)', padding: '1px 4px', borderRadius: 4, color: 'var(--text-muted)' }}>{t}</span>
+                          <span key={t} style={{ fontFamily: SG.mono, fontSize: '9px', background: 'var(--bg-surface)', padding: '1px 4px', borderRadius: 4, color: 'var(--text-muted)' }}>{t}</span>
                         ))}
                       </span>
                     )}
@@ -580,11 +580,6 @@ const NewsFeedHome = () => (
         <p className="text-[9px] font-bold uppercase mb-0.5" style={{ color: SG.textMuted, letterSpacing: '1.5px' }}>Berita Terkini</p>
         <h3 className="text-base font-bold" style={{ color: SG.textPrimary }}>Pasar Modal Indonesia</h3>
       </div>
-      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded text-[9px] font-bold"
-        style={{ background: SG.greenBg, color: SG.green }}>
-        <span className="w-1.5 h-1.5 rounded-full animate-pulse inline-block" style={{ background: SG.green }} />
-        LIVE
-      </div>
     </div>
     <div className="space-y-2.5">
       {MOCK_NEWS.map((n) => (
@@ -604,7 +599,7 @@ const NewsFeedHome = () => (
               </span>
               <span className="text-[9px] font-medium" style={{ color: SG.textMuted }}>{n.source}</span>
             </div>
-            <p className="font-medium line-clamp-2" style={{ fontFamily: SG.sans, fontSize: '13px', color: '#cbd5e1', lineHeight: 1.5 }}>
+            <p className="font-medium line-clamp-2" style={{ fontFamily: SG.sans, fontSize: '13px', color: SG.textPrimary, lineHeight: 1.5 }}>
               {n.title}
             </p>
             <p className="text-[9px] font-medium mt-1" style={{ color: SG.textMuted }}>{n.time}</p>

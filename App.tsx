@@ -1080,8 +1080,8 @@ const App: React.FC = () => {
 
                   <div className="flex items-center gap-2 md:gap-4 flex-wrap">
                     <h1 className="text-3xl md:text-5xl font-black tracking-tighter font-mono-trading" style={{color: SG.textPrimary}}>{selectedStock.ticker}</h1>
-                    <span className="text-[10px] md:text-xs px-2 md:px-3 py-1 md:py-1.5 rounded-lg border font-black uppercase font-jakarta" style={{background: SG.bgMuted, color: SG.textMuted, borderColor: SG.border}}>IDX</span>
-                    {realTimeData && <span className="flex items-center gap-1.5 md:gap-2 text-[9px] md:text-[10px] px-2 md:px-3 py-1 md:py-1.5 rounded-full border animate-pulse font-black font-jakarta" style={{background: 'rgba(239, 68, 68, 0.1)', color: SG.red, borderColor: 'rgba(239, 68, 68, 0.2)'}}><span className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full" style={{background: SG.red}}></span> LIVE</span>}
+                    <span className="text-[10px] md:text-xs px-2 md:px-3 py-1 md:py-1.5 rounded-lg border font-black uppercase font-jakarta shadow-sm" style={{background: 'var(--bg-muted)', color: 'var(--text-second)', borderColor: 'var(--border)'}}>IDX</span>
+                    {realTimeData && <span className="flex items-center gap-1.5 md:gap-2 text-[9px] md:text-[10px] px-2 md:px-3 py-1 md:py-1.5 rounded-full border animate-pulse font-black font-jakarta shadow-sm bg-red-50 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-500 dark:border-red-500/20"><span className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-red-600 dark:bg-red-500"></span> LIVE</span>}
                   </div>
                   <p className="mt-1 md:mt-2 text-base md:text-xl font-bold font-jakarta" style={{color: SG.textSecond}}>{selectedStock.name}</p>
 
@@ -1091,8 +1091,7 @@ const App: React.FC = () => {
                     {selectedStock.sector && selectedStock.sector !== 'Unknown' && (
                       <button
                         onClick={() => { setSelectedStock(null); handleBrowseSector(selectedStock.sector); }}
-                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-colors cursor-pointer font-jakarta"
-                        style={{background: 'rgba(99, 102, 241, 0.1)', color: '#818cf8', borderColor: 'rgba(99, 102, 241, 0.2)'}}
+                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-colors cursor-pointer font-jakarta bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100 dark:bg-indigo-900/20 dark:text-indigo-400 dark:border-indigo-500/30 dark:hover:bg-indigo-900/40 shadow-sm"
                       >
                         <span>{IDX_SECTORS.find(s => s.id === selectedStock.sector)?.icon || '📁'}</span>
                         <span>#{selectedStock.sector}</span>
@@ -1106,7 +1105,7 @@ const App: React.FC = () => {
                         <button
                           key={idx.id}
                           onClick={() => { setSelectedStock(null); handleBrowseIndex(idx.id); }}
-                          className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-900/15 text-amber-700 dark:text-amber-400 text-[10px] font-bold border border-amber-100 dark:border-amber-900/40 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors cursor-pointer"
+                          className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-900/15 text-amber-800 dark:text-amber-400 text-[10px] font-bold border border-amber-200 dark:border-amber-900/40 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors cursor-pointer shadow-sm"
                         >
                           <span>{idx.icon}</span>
                           <span>{idx.label}</span>
@@ -1266,8 +1265,8 @@ const App: React.FC = () => {
               </div>
 
               {/* Financial Disclaimer */}
-              <div className="my-4 px-4 py-2.5 rounded-xl bg-amber-500/5 border border-amber-500/10 dark:border-amber-400/10">
-                <p className="text-xs text-amber-600/70 dark:text-amber-400/50 font-medium text-center">
+              <div className="my-4 px-4 py-3 rounded-xl bg-amber-50 dark:bg-amber-500/5 border border-amber-200 dark:border-amber-400/10 shadow-sm">
+                <p className="text-xs text-amber-900 dark:text-amber-400/70 font-semibold text-center tracking-tight">
                   ⚠️ Disclaimer: This analysis is for informational purposes only and does not constitute financial advice.
                 </p>
               </div>
