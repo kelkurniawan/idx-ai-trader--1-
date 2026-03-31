@@ -244,8 +244,9 @@ export const DUMMY_NEWS: NewsItem[] = [
  */
 export async function fetchPersonalizedNews(watchlistTickers: string[], _portfolioTickers: string[]): Promise<NewsItem[]> {
   try {
+    const API_BASE = import.meta.env.VITE_API_URL || '';
     const tickersParam = watchlistTickers.join(',');
-    const res = await fetch(`http://localhost:3002/api/news/personalized?tickers=${tickersParam}`);
+    const res = await fetch(`${API_BASE}/api/news/personalized?tickers=${tickersParam}`);
     if (!res.ok) throw new Error('Network response was not ok');
     return await res.json();
   } catch (err) {
@@ -260,7 +261,8 @@ export async function fetchPersonalizedNews(watchlistTickers: string[], _portfol
  */
 export async function fetchNewsByTicker(ticker: string): Promise<NewsItem[]> {
   try {
-    const res = await fetch(`http://localhost:3002/api/news/ticker/${ticker}`);
+    const API_BASE = import.meta.env.VITE_API_URL || '';
+    const res = await fetch(`${API_BASE}/api/news/ticker/${ticker}`);
     if (!res.ok) throw new Error('Network response was not ok');
     return await res.json();
   } catch (err) {
@@ -274,7 +276,8 @@ export async function fetchNewsByTicker(ticker: string): Promise<NewsItem[]> {
  */
 export async function fetchNewsByCategory(category: NewsCategory | string, page: number = 1): Promise<NewsItem[]> {
   try {
-    const res = await fetch(`http://localhost:3002/api/news/feed?tab=${category}&page=${page}&limit=20`);
+    const API_BASE = import.meta.env.VITE_API_URL || '';
+    const res = await fetch(`${API_BASE}/api/news/feed?tab=${category}&page=${page}&limit=20`);
     if (!res.ok) throw new Error('Network response was not ok');
     const data = await res.json();
     return data.data || [];
