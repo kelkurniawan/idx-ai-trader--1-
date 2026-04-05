@@ -288,27 +288,15 @@ async def revoke_all_other_sessions(current_token_hash: str, user_id: str, db: A
 
 
 # ────────────────────────────────────────────────────────────────
-# Plan
+# Plan (delegates to centralized plan_service)
 # ────────────────────────────────────────────────────────────────
 
-PLAN_FEATURES = {
-    "FREE": {
-        "news_ai": False,
-        "watchlist_limit": 5,
-        "alert_limit": 3,
-    },
-    "PRO": {
-        "news_ai": True,
-        "watchlist_limit": 50,
-        "alert_limit": None,
-    },
-}
-
-
 def get_plan_info(user: User) -> dict:
+    from ..services.plan_service import get_plan_features
     plan = user.plan or "FREE"
     return {
         "plan": plan,
         "plan_expires_at": user.plan_expires_at,
-        "features": PLAN_FEATURES.get(plan, PLAN_FEATURES["FREE"]),
+        "features": get_plan_features(plan),
     }
+

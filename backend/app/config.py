@@ -120,6 +120,19 @@ class Settings(BaseSettings):
     TWILIO_ACCOUNT_SID: str = ""
     TWILIO_AUTH_TOKEN: str = ""
     TWILIO_PHONE_NUMBER: str = ""  # Your Twilio phone number, e.g. +12345678900
+
+    # ===========================
+    # Xendit Payment Gateway
+    # ===========================
+    # Dev: Leave empty — invoices will be mocked (no real Xendit calls)
+    # Prod: Register at https://dashboard.xendit.co/ and set the vars below
+    # XENDIT_SECRET_KEY: Your secret API key (test or live mode)
+    # XENDIT_WEBHOOK_TOKEN: Verification token from Dashboard → Webhooks
+    XENDIT_SECRET_KEY: str = ""
+    XENDIT_WEBHOOK_TOKEN: str = ""
+    XENDIT_ENVIRONMENT: str = "TEST"  # "TEST" or "LIVE"
+    XENDIT_SUCCESS_URL: str = "http://localhost:5173/payment/success"
+    XENDIT_FAILURE_URL: str = "http://localhost:5173/payment/failed"
     
     @property
     def is_development(self) -> bool:

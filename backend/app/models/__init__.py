@@ -4,3 +4,4 @@ from .analysis import AnalysisCache
 from .user import User, RememberMeToken
 from .profile import NotificationPreference, UserSession
 from .portfolio import PortfolioHolding, TradeJournalEntry, BrokerCash
+from .subscription import Subscription, PaymentHistory

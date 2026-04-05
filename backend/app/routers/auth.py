@@ -155,6 +155,14 @@ async def register(
     await db.commit()
     await db.refresh(user)
     
+    # Activate 30-day free Pro trial for new users
+    try:
+        from ..services.plan_service import activate_trial
+        await activate_trial(user.id, db)
+        await db.refresh(user)  # Refresh to get updated plan fields
+    except Exception as e:
+        print(f"⚠️ Failed to activate trial for {user.id}: {e}")
+    
     # Issue token
     return await _complete_login(response, user, db)
 
@@ -310,6 +318,14 @@ async def google_auth(
             db.add(user)
             await db.commit()
             await db.refresh(user)
+            
+            # Activate 30-day free Pro trial for new Google users
+            try:
+                from ..services.plan_service import activate_trial
+                await activate_trial(user.id, db)
+                await db.refresh(user)
+            except Exception as e:
+                print(f"⚠️ Failed to activate trial for Google user {user.id}: {e}")
     
     # Check MFA
     if user.mfa_enabled:

@@ -518,9 +518,5 @@ async def get_plan(user: User = Depends(get_current_user)) -> PlanResponse:
     return PlanResponse(
         plan=info["plan"],
         plan_expires_at=info["plan_expires_at"],
-        features=PlanFeaturesResponse(
-            news_ai=features["news_ai"],
-            watchlist_limit=features["watchlist_limit"],
-            alert_limit=features.get("alert_limit"),
-        ),
+        features=PlanFeaturesResponse(**features),
     )

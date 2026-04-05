@@ -48,6 +48,9 @@ class User(Base):
     bio = Column(Text, nullable=True)
     plan = Column(String(20), default="FREE", nullable=False)
     plan_expires_at = Column(DateTime, nullable=True)
+    plan_grace_until = Column(DateTime, nullable=True)  # expires_at + 3 days
+    has_used_trial = Column(Boolean, default=False, nullable=False)  # One-time Pro trial
+    subscription_cycle = Column(String(20), nullable=True)  # MONTHLY | QUARTERLY | ANNUAL
     theme_preference = Column(String(20), default="dark", nullable=False)
     # Stored as JSON string: list of bcrypt-hashed backup codes
     mfa_backup_codes = Column(Text, nullable=True)

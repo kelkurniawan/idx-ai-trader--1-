@@ -9,11 +9,31 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import get_settings
-from .database import engine, Base
+from .database import engine, Base, AsyncSessionLocal
 from . import models  # noqa: F401
 from .routers import stocks, market_analyzer, predictions, auth, profile, ai, portfolio, strip
+from .routers import subscription as subscription_router
+from .routers import webhook as webhook_router
 
 settings = get_settings()
+
+
+async def _plan_expiry_cron():
+    """Background task that checks for expired plans every hour."""
+    import asyncio
+    from .services.plan_service import check_and_downgrade_expired
+
+    while True:
+        try:
+            await asyncio.sleep(3600)  # Run every hour
+            async with AsyncSessionLocal() as db:
+                await check_and_downgrade_expired(db)
+        except asyncio.CancelledError:
+            print("⏰ Plan expiry cron job stopped")
+            break
+        except Exception as e:
+            print(f"❌ Plan expiry cron error: {e}")
+            await asyncio.sleep(60)  # Wait a minute before retrying on error
 
 
 @asynccontextmanager
@@ -43,8 +63,14 @@ async def lifespan(app: FastAPI):
                 print(f"❌ Failed to connect to database after {max_retries} attempts.")
                 raise e
         
+    # Start plan expiry cron job (runs every hour)
+    expiry_task = asyncio.create_task(_plan_expiry_cron())
+    print("⏰ Plan expiry cron job started (hourly)")
+
     yield
+
     # Shutdown
+    expiry_task.cancel()
     print("👋 Shutting down IDX AI Trader Backend")
 
 
@@ -89,6 +115,8 @@ app.include_router(predictions.router, prefix="/api/predict", tags=["Predictions
 app.include_router(ai.router, prefix="/api/ai", tags=["AI Proxy"])
 app.include_router(portfolio.router, prefix="/api/portfolio", tags=["Portfolio"])
 app.include_router(strip.router, prefix="/api/strip", tags=["Strip"])
+app.include_router(subscription_router.router, prefix="/api/subscription", tags=["Subscription"])
+app.include_router(webhook_router.router, prefix="/api/webhooks/xendit", tags=["Webhooks"])
 
 # Serve uploaded avatar files
 import os

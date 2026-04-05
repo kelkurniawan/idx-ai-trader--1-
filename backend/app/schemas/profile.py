@@ -185,8 +185,19 @@ class SessionResponse(BaseModel):
 
 class PlanFeaturesResponse(BaseModel):
     news_ai: bool
-    watchlist_limit: int
-    alert_limit: Optional[int]   # None = unlimited
+    watchlist_limit: Optional[int] = None       # None = unlimited
+    alert_limit: Optional[int] = None
+    ai_analysis_daily_limit: Optional[int] = None
+    chart_vision: bool = False
+    backtester: bool = False
+    journal_limit: Optional[int] = None
+    portfolio_limit: Optional[int] = None
+    export_csv: bool = False
+    learning_full: bool = False
+    community_write: bool = False
+    priority_support: bool = False
+    verified_badge: bool = False
+    advanced_analysis: bool = False
 
 
 class PlanResponse(BaseModel):
