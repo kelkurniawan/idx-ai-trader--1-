@@ -72,6 +72,7 @@ class UserResponse(BaseModel):
     mfa_type: Optional[str] = None
     profile_complete: bool = False
     auth_provider: str = "local"
+    is_admin: bool = False
 
     class Config:
         from_attributes = True

@@ -689,6 +689,18 @@ const App: React.FC = () => {
 
   // Admin Dashboard — full-page takeover (no sidebar)
   if (view === 'admin') {
+    if (!user.is_admin) {
+      return (
+        <div className="min-h-screen flex items-center justify-center" style={{ background: SG.bgBase }}>
+          <div className="text-center space-y-4">
+            <h1 className="text-2xl font-bold" style={{ color: SG.red }}>Access Denied</h1>
+            <button onClick={() => setView('home')} className="px-4 py-2 rounded-lg text-sm font-bold" style={{ background: SG.surface, border: `1px solid ${SG.border}`, color: SG.textPrimary }}>
+              Back to Home
+            </button>
+          </div>
+        </div>
+      );
+    }
     return (
       <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div></div>}>
         <AdminDashboard onBack={() => setView('home')} />
@@ -744,34 +756,17 @@ const App: React.FC = () => {
             )}
 
             {/* System */}
-            <section>
-              <h3 className="text-[10px] font-bold uppercase mb-2 ml-3" style={{ color: SG.textMuted, letterSpacing: '1px' }}>SISTEM</h3>
-              <div className="space-y-0.5">
-                <SidebarItem icon={<Settings className="w-4 h-4" />} label="Admin" viewId="admin" view={view} setView={setView} />
-                <button
-                  onClick={() => setSettingsView(settingsView === 'mfa' ? null : 'mfa')}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold transition-colors"
-                  style={{
-                    color: settingsView === 'mfa' ? SG.green : SG.muted,
-                    fontFamily: SG.sans, fontWeight: 600, fontSize: '13px',
-                    background: settingsView === 'mfa' ? SG.greenBg : 'transparent',
-                    borderLeft: settingsView === 'mfa' ? `3px solid ${SG.green}` : '3px solid transparent',
-                    borderRadius: '0 10px 10px 0',
-                  }}
-                >
-                  <span className="text-base group-hover:scale-110 transition-transform"><ShieldCheck className="w-4 h-4" /></span><span>MFA Settings</span>
-                </button>
-              </div>
-            </section>
+            {user.is_admin && (
+              <section>
+                <h3 className="text-[10px] font-bold uppercase mb-2 ml-3" style={{ color: SG.textMuted, letterSpacing: '1px' }}>SISTEM</h3>
+                <div className="space-y-0.5">
+                  <SidebarItem icon={<Settings className="w-4 h-4" />} label="Admin" viewId="admin" view={view} setView={setView} />
+                </div>
+              </section>
+            )}
           </div>
         </div>
-        <div className="mt-auto p-5 space-y-3">
-          <button onClick={handleLogout}
-            className="w-full py-2.5 rounded-xl text-sm font-bold transition-all"
-            style={{ background: SG.surface, border: `1px solid ${SG.border}`, color: SG.dim }}>
-            Keluar
-          </button>
-        </div>
+
       </aside>
 
       {/* MAIN CONTENT AREA */}

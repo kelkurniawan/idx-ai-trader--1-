@@ -52,6 +52,9 @@ class User(Base):
     has_used_trial = Column(Boolean, default=False, nullable=False)  # One-time Pro trial
     subscription_cycle = Column(String(20), nullable=True)  # MONTHLY | QUARTERLY | ANNUAL
     theme_preference = Column(String(20), default="dark", nullable=False)
+    # Admin flag
+    is_admin = Column(Boolean, default=False, nullable=False)
+
     # ── Xendit payment method (for auto-charge after trial) ──────────
     xendit_customer_id = Column(String(255), nullable=True)  # Xendit customer reference
     xendit_payment_method_id = Column(String(255), nullable=True)  # Saved card/e-wallet token
