@@ -49,6 +49,8 @@ const AdminDashboard = React.lazy(() => import('./components/admin/AdminDashboar
 const ProfilePageLazy = React.lazy(() => import('./pages/ProfilePage'));
 const ProfileMenuLazy = React.lazy(() => import('./components/profile/ProfileMenu'));
 import HomeDashboard from './components/HomeDashboard';
+import LandingPage from './pages/LandingPage';
+import SubscriptionCampaign from './components/SubscriptionCampaign';
 import { NewsPage, TickerNewsPanel } from './components/NewsPage';
 import { 
   Home, LineChart, Eye, Newspaper, ClipboardList, BookOpen, 
@@ -314,7 +316,8 @@ const SidebarItem = ({ icon, label, viewId, view, setView }: { icon: React.React
 
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
-  const [authView, setAuthView] = useState<'login' | 'register'>('login');
+  const [authView, setAuthView] = useState<'landing' | 'login' | 'register'>('landing');
+  const [selectedPlan, setSelectedPlan] = useState<'FREE' | 'PRO' | 'EXPERT'>('FREE');
   const [authLoading, setAuthLoading] = useState(true); // Loading while checking session
   // MFA challenge state
   const [mfaTempToken, setMfaTempToken] = useState<string | null>(null);
@@ -608,7 +611,7 @@ const App: React.FC = () => {
     );
   }
 
-  // Not authenticated — show login/register
+  // Not authenticated — show landing/login/register
   if (!user) {
     // MFA challenge screen
     if (mfaTempToken) {
@@ -621,8 +624,19 @@ const App: React.FC = () => {
         />
       );
     }
+    if (authView === 'landing') {
+      return (
+        <LandingPage 
+          onLogin={() => setAuthView('login')} 
+          onGetStarted={(plan = 'FREE') => {
+            setSelectedPlan(plan);
+            setAuthView('register');
+          }} 
+        />
+      );
+    }
     if (authView === 'login') return <LoginPage onLogin={handleLogin} onSwitch={() => setAuthView('register')} onMfaRequired={handleMfaRequired} />;
-    return <RegisterPage onLogin={handleLogin} onSwitch={() => setAuthView('login')} onMfaRequired={handleMfaRequired} />;
+    return <RegisterPage selectedPlan={selectedPlan} onLogin={handleLogin} onSwitch={() => setAuthView('login')} onMfaRequired={handleMfaRequired} />;
   }
 
   // Profile setup (if not complete)
@@ -697,7 +711,7 @@ const App: React.FC = () => {
               <span style={{ fontFamily: SG.mono, fontWeight: 800, fontSize: '12px', color: SG.bgBase }}>SG</span>
             </div>
             <div>
-              <h1 className="font-black tracking-tight leading-none" style={{ fontFamily: SG.sans, fontWeight: 800, fontSize: '15px', color: SG.text }}>IDX Assistant</h1>
+              <h1 className="font-black tracking-tight leading-none" style={{ fontFamily: SG.sans, fontWeight: 800, fontSize: '15px', color: SG.text }}>sahamgue</h1>
               <p className="text-[8px] font-bold uppercase tracking-widest mt-0.5" style={{ color: SG.muted }}>SahamGue AI</p>
             </div>
           </div>
@@ -772,7 +786,7 @@ const App: React.FC = () => {
                 style={{ background: 'linear-gradient(135deg, #22c55e, #16a34a)' }}>
                 <span style={{ fontFamily: SG.mono, fontWeight: 800, fontSize: '10px', color: SG.bgBase }}>SG</span>
               </div>
-              <span className="font-black text-sm tracking-tight" style={{ fontFamily: SG.sans, color: SG.text }}>IDX Assistant</span>
+              <span className="font-black text-sm tracking-tight" style={{ fontFamily: SG.sans, color: SG.text }}>sahamgue</span>
             </div>
             <h2 className="hidden lg:block text-[11px] font-bold uppercase tracking-widest" style={{ color: SG.dim }}>
               {view === 'home' ? 'Home' : view === 'analysis' ? 'Market Analysis' : view === 'watchlist' ? 'Watchlist' : view === 'news' ? 'Berita & Analisis' : view === 'journal' ? 'Trade Journal' : view === 'learning' ? 'Learning' : view.replace('-', ' ')}
@@ -837,14 +851,18 @@ const App: React.FC = () => {
 
           {/* HOME VIEW */}
           {!settingsView && view === 'home' && (
-            <HomeDashboard
-              user={user}
-              onNavigateAnalysis={() => setView('analysis')}
-              onNavigateWatchlist={() => setView('watchlist')}
-              onNavigateJournal={() => setView('journal')}
-              onSelectStock={(ticker) => handleSelectStock({ ticker, name: ticker, sector: 'Unknown' })}
-              onLogout={handleLogout}
-            />
+            <>
+              <HomeDashboard
+                user={user}
+                onNavigateAnalysis={() => setView('analysis')}
+                onNavigateWatchlist={() => setView('watchlist')}
+                onNavigateJournal={() => setView('journal')}
+                onSelectStock={(ticker) => handleSelectStock({ ticker, name: ticker, sector: 'Unknown' })}
+                onLogout={handleLogout}
+              />
+              {/* Subscription campaign pop-up (shown based on plan status) */}
+              <SubscriptionCampaign userId={user.id} />
+            </>
           )}
 
           {/* ARCHIVED VIEWS — kept for route integrity, never render */}
@@ -889,26 +907,26 @@ const App: React.FC = () => {
 
           {/* MARKET ANALYSIS TAB */}
           {view === 'analysis' && (!selectedStock ? (
-            <div className="py-16 text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm animate-fade-in">
-              <div className="w-20 h-20 bg-indigo-50 dark:bg-indigo-900/20 rounded-3xl flex items-center justify-center text-4xl mx-auto mb-6 shadow-sm">🔍</div>
-              <h2 className="text-3xl font-black text-slate-800 dark:text-slate-100 tracking-tight">Market IQ Scanner</h2>
-              <p className="text-slate-400 dark:text-slate-500 font-bold mb-8 uppercase tracking-widest text-xs">Search a ticker or browse by sector & index</p>
+            <div className="py-6 md:py-12 text-center animate-fade-in mx-4 md:mx-0">
+              <h2 className="text-2xl md:text-3xl font-black tracking-tight mb-2 font-jakarta" style={{color: SG.textPrimary}}>Market IQ Scanner</h2>
+              <p className="font-bold mb-6 md:mb-10 uppercase tracking-widest text-[9px] md:text-[10px]" style={{color: SG.textMuted}}>Search a ticker or browse by sector & index</p>
 
               {/* Search Bar */}
-              <div className="max-w-xl mx-auto mb-10 relative px-6">
+              <div className="max-w-xl mx-auto mb-8 md:mb-12 relative px-0 md:px-2">
                 <form onSubmit={handleSearchSubmit}>
                   <input
                     type="text"
                     placeholder="Search IDX Ticker (e.g. UNVR, TLKM)"
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl py-4 pl-12 pr-4 text-lg font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all uppercase placeholder:normal-case shadow-inner"
+                    className="w-full rounded-2xl py-3.5 pl-10 md:pl-12 pr-24 text-[13px] md:text-sm font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all uppercase placeholder:normal-case font-mono-trading"
+                    style={{ background: SG.surface, border: `1px solid ${SG.border}`, color: SG.textPrimary }}
                     value={searchTicker}
                     onChange={(e) => setSearchTicker(e.target.value)}
                   />
-                  <button type="submit" className="absolute right-8 top-2 bottom-2 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-xl px-6 transition-all">
+                  <button type="submit" className="absolute right-1 md:right-3 top-1 bottom-1 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-xl px-4 md:px-6 text-xs md:text-sm transition-all" style={{ margin: '3px' }}>
                     Scan
                   </button>
-                  <span className="absolute left-10 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500">
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                  <span className="absolute left-4 md:left-6 top-1/2 -translate-y-1/2" style={{color: SG.textMuted}}>
+                    <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                   </span>
                 </form>
               </div>
@@ -916,12 +934,15 @@ const App: React.FC = () => {
               {browseMode === 'home' ? (
                 <>
                   {/* Browse by Sector */}
-                  <div className="max-w-4xl mx-auto px-6 mb-10">
-                    <h3 className="text-left text-[10px] font-black uppercase tracking-widest mb-4 flex items-center gap-2 font-jakarta" style={{color: SG.textMuted}}>
-                      <span className="w-5 h-px" style={{background: SG.border}}></span>
-                      Browse by Business Sector
-                    </h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5">
+                  <div className="max-w-4xl mx-auto mb-10">
+                    <div className="flex items-center justify-center mb-6">
+                      <div className="flex-1 h-px" style={{background: SG.border}}></div>
+                      <span className="px-4 text-[9px] md:text-[10px] font-black uppercase tracking-widest font-jakarta" style={{color: SG.textMuted}}>
+                        BROWSE BY BUSINESS SECTOR
+                      </span>
+                      <div className="flex-1 h-px" style={{background: SG.border}}></div>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3">
                       {IDX_SECTORS.map(sector => {
                         if (sector.id === 'All') return null; // Skip 'All' sector
                         const count = SAMPLE_IDX_STOCKS.filter(s => s.sector === sector.id).length;
@@ -929,17 +950,17 @@ const App: React.FC = () => {
                           <button
                             key={sector.id}
                             onClick={() => handleBrowseSector(sector.id)}
-                            className="flex items-center gap-3 px-4 py-3.5 sg-surface rounded-xl transition-all active:scale-[0.98] group text-left"
+                            className="flex items-center gap-2 md:gap-3 px-3 md:px-4 py-2.5 md:py-3.5 sg-surface rounded-xl transition-all active:scale-[0.98] group text-left"
                             style={{border: `1px solid ${SG.border}`}}
                             onMouseEnter={(e) => e.currentTarget.style.borderColor = SG.green}
                             onMouseLeave={(e) => e.currentTarget.style.borderColor = SG.border}
                           >
-                            <span className="text-xl">{sector.icon}</span>
+                            <span className="text-base md:text-xl">{sector.icon}</span>
                             <div className="flex-1 min-w-0">
-                              <span className="text-xs font-bold block truncate font-jakarta" style={{color: SG.textPrimary}}>{sector.label}</span>
-                              <span className="text-[10px] font-medium font-jakarta" style={{color: SG.textDim}}>{count} stocks</span>
+                              <span className="text-[10px] md:text-xs font-bold block truncate font-jakarta" style={{color: SG.textPrimary}}>{sector.label}</span>
+                              <span className="text-[8px] md:text-[9px] font-medium font-jakarta" style={{color: SG.textDim}}>{count} stocks</span>
                             </div>
-                            <svg className="w-3.5 h-3.5 transition-colors flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{color: SG.textDim}}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" /></svg>
+                            <svg className="w-3 h-3 transition-colors flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{color: SG.textDim}}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" /></svg>
                           </button>
                         );
                       })}
@@ -947,25 +968,28 @@ const App: React.FC = () => {
                   </div>
 
                   {/* Browse by Index */}
-                  <div className="max-w-4xl mx-auto px-6">
-                    <h3 className="text-left text-[10px] font-black uppercase tracking-widest mb-4 flex items-center gap-2 font-jakarta" style={{color: SG.textMuted}}>
-                      <span className="w-5 h-px" style={{background: SG.border}}></span>
-                      Browse by Stock Index
-                    </h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5">
+                  <div className="max-w-4xl mx-auto">
+                    <div className="flex items-center justify-center mb-6">
+                      <div className="flex-1 h-px" style={{background: SG.border}}></div>
+                      <span className="px-4 text-[9px] md:text-[10px] font-black uppercase tracking-widest font-jakarta" style={{color: SG.textMuted}}>
+                        BROWSE BY STOCK INDEX
+                      </span>
+                      <div className="flex-1 h-px" style={{background: SG.border}}></div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 md:gap-3">
                       {IDX_STOCK_INDICES.map(index => (
                         <button
                           key={index.id}
                           onClick={() => handleBrowseIndex(index.id)}
-                          className="flex flex-col items-center gap-2 px-4 py-5 sg-surface rounded-xl transition-all active:scale-[0.98] group"
+                          className="flex flex-col items-center gap-1 md:gap-2 px-3 md:px-4 py-4 md:py-6 sg-surface rounded-xl transition-all active:scale-[0.98] group"
                           style={{border: `1px solid ${SG.border}`}}
                           onMouseEnter={(e) => e.currentTarget.style.borderColor = SG.green}
                           onMouseLeave={(e) => e.currentTarget.style.borderColor = SG.border}
                         >
-                          <span className="text-2xl">{index.icon}</span>
-                          <span className="text-sm font-black font-jakarta transition-colors" style={{color: SG.textPrimary}}>{index.label}</span>
-                          <span className="text-[10px] font-medium leading-tight text-center font-jakarta" style={{color: SG.textSecond}}>{index.description}</span>
-                          <span className="text-[10px] mt-1 px-2.5 py-0.5 rounded-full font-bold font-jakarta" style={{background: SG.bgMuted, color: SG.textMuted}}>{index.tickers.length} stocks</span>
+                          <span className="text-xl md:text-2xl mb-1">{index.icon}</span>
+                          <span className="text-xs md:text-sm font-black font-jakarta transition-colors" style={{color: SG.textPrimary}}>{index.label}</span>
+                          <span className="text-[8px] md:text-[10px] font-medium leading-tight text-center font-jakarta" style={{color: SG.textSecond}}>{index.description}</span>
+                          <span className="text-[8px] md:text-[9px] mt-2 px-2 md:px-2.5 py-0.5 md:py-1 rounded-full font-bold font-jakarta" style={{background: SG.bgMuted, color: SG.textMuted}}>{index.tickers.length} stocks</span>
                         </button>
                       ))}
                     </div>
@@ -1354,33 +1378,29 @@ const App: React.FC = () => {
 
       {/* MOBILE BOTTOM NAVIGATION — SahamGue 6 tabs */}
       {view !== 'auth' && (
-        <nav className="lg:hidden fixed bottom-0 left-0 right-0 flex justify-around items-end z-50 transition-colors"
-          style={{ background: SG.bg, borderTop: `1px solid ${SG.border}`, height: '60px', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+        <nav className="lg:hidden fixed bottom-0 left-0 right-0 flex justify-around items-stretch z-50 transition-colors"
+          style={{ background: SG.bg, borderTop: `1px solid ${SG.border}`, height: '64px', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
           {[
             { id: 'home'      as const, icon: <Home className="w-[22px] h-[22px] stroke-[2]" />, label: 'Home'     },
             { id: 'analysis'  as const, icon: <LineChart className="w-[22px] h-[22px] stroke-[2]" />, label: 'Analisis' },
-            { id: 'watchlist' as const, icon: <Eye className="w-[22px] h-[22px] stroke-[2]" />,  label: 'Watch'   },
-            { id: 'news'      as const, icon: <Newspaper className="w-[22px] h-[22px] stroke-[2]" />, label: 'News'     },
+            { id: 'watchlist' as const, icon: <Eye className="w-[22px] h-[22px] stroke-[2]" />,  label: 'Watchlist'   },
+            { id: 'news'      as const, icon: <Newspaper className="w-[22px] h-[22px] stroke-[2]" />, label: 'Berita'     },
             { id: 'journal'   as const, icon: <ClipboardList className="w-[22px] h-[22px] stroke-[2]" />, label: 'Jurnal'   },
             { id: 'learning'  as const, icon: <BookOpen className="w-[22px] h-[22px] stroke-[2]" />, label: 'Belajar'  },
           ].map((tab) => {
             const isActive = view === tab.id;
             return (
               <button key={tab.id} onClick={() => setView(tab.id)}
-                className="flex flex-col items-center justify-center flex-1 py-1.5 min-h-[52px] relative touch-manipulation transition-all active:scale-95"
+                className="flex flex-col items-center justify-center flex-1 relative touch-manipulation transition-all active:scale-95 py-2"
                 style={{ color: isActive ? SG.green : SG.muted }}
               >
-                {isActive && (
-                  <span className="absolute top-0 left-1/2 -translate-x-1/2 rounded-b-full"
-                    style={{ width: 24, height: 2.5, background: SG.green }} />
-                )}
-                <span className="text-[17px] leading-none" style={{ transform: isActive ? 'scale(1.1)' : 'scale(1)', transition: 'transform 0.15s' }}>
+                <span className="leading-none" style={{ transform: isActive ? 'scale(1.1)' : 'scale(1)', transition: 'transform 0.15s', marginBottom: '3px' }}>
                   {tab.icon}
                 </span>
                 <span style={{
-                  fontSize: '8.5px', marginTop: '2px', fontFamily: SG.sans,
-                  fontWeight: isActive ? 700 : 500,
-                  opacity: isActive ? 1 : 0.5, letterSpacing: '0.2px',
+                  fontSize: '9px', fontFamily: SG.sans,
+                  fontWeight: isActive ? 800 : 500,
+                  opacity: isActive ? 1 : 0.6, letterSpacing: '0.2px',
                 }}>
                   {tab.label}
                 </span>

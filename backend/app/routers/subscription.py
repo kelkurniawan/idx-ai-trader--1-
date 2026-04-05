@@ -24,9 +24,10 @@ from ..services.plan_service import (
     BILLING_CYCLES,
     PLAN_FEATURES,
 )
-from ..services.xendit_service import create_invoice
+from ..services.xendit_service import create_invoice, create_customer, tokenize_payment_method
 from ..schemas.subscription import (
     SubscribeRequest,
+    StartTrialRequest,
     InvoiceResponse,
     PlansListResponse,
     PlanDetail,
@@ -88,6 +89,82 @@ async def list_plans() -> PlansListResponse:
         ))
 
     return PlansListResponse(plans=plans)
+
+
+# ────────────────────────────────────────────────────────────────
+# Start Free Trial (with payment collection)
+# ────────────────────────────────────────────────────────────────
+
+@router.post("/start-trial", summary="Start free trial with payment method collection")
+async def start_trial(
+    request: StartTrialRequest,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Start a 30-day free Pro trial.
+
+    1. Checks if user has already used their one-time trial
+    2. Creates a Xendit customer profile
+    3. Tokenizes their payment method (card/e-wallet) for auto-charge
+    4. Activates the free Pro trial
+
+    When the trial expires, the saved payment method will be auto-charged.
+    """
+    # Check if trial was already used
+    if user.has_used_trial:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You have already used your free trial. Each account is limited to one free Pro trial.",
+        )
+
+    # Already on a paid plan
+    if user.plan in ("PRO", "EXPERT") and not user.plan_grace_until:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"You are already on the {user.plan} plan.",
+        )
+
+    # Step 1: Create Xendit customer (or reuse existing)
+    customer_id = user.xendit_customer_id
+    if not customer_id:
+        customer_data = await create_customer(
+            user_id=user.id,
+            user_email=user.email,
+            user_name=user.name,
+        )
+        customer_id = customer_data["customer_id"]
+
+    # Step 2: Tokenize payment method
+    pm_data = await tokenize_payment_method(
+        customer_id=customer_id,
+        payment_type=request.payment_type,
+    )
+    payment_method_id = pm_data["payment_method_id"]
+
+    # Step 3: Activate trial with payment references
+    subscription = await activate_trial(
+        user_id=user.id,
+        db=db,
+        xendit_customer_id=customer_id,
+        xendit_payment_method_id=payment_method_id,
+    )
+
+    if not subscription:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Unable to activate trial. You may have already used your free trial.",
+        )
+
+    return {
+        "message": "Free Pro trial activated! Your payment method has been saved for auto-renewal.",
+        "plan": "PRO",
+        "is_trial": True,
+        "trial_ends_at": subscription.expires_at.isoformat(),
+        "days_remaining": 30,
+        "payment_method_saved": True,
+        "redirect_url": pm_data.get("redirect_url"),
+    }
 
 
 # ────────────────────────────────────────────────────────────────

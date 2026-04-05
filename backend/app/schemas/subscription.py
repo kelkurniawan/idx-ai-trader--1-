@@ -19,6 +19,11 @@ class SubscribeRequest(BaseModel):
     billing_cycle: Literal["MONTHLY", "QUARTERLY", "ANNUAL"] = "MONTHLY"
 
 
+class StartTrialRequest(BaseModel):
+    """Start a free trial with pre-collected payment method."""
+    payment_type: Literal["CARD", "EWALLET"] = "CARD"
+
+
 # ────────────────────────────────────────────────────────────────
 # Response Schemas
 # ────────────────────────────────────────────────────────────────
@@ -62,10 +67,12 @@ class SubscriptionStatusResponse(BaseModel):
     status: str               # "FREE" | "TRIAL" | "ACTIVE" | "GRACE" | "EXPIRED"
     billing_cycle: Optional[str] = None
     is_trial: bool = False
+    has_used_trial: bool = False
     trial_ends_at: Optional[datetime] = None
     expires_at: Optional[datetime] = None
     grace_until: Optional[datetime] = None
     days_remaining: Optional[int] = None
+    has_payment_method: bool = False
     features: dict
 
 

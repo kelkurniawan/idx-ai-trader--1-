@@ -201,9 +201,17 @@ async def activate_plan(
 # Free Trial
 # ────────────────────────────────────────────────────────────────
 
-async def activate_trial(user_id: str, db: AsyncSession) -> Optional[Subscription]:
+async def activate_trial(
+    user_id: str,
+    db: AsyncSession,
+    xendit_customer_id: str = None,
+    xendit_payment_method_id: str = None,
+) -> Optional[Subscription]:
     """
     Activate a 30-day free Pro trial for a new user.
+
+    Requires Xendit payment method to be pre-collected so we can
+    auto-charge when the trial ends.
 
     Returns None if the user has already used their trial.
     """
@@ -233,12 +241,16 @@ async def activate_trial(user_id: str, db: AsyncSession) -> Optional[Subscriptio
     )
     db.add(subscription)
 
-    # Update user
+    # Update user — mark trial used + store payment method for auto-charge
     user.plan = "PRO"
     user.plan_expires_at = expires_at
     user.plan_grace_until = grace_until
     user.has_used_trial = True
     user.updated_at = now
+    if xendit_customer_id:
+        user.xendit_customer_id = xendit_customer_id
+    if xendit_payment_method_id:
+        user.xendit_payment_method_id = xendit_payment_method_id
 
     await db.commit()
     await db.refresh(subscription)
@@ -247,6 +259,7 @@ async def activate_trial(user_id: str, db: AsyncSession) -> Optional[Subscriptio
     print(f"🎉 FREE TRIAL ACTIVATED for user {user_id[:8]}...")
     print(f"   Plan: PRO | Duration: {TRIAL_DURATION_DAYS} days")
     print(f"   Expires: {expires_at.isoformat()}")
+    print(f"   Payment method saved: {'✅' if xendit_payment_method_id else '❌'}")
     print(f"{'='*50}\n")
 
     return subscription
@@ -280,10 +293,12 @@ async def get_subscription_status(user_id: str, db: AsyncSession) -> dict:
             "status": "FREE",
             "billing_cycle": None,
             "is_trial": False,
+            "has_used_trial": user.has_used_trial,
             "trial_ends_at": None,
             "expires_at": None,
             "grace_until": None,
             "days_remaining": None,
+            "has_payment_method": bool(user.xendit_payment_method_id),
             "features": features,
         }
 
@@ -327,26 +342,38 @@ async def get_subscription_status(user_id: str, db: AsyncSession) -> dict:
         "status": status_str,
         "billing_cycle": user.subscription_cycle,
         "is_trial": is_trial,
+        "has_used_trial": user.has_used_trial,
         "trial_ends_at": trial_ends_at,
         "expires_at": user.plan_expires_at,
         "grace_until": user.plan_grace_until,
         "days_remaining": days_remaining,
+        "has_payment_method": bool(user.xendit_payment_method_id),
         "features": features,
     }
 
 
 # ────────────────────────────────────────────────────────────────
-# Expiry Cron Job
+# Expiry Cron Job (with auto-charge for trial users)
 # ────────────────────────────────────────────────────────────────
 
 async def check_and_downgrade_expired(db: AsyncSession) -> int:
     """
-    Cron job: find all users whose grace period has ended and downgrade to FREE.
+    Cron job: find all users whose grace period has ended.
 
-    Returns the number of users downgraded.
+    For trial users with a saved payment method:
+      → Auto-charge the first month of Pro via Xendit
+      → If charge succeeds, activate paid subscription
+      → If charge fails, downgrade to FREE
+
+    For other expired users:
+      → Downgrade to FREE
+
+    Returns the number of users processed.
     """
+    from ..services.xendit_service import charge_saved_payment_method
+
     now = datetime.utcnow()
-    downgraded = 0
+    processed = 0
 
     # Find users with expired grace periods who are still on paid plans
     stmt = select(User).where(
@@ -361,31 +388,103 @@ async def check_and_downgrade_expired(db: AsyncSession) -> int:
 
     for user in expired_users:
         old_plan = user.plan
-        user.plan = "FREE"
-        user.plan_expires_at = None
-        user.plan_grace_until = None
-        user.subscription_cycle = None
-        user.updated_at = now
 
-        # Also mark the subscription record as expired
+        # Check if this is a trial user with saved payment method
         sub_stmt = (
             select(Subscription)
             .where(
                 Subscription.user_id == user.id,
-                Subscription.status.in_(["ACTIVE", "TRIAL", "GRACE"]),
+                Subscription.status.in_(["TRIAL", "GRACE"]),
+                Subscription.is_trial == True,
             )
+            .order_by(Subscription.created_at.desc())
+            .limit(1)
         )
         sub_result = await db.execute(sub_stmt)
-        active_subs = sub_result.scalars().all()
-        for sub in active_subs:
-            sub.status = "EXPIRED"
-            sub.updated_at = now
+        trial_sub = sub_result.scalar_one_or_none()
 
-        downgraded += 1
-        print(f"⬇️ Downgraded user {user.id[:8]}... from {old_plan} to FREE (grace period ended)")
+        charged = False
 
-    if downgraded > 0:
+        # Attempt auto-charge if payment method is saved
+        if (
+            trial_sub
+            and user.xendit_customer_id
+            and user.xendit_payment_method_id
+        ):
+            amount = get_price("PRO", "MONTHLY")
+            charge_result = await charge_saved_payment_method(
+                customer_id=user.xendit_customer_id,
+                payment_method_id=user.xendit_payment_method_id,
+                amount=amount,
+                description="SahamGue Pro Plan – 1 Bulan (Auto-renewal after trial)",
+                user_id=user.id,
+            )
+
+            if charge_result.get("status") == "SUCCEEDED":
+                # Activate paid subscription
+                duration_days = get_cycle_duration_days("MONTHLY")
+                new_expires = now + timedelta(days=duration_days)
+                new_grace = new_expires + timedelta(days=GRACE_PERIOD_DAYS)
+
+                new_sub = Subscription(
+                    id=str(uuid.uuid4()),
+                    user_id=user.id,
+                    plan="PRO",
+                    billing_cycle="MONTHLY",
+                    status="ACTIVE",
+                    is_trial=False,
+                    amount_idr=amount,
+                    started_at=now,
+                    expires_at=new_expires,
+                    grace_until=new_grace,
+                    xendit_invoice_id=charge_result.get("payment_request_id"),
+                )
+                db.add(new_sub)
+
+                user.plan = "PRO"
+                user.plan_expires_at = new_expires
+                user.plan_grace_until = new_grace
+                user.subscription_cycle = "MONTHLY"
+                user.updated_at = now
+
+                # Mark old trial as expired
+                trial_sub.status = "EXPIRED"
+                trial_sub.updated_at = now
+
+                charged = True
+                print(f"💰 Auto-charged user {user.id[:8]}... — Rp {amount:,} for PRO MONTHLY")
+            else:
+                print(f"❌ Auto-charge FAILED for user {user.id[:8]}...: {charge_result.get('error', 'Unknown')}")
+
+        if not charged:
+            # Downgrade to FREE
+            user.plan = "FREE"
+            user.plan_expires_at = None
+            user.plan_grace_until = None
+            user.subscription_cycle = None
+            user.updated_at = now
+
+            # Mark all active subscriptions as expired
+            active_sub_stmt = (
+                select(Subscription)
+                .where(
+                    Subscription.user_id == user.id,
+                    Subscription.status.in_(["ACTIVE", "TRIAL", "GRACE"]),
+                )
+            )
+            active_sub_result = await db.execute(active_sub_stmt)
+            active_subs = active_sub_result.scalars().all()
+            for sub in active_subs:
+                sub.status = "EXPIRED"
+                sub.updated_at = now
+
+            print(f"⬇️ Downgraded user {user.id[:8]}... from {old_plan} to FREE (grace period ended)")
+
+        processed += 1
+
+    if processed > 0:
         await db.commit()
-        print(f"\n📊 Plan expiry cron: {downgraded} user(s) downgraded to FREE\n")
+        print(f"\n📊 Plan expiry cron: {processed} user(s) processed\n")
 
-    return downgraded
+    return processed
+

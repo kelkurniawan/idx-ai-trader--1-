@@ -174,3 +174,187 @@ async def get_invoice(invoice_id: str) -> dict:
                 return {"id": invoice_id, "status": "UNKNOWN"}
     except httpx.RequestError:
         return {"id": invoice_id, "status": "ERROR"}
+
+
+# ────────────────────────────────────────────────────────────────
+# Customer & Payment Method Tokenization (for auto-charge)
+# ────────────────────────────────────────────────────────────────
+
+async def create_customer(user_id: str, user_email: str, user_name: str) -> dict:
+    """
+    Create a Xendit Customer object. Required before tokenizing payment methods.
+
+    Returns dict with customer_id.
+    """
+    if settings.is_development and not settings.XENDIT_SECRET_KEY:
+        mock_id = f"cust_mock_{uuid.uuid4().hex[:12]}"
+        print(f"\n{'='*50}")
+        print(f"👤 XENDIT CUSTOMER (DEV MODE - Mock)")
+        print(f"   Customer ID: {mock_id}")
+        print(f"   Email: {user_email}")
+        print(f"{'='*50}\n")
+        return {"customer_id": mock_id}
+
+    headers = _get_auth_header()
+    payload = {
+        "reference_id": f"sahamgue_user_{user_id}",
+        "type": "INDIVIDUAL",
+        "individual_detail": {"given_names": user_name},
+        "email": user_email,
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(
+                f"{XENDIT_API_BASE}/customers",
+                headers=headers,
+                json=payload,
+            )
+            if response.status_code in (200, 201):
+                data = response.json()
+                return {"customer_id": data["id"]}
+            else:
+                error_data = response.json() if response.content else {}
+                raise HTTPException(
+                    status_code=status.HTTP_502_BAD_GATEWAY,
+                    detail=f"Failed to create payment customer: {error_data.get('message', 'Unknown')}",
+                )
+    except httpx.RequestError as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Unable to reach payment service.",
+        )
+
+
+async def tokenize_payment_method(
+    customer_id: str,
+    payment_type: str = "CARD",
+) -> dict:
+    """
+    Create a tokenization session for the customer to save their payment method.
+
+    In production, this returns a URL/token that the frontend uses to collect
+    card/e-wallet details securely via Xendit.js or redirect.
+
+    Returns dict with:
+        - payment_method_id: Token for future charges
+        - redirect_url: URL to redirect user for payment method collection
+    """
+    if settings.is_development and not settings.XENDIT_SECRET_KEY:
+        mock_pm_id = f"pm_mock_{uuid.uuid4().hex[:12]}"
+        print(f"\n{'='*50}")
+        print(f"💳 XENDIT PAYMENT METHOD (DEV MODE - Mock)")
+        print(f"   Payment Method ID: {mock_pm_id}")
+        print(f"   Customer: {customer_id}")
+        print(f"   Type: {payment_type}")
+        print(f"{'='*50}\n")
+        return {
+            "payment_method_id": mock_pm_id,
+            "redirect_url": f"https://checkout-staging.xendit.co/mock/{mock_pm_id}",
+            "status": "ACTIVE",
+        }
+
+    headers = _get_auth_header()
+    payload = {
+        "type": payment_type,
+        "customer_id": customer_id,
+        "reusability": "MULTIPLE",
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(
+                f"{XENDIT_API_BASE}/v2/payment_methods",
+                headers=headers,
+                json=payload,
+            )
+            if response.status_code in (200, 201):
+                data = response.json()
+                return {
+                    "payment_method_id": data["id"],
+                    "redirect_url": data.get("actions", [{}])[0].get("url", ""),
+                    "status": data.get("status", "REQUIRES_ACTION"),
+                }
+            else:
+                error_data = response.json() if response.content else {}
+                raise HTTPException(
+                    status_code=status.HTTP_502_BAD_GATEWAY,
+                    detail=f"Failed to tokenize payment method: {error_data.get('message', 'Unknown')}",
+                )
+    except httpx.RequestError:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Unable to reach payment service.",
+        )
+
+
+async def charge_saved_payment_method(
+    customer_id: str,
+    payment_method_id: str,
+    amount: int,
+    description: str,
+    user_id: str,
+) -> dict:
+    """
+    Charge a previously saved payment method (auto-charge after trial).
+
+    Returns dict with payment_request_id and status.
+    """
+    if settings.is_development and not settings.XENDIT_SECRET_KEY:
+        mock_pr_id = f"pr_mock_{uuid.uuid4().hex[:12]}"
+        print(f"\n{'='*50}")
+        print(f"⚡ XENDIT AUTO-CHARGE (DEV MODE - Mock)")
+        print(f"   Payment Request ID: {mock_pr_id}")
+        print(f"   Amount: Rp {amount:,}")
+        print(f"   Description: {description}")
+        print(f"{'='*50}\n")
+        return {
+            "payment_request_id": mock_pr_id,
+            "status": "SUCCEEDED",
+            "amount": amount,
+        }
+
+    headers = _get_auth_header()
+    reference_id = f"sahamgue_autocharge_{user_id}_{int(datetime.utcnow().timestamp())}"
+    payload = {
+        "amount": amount,
+        "currency": "IDR",
+        "payment_method_id": payment_method_id,
+        "customer_id": customer_id,
+        "description": description,
+        "reference_id": reference_id,
+        "metadata": {"user_id": user_id, "type": "trial_auto_charge"},
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(
+                f"{XENDIT_API_BASE}/v2/payment_requests",
+                headers=headers,
+                json=payload,
+            )
+            if response.status_code in (200, 201):
+                data = response.json()
+                return {
+                    "payment_request_id": data["id"],
+                    "status": data.get("status", "PENDING"),
+                    "amount": data.get("amount", amount),
+                }
+            else:
+                error_data = response.json() if response.content else {}
+                print(f"❌ Xendit auto-charge error: {response.status_code} — {error_data}")
+                return {
+                    "payment_request_id": None,
+                    "status": "FAILED",
+                    "amount": amount,
+                    "error": error_data.get("message", "Unknown error"),
+                }
+    except httpx.RequestError as e:
+        print(f"❌ Xendit auto-charge connection error: {e}")
+        return {
+            "payment_request_id": None,
+            "status": "FAILED",
+            "amount": amount,
+            "error": str(e),
+        }
+

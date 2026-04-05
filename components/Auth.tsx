@@ -6,6 +6,7 @@ interface AuthProps {
   onLogin: (user: User) => void;
   onSwitch: () => void;
   onMfaRequired?: (tempToken: string, message: string) => void;
+  selectedPlan?: 'FREE' | 'PRO' | 'EXPERT';
 }
 
 const GoogleIcon = () => (
@@ -190,7 +191,7 @@ export const LoginPage: React.FC<AuthProps> = ({ onLogin, onSwitch, onMfaRequire
   );
 };
 
-export const RegisterPage: React.FC<AuthProps> = ({ onLogin, onSwitch, onMfaRequired }) => {
+export const RegisterPage: React.FC<AuthProps> = ({ onLogin, onSwitch, onMfaRequired, selectedPlan }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -254,7 +255,9 @@ export const RegisterPage: React.FC<AuthProps> = ({ onLogin, onSwitch, onMfaRequ
             AI
           </div>
           <h1 className="text-2xl font-bold text-white">Create Account</h1>
-          <p className="text-slate-400 mt-2">Start your journey with IDX AI Trader</p>
+          <p className="text-slate-400 mt-2">
+            {selectedPlan ? `You are enrolling in the ${selectedPlan} tier` : 'Start your journey with IDX AI Trader'}
+          </p>
         </div>
 
         {error && (
