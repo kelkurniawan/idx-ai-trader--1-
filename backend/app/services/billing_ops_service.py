@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..models.subscription import PaymentHistory, Subscription
 from ..models.user import User
+from ..services.alert_service import send_ops_alert
 from ..services.plan_service import activate_plan
 from ..services.xendit_service import get_invoice
 
@@ -81,6 +82,15 @@ async def reconcile_billing_records(db: AsyncSession, limit: int = 50) -> dict:
         payment.updated_at = datetime.utcnow()
 
     await db.commit()
+    if anomalies:
+        await send_ops_alert(
+            title="Billing reconciliation anomalies detected",
+            message=f"Found {len(anomalies)} anomaly entries during reconciliation.",
+            details={
+                "processed": processed,
+                "anomalies": anomalies,
+            },
+        )
     return {
         "processed": processed,
         "paid_activated": paid_activated,

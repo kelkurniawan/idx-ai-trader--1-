@@ -25,3 +25,17 @@ Railway deployment works best by creating a single "Project" and explicitly prov
 
 ### Internal Networking on Railway
 Ensure `python_backend` and `node_backend` are given internal Railway domains (e.g., `python-backend.railway.internal`). Update `Caddyfile.production` to point to these internal domains, allowing Caddy to proxy traffic securely.
+
+## Production Notes
+
+1. Copy `backend/.env.production.example` to `backend/.env.production` and fill in live secrets.
+2. Use `OTP_STORE_BACKEND=redis` and `RATE_LIMIT_BACKEND=redis` for any multi-instance deployment.
+3. Set `OPS_ALERT_WEBHOOK_URL` if you want external alerts for webhook mismatches and reconciliation anomalies.
+4. For Docker-based production, use:
+   ```bash
+   docker compose -f docker-compose.production.yml up --build -d
+   ```
+5. After deploy, run:
+   ```bash
+   python scripts/go_live_smoke_test.py --base-url https://your-domain.com
+   ```

@@ -101,10 +101,15 @@ class Settings(BaseSettings):
     # Dev: "memory" — stores OTPs in a Python dict (single-server only)
     # Prod: "redis" — use Redis for distributed OTP storage
     OTP_STORE_BACKEND: Literal["memory", "redis"] = "memory"
+    RATE_LIMIT_BACKEND: Literal["memory", "redis"] = "memory"
     # Redis Configuration (only used when OTP_STORE_BACKEND = "redis")
     # REDIS_URL: Full Redis connection URL
     # Example: redis://localhost:6379/0 or redis://:password@redis-host:6379/1
     REDIS_URL: str = "redis://localhost:6379/0"
+
+    # Ops alerting
+    OPS_ALERT_WEBHOOK_URL: str = ""
+    OPS_ALERT_WEBHOOK_BEARER: str = ""
 
     # ===========================
     # MFA Encryption

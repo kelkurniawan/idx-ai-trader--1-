@@ -24,6 +24,7 @@ from ..config import get_settings
 from ..database import AsyncSessionLocal
 from ..models.user import User
 from ..models.subscription import PaymentHistory
+from ..services.alert_service import send_ops_alert
 from ..services.plan_service import activate_plan
 from ..services.request_guard import enforce_rate_limit, request_identifier
 
@@ -85,7 +86,15 @@ async def handle_invoice_webhook(request: Request):
     enforce_rate_limit("webhook:xendit", request_identifier(request), 300, 60)
 
     # 1. Verify callback token
-    _verify_callback_token(request)
+    try:
+        _verify_callback_token(request)
+    except HTTPException:
+        await send_ops_alert(
+            title="Xendit webhook token mismatch",
+            message="Received a webhook request with an invalid callback token.",
+            details={"path": str(request.url.path), "client": request.client.host if request.client else "unknown"},
+        )
+        raise
 
     # 2. Parse payload
     try:
@@ -117,6 +126,11 @@ async def handle_invoice_webhook(request: Request):
 
         if not payment:
             print(f"⚠️  No payment record found for invoice {invoice_id}. Skipping.")
+            await send_ops_alert(
+                title="Xendit webhook invoice not found locally",
+                message="Webhook arrived for an invoice that does not exist in local payment history.",
+                details={"invoice_id": invoice_id, "external_id": external_id, "status": invoice_status},
+            )
             return {"status": "received", "message": "No matching payment record"}
 
         if payment.status == "PAID":
@@ -153,6 +167,16 @@ async def _handle_paid(payment: PaymentHistory, payload: dict, db) -> None:
     now = datetime.utcnow()
     payload_amount = payload.get("paid_amount") or payload.get("amount")
     if payload_amount is not None and int(payload_amount) != payment.amount_idr:
+        await send_ops_alert(
+            title="Xendit payment amount mismatch",
+            message="Webhook paid amount did not match the pending invoice amount.",
+            details={
+                "invoice_id": payment.xendit_invoice_id,
+                "expected_amount": payment.amount_idr,
+                "received_amount": payload_amount,
+                "user_id": payment.user_id,
+            },
+        )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Payment amount does not match the pending invoice.",

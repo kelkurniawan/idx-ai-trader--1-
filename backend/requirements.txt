@@ -17,7 +17,7 @@ psycopg2-binary>=2.9.9       # Sync PostgreSQL driver — used ONLY by Alembic m
 aiosqlite>=0.19.0            # Async SQLite driver — used for local development fallback
 
 # AI Integration (optional, only needed for production)
-google-generativeai>=0.3.0
+google-genai>=1.0.0
 
 # Data Processing
 numpy>=1.24.0
@@ -49,12 +49,10 @@ pyotp>=2.9.0
 qrcode[pil]>=7.4.0
 
 # Google OAuth token verification
-# (already included via google-generativeai, listed for clarity)
 google-auth>=2.20.0
 
-# Redis client (optional, for production OTP storage)
-# Uncomment when deploying to production with OTP_STORE_BACKEND=redis
-# redis>=5.0.0
+# Redis client (production shared state for OTP and rate limiting)
+redis>=5.0.0
 
 # Rate Limiting
 slowapi>=0.1.9

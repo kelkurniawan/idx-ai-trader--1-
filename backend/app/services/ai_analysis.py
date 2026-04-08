@@ -10,6 +10,7 @@ from typing import Optional, List
 import hashlib
 
 from ..config import get_settings
+from ..services.genai_client import async_generate_content, get_genai_client
 from ..schemas.stock import TechnicalIndicators
 from ..schemas.analysis import (
     AIAnalysisResult,
@@ -35,9 +36,7 @@ class AIAnalysisService:
         """Lazy load Gemini client only when needed."""
         if self._client is None and settings.enable_ai_calls:
             try:
-                import google.generativeai as genai
-                genai.configure(api_key=settings.GEMINI_API_KEY)
-                self._client = genai.GenerativeModel('gemini-2.0-flash')
+                self._client = get_genai_client()
             except Exception as e:
                 print(f"Failed to initialize Gemini client: {e}")
         return self._client
@@ -89,7 +88,11 @@ class AIAnalysisService:
         """
         
         try:
-            response = await client.generate_content_async(prompt)
+            await async_generate_content(
+                model="gemini-2.0-flash",
+                prompt=prompt,
+                response_mime_type="application/json",
+            )
             # Parse JSON response (simplified - would need proper parsing)
             return self._get_mock_analysis(ticker, current_price, technicals)
         except Exception as e:

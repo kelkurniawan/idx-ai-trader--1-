@@ -16,7 +16,7 @@ from ..schemas.analysis import (
     AnalysisApproach
 )
 from ..config import get_settings
-import google.generativeai as genai
+from ..services.genai_client import async_generate_content, response_text
 
 
 # Sector-based fundamental ranges for realistic mock data
@@ -220,9 +220,6 @@ async def fetch_real_fundamentals_with_ai(ticker: str) -> Dict[str, Any]:
         return None
 
     try:
-        genai.configure(api_key=settings.GEMINI_API_KEY)
-        model = genai.GenerativeModel('gemini-2.0-flash-exp')
-        
         prompt = f"""
         Act as a professional financial analyst. Perform a comprehensive fundamental analysis for {ticker} (Indonesia Stock Exchange).
         Use Google Search to find the latest financial data (2024/2025).
@@ -249,13 +246,16 @@ async def fetch_real_fundamentals_with_ai(ticker: str) -> Dict[str, Any]:
             }}
         }}
         """
-        
-        # In a real scenario, we would use tools='google_search' if available in the SDK version
-        # For this MVP, we rely on the model's internal knowledge and browsing capability if enabled
-        response = model.generate_content(prompt)
+
+        response = await async_generate_content(
+            model="gemini-2.0-flash",
+            prompt=prompt,
+            response_mime_type="application/json",
+            use_google_search=True,
+        )
         
         # Clean response text (remove markdown code blocks if present)
-        text = response.text.replace("```json", "").replace("```", "").strip()
+        text = response_text(response).replace("```json", "").replace("```", "").strip()
         data = json.loads(text)
         
         # Parse into Pydantic models to validate

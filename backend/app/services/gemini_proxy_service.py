@@ -18,27 +18,10 @@ from datetime import datetime
 from typing import Optional
 
 from ..config import get_settings
+from ..services.genai_client import async_generate_content, response_text
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
-
-
-def _get_genai():
-    """
-    Lazy-import and configure the google-generativeai SDK.
-    Raises RuntimeError if GEMINI_API_KEY is not configured.
-    """
-    try:
-        import google.generativeai as genai  # type: ignore[import]
-        if not settings.GEMINI_API_KEY:
-            raise RuntimeError("GEMINI_API_KEY is not set in environment.")
-        genai.configure(api_key=settings.GEMINI_API_KEY)
-        return genai
-    except ImportError as exc:
-        raise RuntimeError(
-            "google-generativeai package is not installed. "
-            "Run: pip install google-generativeai>=0.8.0"
-        ) from exc
 
 
 # ---------------------------------------------------------------------------
@@ -60,9 +43,6 @@ async def analyze_chart_vision(base64_image: str, trading_type: str) -> dict:
         return _mock_chart_vision(trading_type)
 
     try:
-        genai = _get_genai()
-        model = genai.GenerativeModel("gemini-2.0-flash")
-
         prompt = (
             f"Act as a professional technical analyst. Analyse this trading chart for a {trading_type} setup.\n"
             "1. Identify the primary market trend.\n"
@@ -74,22 +54,13 @@ async def analyze_chart_vision(base64_image: str, trading_type: str) -> dict:
             "supportLevels (array of {price, yPos, label}), resistanceLevels (array of {price, yPos, label}), "
             "entrySuggestion (string), stopLoss (string), takeProfit (string), overallStrategy (string)."
         )
-
-        import base64 as b64mod
-        # Strip data URI prefix if accidentally included
-        raw = base64_image.split(",")[-1]
-        image_part = {
-            "inline_data": {
-                "mime_type": "image/png",
-                "data": raw,
-            }
-        }
-
-        response = model.generate_content(
-            [image_part, prompt],
-            generation_config={"response_mime_type": "application/json"},
+        response = await async_generate_content(
+            model="gemini-2.0-flash",
+            prompt=prompt,
+            response_mime_type="application/json",
+            image_base64=base64_image,
         )
-        text = response.text
+        text = response_text(response)
         if not text:
             raise ValueError("Empty response from Gemini Vision")
         return json.loads(text)
@@ -146,21 +117,17 @@ async def get_realtime_stock_data(ticker: str) -> dict:
         return _mock_realtime(ticker)
 
     try:
-        genai = _get_genai()
-        model = genai.GenerativeModel(
-            "gemini-2.0-flash",
-            tools=["google_search_retrieval"],  # type: ignore[arg-type]
-        )
-
         prompt = (
             f'Find the latest real-time stock price (IDR), today\'s change amount, '
             f'change percentage, and volume for "{ticker}" on the Indonesia Stock Exchange (IDX). '
             f'Return JSON with keys: price (number), change (number), changePercent (number), volume (number).'
         )
 
-        response = model.generate_content(
-            prompt,
-            generation_config={"response_mime_type": "application/json"},
+        response = await async_generate_content(
+            model="gemini-2.0-flash",
+            prompt=prompt,
+            response_mime_type="application/json",
+            use_google_search=True,
         )
 
         # Extract grounding sources
@@ -180,7 +147,7 @@ async def get_realtime_stock_data(ticker: str) -> dict:
 
         data = {"price": 0, "change": 0, "changePercent": 0, "volume": 0}
         try:
-            text = response.text
+            text = response_text(response)
             if text:
                 parsed = json.loads(text)
                 data.update(parsed)
@@ -238,12 +205,6 @@ async def fetch_stock_news(ticker: str, company_name: str) -> list:
         return []
 
     try:
-        genai = _get_genai()
-        model = genai.GenerativeModel(
-            "gemini-2.0-flash",
-            tools=["google_search_retrieval"],  # type: ignore[arg-type]
-        )
-
         prompt = (
             f'Find the 5 most recent and relevant news articles about the stock '
             f'"{ticker}" ({company_name}) on IDX. '
@@ -251,9 +212,11 @@ async def fetch_stock_news(ticker: str, company_name: str) -> list:
             f'title (string), source (string), url (string), snippet (string), publishedAt (string).'
         )
 
-        response = model.generate_content(
-            prompt,
-            generation_config={"response_mime_type": "application/json"},
+        response = await async_generate_content(
+            model="gemini-2.0-flash",
+            prompt=prompt,
+            response_mime_type="application/json",
+            use_google_search=True,
         )
 
         logger.info(
@@ -261,7 +224,7 @@ async def fetch_stock_news(ticker: str, company_name: str) -> list:
             ticker,
         )
 
-        text = response.text
+        text = response_text(response)
         if text:
             return json.loads(text)
         return []
@@ -298,12 +261,6 @@ async def analyze_stock(
         return _mock_stock_analysis(ticker, real_time_data)
 
     try:
-        genai = _get_genai()
-        model = genai.GenerativeModel(
-            "gemini-2.0-flash-exp",
-            tools=["google_search_retrieval"],  # type: ignore[arg-type]
-        )
-
         rsi = technicals.get("rsi", 0)
         macd = technicals.get("macd", 0)
         ma50 = technicals.get("ma50", 0)
@@ -353,9 +310,11 @@ fundamentals (object with peRatio, pbvRatio, roe, der, marketCap, dividendYield)
 verdict (object with rating, suitability {{growth, value, dividend}}, pros, cons).
 """
 
-        response = model.generate_content(
-            prompt,
-            generation_config={"response_mime_type": "application/json"},
+        response = await async_generate_content(
+            model="gemini-2.0-flash",
+            prompt=prompt,
+            response_mime_type="application/json",
+            use_google_search=True,
         )
 
         logger.info(
@@ -363,7 +322,7 @@ verdict (object with rating, suitability {{growth, value, dividend}}, pros, cons
             ticker,
         )
 
-        text = response.text or "{}"
+        text = response_text(response) or "{}"
         parsed = json.loads(text)
         return {
             "ticker": ticker,
