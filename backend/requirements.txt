@@ -56,3 +56,5 @@ google-auth>=2.20.0
 # Uncomment when deploying to production with OTP_STORE_BACKEND=redis
 # redis>=5.0.0
 
+# Rate Limiting
+slowapi>=0.1.9

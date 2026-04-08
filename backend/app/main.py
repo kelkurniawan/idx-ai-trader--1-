@@ -7,9 +7,13 @@ Main entry point for the backend API server.
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
+from starlette.responses import Response
 
 from .config import get_settings
 from .database import engine, Base, AsyncSessionLocal
+from .rate_limiter import limiter, _rate_limit_exceeded_handler, RateLimitExceeded
 from . import models  # noqa: F401
 from .routers import stocks, market_analyzer, predictions, auth, profile, ai, portfolio, strip
 from .routers import subscription as subscription_router
@@ -97,13 +101,31 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
-# CORS Middleware
+# Attach SlowAPI exceptions and state
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# Security Headers Middleware
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        response: Response = await call_next(request)
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        # Optional: very restrictive CSP; you might want to adjust this heavily for production
+        # response.headers["Content-Security-Policy"] = "default-src 'self'"
+        return response
+
+app.add_middleware(SecurityHeadersMiddleware)
+
+# Strict CORS Middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins_list,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "Accept"],
 )
 
 # Include Routers

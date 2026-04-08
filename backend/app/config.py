@@ -6,8 +6,12 @@ In development mode, AI calls are disabled and mock data is used.
 """
 
 from functools import lru_cache
+from pathlib import Path
 from typing import Literal
+
 from pydantic_settings import BaseSettings
+
+BACKEND_ENV_FILE = Path(__file__).resolve().parent.parent / ".env"
 
 
 class Settings(BaseSettings):
@@ -175,7 +179,7 @@ class Settings(BaseSettings):
         return not bool(self.WHATSAPP_ACCESS_TOKEN)
     
     class Config:
-        env_file = ".env"
+        env_file = str(BACKEND_ENV_FILE)
         env_file_encoding = "utf-8"
         extra = "ignore"
 

@@ -54,7 +54,7 @@ def _user_to_response(user: User) -> UserResponse:
     )
 
 
-async def _handle_mfa_challenge(user: User, db: Session) -> AuthResponse:
+async def _handle_mfa_challenge(user: User, db: AsyncSession) -> AuthResponse:
     """
     Handle MFA challenge: generate temp token and send OTP if needed.
     Called when user has MFA enabled and password is verified.
