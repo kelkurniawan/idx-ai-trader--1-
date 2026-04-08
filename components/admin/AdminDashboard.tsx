@@ -1,26 +1,27 @@
 import React, { useState } from 'react';
-import StockManager from './StockManager';
-import NewsManager from './NewsManager';
+import BillingOps from './BillingOps';
 import DataImport from './DataImport';
+import NewsManager from './NewsManager';
+import StockManager from './StockManager';
 
-type AdminTab = 'stocks' | 'news' | 'import';
+type AdminTab = 'stocks' | 'news' | 'import' | 'billing';
 
 interface AdminDashboardProps {
     onBack: () => void;
 }
 
+const tabs: { id: AdminTab; label: string; icon: string }[] = [
+    { id: 'stocks', label: 'Stock Overrides', icon: 'SO' },
+    { id: 'news', label: 'News Manager', icon: 'NM' },
+    { id: 'import', label: 'Import / Export', icon: 'IE' },
+    { id: 'billing', label: 'Billing Ops', icon: 'BO' },
+];
+
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack }) => {
     const [activeTab, setActiveTab] = useState<AdminTab>('stocks');
 
-    const tabs: { id: AdminTab; label: string; icon: string }[] = [
-        { id: 'stocks', label: 'Stock Overrides', icon: '📊' },
-        { id: 'news', label: 'News Manager', icon: '📰' },
-        { id: 'import', label: 'Import / Export', icon: '📦' },
-    ];
-
     return (
         <div className="min-h-screen flex flex-col bg-[#F8FAFC] dark:bg-slate-950 text-slate-900 dark:text-slate-50 transition-colors">
-            {/* Top Bar */}
             <div className="sticky top-0 z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm border-b border-slate-200 dark:border-slate-800 px-4 md:px-6 py-3 md:py-4">
                 <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-0">
                     <div className="flex items-center gap-3 md:gap-4">
@@ -43,21 +44,22 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack }) => {
                             </div>
                             <div>
                                 <h1 className="text-base md:text-lg font-black tracking-tight">Admin Dashboard</h1>
-                                <p className="text-[8px] md:text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Manual Data Management</p>
+                                <p className="text-[8px] md:text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Operations, content, and billing control</p>
                             </div>
                         </div>
                     </div>
                     <div className="flex items-center gap-1 md:gap-2 bg-slate-100 dark:bg-slate-800 rounded-xl p-1 border border-slate-200 dark:border-slate-700 overflow-x-auto overflow-y-hidden hide-scrollbar">
-                        {tabs.map(tab => (
+                        {tabs.map((tab) => (
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
-                                className={`flex items-center justify-center gap-1.5 md:gap-2 px-3 md:px-4 py-2 md:py-2.5 min-h-touch min-w-max rounded-lg text-[10px] md:text-xs font-bold uppercase tracking-wider transition-all active:scale-[0.98] ${activeTab === tab.id
-                                    ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-sm'
-                                    : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
-                                    }`}
+                                className={`flex items-center justify-center gap-1.5 md:gap-2 px-3 md:px-4 py-2 md:py-2.5 min-h-touch min-w-max rounded-lg text-[10px] md:text-xs font-bold uppercase tracking-wider transition-all active:scale-[0.98] ${
+                                    activeTab === tab.id
+                                        ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-sm'
+                                        : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+                                }`}
                             >
-                                <span className="text-sm md:text-base">{tab.icon}</span>
+                                <span className="text-[10px] md:text-xs font-black">{tab.icon}</span>
                                 <span>{tab.label}</span>
                             </button>
                         ))}
@@ -65,11 +67,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack }) => {
                 </div>
             </div>
 
-            {/* Content */}
             <div className="max-w-7xl mx-auto p-4 md:p-6 flex-1 w-full">
                 {activeTab === 'stocks' && <StockManager />}
                 {activeTab === 'news' && <NewsManager />}
                 {activeTab === 'import' && <DataImport />}
+                {activeTab === 'billing' && <BillingOps />}
             </div>
         </div>
     );

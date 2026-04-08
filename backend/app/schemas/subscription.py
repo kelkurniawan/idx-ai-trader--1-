@@ -119,3 +119,51 @@ class MessageResponse(BaseModel):
     """Generic message response."""
     message: str
     success: bool = True
+
+
+class AutoRenewStatusResponse(BaseModel):
+    """Customer-facing auto-renew state."""
+    enabled: bool
+    cancellable: bool = True
+    current_plan: str
+    expires_at: Optional[datetime] = None
+    message: str = ""
+
+
+class BillingOverviewMetricSet(BaseModel):
+    active_paid_users: int
+    trial_users: int
+    auto_renew_enabled: int
+    pending_invoices: int
+    revenue_this_month: int
+    paid_without_subscription: int
+    expiring_soon: int
+    cancelled_auto_renew: int
+
+
+class BillingPaymentRow(BaseModel):
+    id: str
+    user_id: str
+    invoice_id: str
+    plan: str
+    billing_cycle: str
+    amount_idr: int
+    status: str
+    payment_method: Optional[str] = None
+    created_at: datetime
+    paid_at: Optional[datetime] = None
+
+
+class BillingOverviewResponse(BaseModel):
+    metrics: BillingOverviewMetricSet
+    recent_payments: List[BillingPaymentRow]
+    generated_at: datetime
+
+
+class BillingReconciliationResponse(BaseModel):
+    processed: int
+    paid_activated: int
+    expired_marked: int
+    failed_marked: int
+    anomalies: List[str]
+    ran_at: datetime

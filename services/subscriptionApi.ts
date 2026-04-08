@@ -67,6 +67,53 @@ export interface StartTrialResponse {
   requires_action: boolean;
 }
 
+export interface AutoRenewStatus {
+  enabled: boolean;
+  cancellable: boolean;
+  current_plan: string;
+  expires_at: string | null;
+  message: string;
+}
+
+export interface BillingOverviewMetricSet {
+  active_paid_users: number;
+  trial_users: number;
+  auto_renew_enabled: number;
+  pending_invoices: number;
+  revenue_this_month: number;
+  paid_without_subscription: number;
+  expiring_soon: number;
+  cancelled_auto_renew: number;
+}
+
+export interface BillingPaymentRow {
+  id: string;
+  user_id: string;
+  invoice_id: string;
+  plan: string;
+  billing_cycle: string;
+  amount_idr: number;
+  status: string;
+  payment_method?: string | null;
+  created_at: string;
+  paid_at?: string | null;
+}
+
+export interface BillingOverview {
+  metrics: BillingOverviewMetricSet;
+  recent_payments: BillingPaymentRow[];
+  generated_at: string;
+}
+
+export interface BillingReconciliationResult {
+  processed: number;
+  paid_activated: number;
+  expired_marked: number;
+  failed_marked: number;
+  anomalies: string[];
+  ran_at: string;
+}
+
 // ───────────────────────────────────────────────
 // API Functions
 // ───────────────────────────────────────────────
@@ -105,4 +152,29 @@ export async function subscribe(
     body: JSON.stringify({ plan, billing_cycle: billingCycle }),
   });
   return handleResponse<InvoiceResponse>(res);
+}
+
+export async function getAutoRenewStatus(): Promise<AutoRenewStatus> {
+  const res = await subFetch('/auto-renew', { method: 'GET' });
+  return handleResponse<AutoRenewStatus>(res);
+}
+
+export async function disableAutoRenew(): Promise<AutoRenewStatus> {
+  const res = await subFetch('/auto-renew/disable', { method: 'POST' });
+  return handleResponse<AutoRenewStatus>(res);
+}
+
+export async function cancelAtPeriodEnd(): Promise<AutoRenewStatus> {
+  const res = await subFetch('/cancel', { method: 'POST' });
+  return handleResponse<AutoRenewStatus>(res);
+}
+
+export async function getAdminBillingOverview(): Promise<BillingOverview> {
+  const res = await subFetch('/admin/overview', { method: 'GET' });
+  return handleResponse<BillingOverview>(res);
+}
+
+export async function runBillingReconciliation(): Promise<BillingReconciliationResult> {
+  const res = await subFetch('/admin/reconcile', { method: 'POST' });
+  return handleResponse<BillingReconciliationResult>(res);
 }

@@ -25,6 +25,7 @@ from ..database import AsyncSessionLocal
 from ..models.user import User
 from ..models.subscription import PaymentHistory
 from ..services.plan_service import activate_plan
+from ..services.request_guard import enforce_rate_limit, request_identifier
 
 settings = get_settings()
 router = APIRouter()
@@ -81,6 +82,8 @@ async def handle_invoice_webhook(request: Request):
         }
     }
     """
+    enforce_rate_limit("webhook:xendit", request_identifier(request), 300, 60)
+
     # 1. Verify callback token
     _verify_callback_token(request)
 

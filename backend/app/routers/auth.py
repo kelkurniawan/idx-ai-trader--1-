@@ -34,6 +34,7 @@ from ..services.mfa_service import (
     send_otp_email, send_otp_whatsapp, encrypt_totp_secret, decrypt_totp_secret,
 )
 from ..services.recaptcha_service import verify_recaptcha
+from ..services.request_guard import enforce_rate_limit, request_identifier
 
 settings = get_settings()
 router = APIRouter()
@@ -115,6 +116,7 @@ async def _complete_login(response: Response, user: User, db: AsyncSession, reme
 @router.post("/register", response_model=AuthResponse)
 async def register(
     request: RegisterRequest,
+    http_request: Request,
     response: Response,
     db: AsyncSession = Depends(get_db),
 ):
@@ -126,6 +128,8 @@ async def register(
     - Creates user with hashed password
     - Returns JWT via HTTP-only cookie
     """
+    enforce_rate_limit("auth:register", request_identifier(http_request, request.email), 5, 15 * 60)
+
     # Verify reCAPTCHA
     if not await verify_recaptcha(request.recaptcha_token):
         raise HTTPException(
@@ -174,6 +178,7 @@ async def register(
 @router.post("/login", response_model=AuthResponse)
 async def login(
     request: LoginRequest,
+    http_request: Request,
     response: Response,
     db: AsyncSession = Depends(get_db),
 ):
@@ -187,6 +192,8 @@ async def login(
     4. If MFA enabled → return temp_token + send OTP
     5. If no MFA → issue JWT cookie
     """
+    enforce_rate_limit("auth:login", request_identifier(http_request, request.email), 10, 15 * 60)
+
     # Verify reCAPTCHA
     if not await verify_recaptcha(request.recaptcha_token):
         raise HTTPException(
@@ -226,6 +233,7 @@ async def login(
 @router.post("/google", response_model=AuthResponse)
 async def google_auth(
     request: GoogleAuthRequest,
+    http_request: Request,
     response: Response,
     db: AsyncSession = Depends(get_db),
 ):
@@ -241,6 +249,8 @@ async def google_auth(
     3. Frontend sends the Google ID token (from Google Sign-In button)
     4. Backend verifies the token with Google and extracts user info
     """
+    enforce_rate_limit("auth:google", request_identifier(http_request), 10, 15 * 60)
+
     # Verify reCAPTCHA
     if not await verify_recaptcha(request.recaptcha_token):
         raise HTTPException(
@@ -341,6 +351,7 @@ async def google_auth(
 @router.post("/mfa/verify", response_model=AuthResponse)
 async def mfa_verify(
     request: MfaVerifyRequest,
+    http_request: Request,
     response: Response,
     db: AsyncSession = Depends(get_db),
 ):
@@ -350,6 +361,8 @@ async def mfa_verify(
     Called after password verification when MFA is enabled.
     Accepts the temp_token (from login response) and OTP/TOTP code.
     """
+    enforce_rate_limit("auth:mfa_verify", request_identifier(http_request), 12, 15 * 60)
+
     # Decode temp token
     payload = decode_token(request.temp_token, expected_type="mfa_challenge")
     user_id = payload.get("sub")

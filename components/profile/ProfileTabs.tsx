@@ -8,6 +8,7 @@ import { useProfile } from '../../hooks/useProfile';
 import { useMfa } from '../../hooks/useMfa';
 import { useNotifications } from '../../hooks/useNotifications';
 import * as profileApi from '../../services/profileApi';
+import * as subscriptionApi from '../../services/subscriptionApi';
 import type { ProfileUser } from '../../services/profileApi';
 
 // ── Design tokens (mirrors App.tsx SG tokens) ─────────────────────────────
@@ -566,33 +567,134 @@ export const NotificationsTab: React.FC = () => {
 
 export const PlanCard: React.FC<{ authUser: ProfileUser }> = ({ authUser }) => {
     const [plan, setPlan] = useState<profileApi.PlanInfo | null>(null);
+    const [autoRenew, setAutoRenew] = useState<subscriptionApi.AutoRenewStatus | null>(null);
+    const [billingMsg, setBillingMsg] = useState<{ type: 'error' | 'success' | 'info'; text: string } | null>(null);
+    const [billingLoading, setBillingLoading] = useState(false);
 
-    useEffect(() => { profileApi.getPlan().then(setPlan).catch(() => { }); }, []);
-    const isPro = authUser.plan === 'PRO';
+    const loadBillingState = async () => {
+        try {
+            const [planData, autoRenewData] = await Promise.all([
+                profileApi.getPlan(),
+                subscriptionApi.getAutoRenewStatus(),
+            ]);
+            setPlan(planData);
+            setAutoRenew(autoRenewData);
+        } catch {
+            setBillingMsg({ type: 'error', text: 'Tidak bisa memuat status billing saat ini.' });
+        }
+    };
+
+    useEffect(() => {
+        loadBillingState();
+    }, []);
+
+    const handleDisableAutoRenew = async () => {
+        try {
+            setBillingLoading(true);
+            const result = await subscriptionApi.disableAutoRenew();
+            setAutoRenew(result);
+            setBillingMsg({ type: 'success', text: result.message });
+        } catch (error: any) {
+            setBillingMsg({ type: 'error', text: error?.message || 'Gagal mematikan auto-renew.' });
+        } finally {
+            setBillingLoading(false);
+        }
+    };
+
+    const handleCancelPlan = async () => {
+        try {
+            setBillingLoading(true);
+            const result = await subscriptionApi.cancelAtPeriodEnd();
+            setAutoRenew(result);
+            setBillingMsg({ type: 'info', text: result.message });
+        } catch (error: any) {
+            setBillingMsg({ type: 'error', text: error?.message || 'Gagal memperbarui status langganan.' });
+        } finally {
+            setBillingLoading(false);
+        }
+    };
+
+    const currentPlan = plan?.plan || authUser.plan;
+    const planExpiry = autoRenew?.expires_at || plan?.plan_expires_at || authUser.plan_expires_at || null;
+    const isPaidPlan = currentPlan === 'PRO' || currentPlan === 'EXPERT';
+    const featureCards = [
+        {
+            label: 'Watchlist',
+            desc: plan ? `Maks ${plan.features.watchlist_limit} saham` : 'Menyesuaikan paket',
+            icon: <CheckCircle size={14} color={SG.green} />,
+            locked: false,
+        },
+        {
+            label: 'Price Alerts',
+            desc: plan?.features.alert_limit ? `Maks ${plan.features.alert_limit} alert` : 'Sesuai paket aktif',
+            icon: <CheckCircle size={14} color={SG.green} />,
+            locked: false,
+        },
+        {
+            label: 'AI News Analysis',
+            desc: plan?.features.news_ai ? 'Aktif di paketmu' : 'Upgrade ke Pro',
+            icon: plan?.features.news_ai ? <CheckCircle size={14} color={SG.green} /> : <Lock size={14} color={SG.yellow} />,
+            locked: !plan?.features.news_ai,
+        },
+        {
+            label: 'Billing Control',
+            desc: autoRenew?.enabled ? 'Auto-renew aktif' : 'Manual renewal',
+            icon: autoRenew?.enabled ? <CheckCircle size={14} color={SG.green} /> : <Lock size={14} color={SG.yellow} />,
+            locked: !autoRenew?.enabled,
+        },
+    ];
 
     return (
         <Card style={{ padding: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
                 <h2 style={{ color: SG.text, fontSize: 18, fontWeight: 900, fontFamily: SG.sans, margin: 0 }}>Paket Saat Ini</h2>
             </div>
-            
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-                <span style={{ fontSize: 12, fontWeight: 800, color: SG.textSecond, background: SG.bgMuted, padding: '6px 16px', borderRadius: 8 }}>{authUser.plan}</span>
-                <button style={{ background: SG.yellow, color: '#fff', border: 'none', padding: '8px 16px', borderRadius: 8, fontWeight: 800, fontSize: 13, cursor: 'pointer' }}>
-                    Upgrade ke Pro
-                </button>
+
+            {billingMsg && <Toast msg={billingMsg.text} type={billingMsg.type} />}
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
+                <span style={{ fontSize: 12, fontWeight: 800, color: SG.textSecond, background: SG.bgMuted, padding: '6px 16px', borderRadius: 8 }}>{currentPlan}</span>
+                {!isPaidPlan && (
+                    <button style={{ background: SG.yellow, color: '#fff', border: 'none', padding: '8px 16px', borderRadius: 8, fontWeight: 800, fontSize: 13, cursor: 'pointer' }}>
+                        Upgrade ke Pro
+                    </button>
+                )}
             </div>
+
+            <div style={{ background: SG.bg2, border: `1px solid ${SG.border}`, borderRadius: 14, padding: 16, marginBottom: 20 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: 12 }}>
+                    <div>
+                        <p style={{ color: SG.muted, fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 6px' }}>Status</p>
+                        <p style={{ color: SG.text, fontSize: 14, fontWeight: 800, margin: 0 }}>{autoRenew?.enabled ? 'Auto-renew aktif' : 'Manual renewal'}</p>
+                    </div>
+                    <div>
+                        <p style={{ color: SG.muted, fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 6px' }}>Berakhir</p>
+                        <p style={{ color: SG.text, fontSize: 14, fontWeight: 800, margin: 0 }}>
+                            {planExpiry ? new Date(planExpiry).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Belum ada tanggal aktif'}
+                        </p>
+                    </div>
+                </div>
+                {autoRenew?.message && (
+                    <p style={{ color: SG.textSecond, fontSize: 13, margin: '12px 0 0', fontFamily: SG.sans }}>{autoRenew.message}</p>
+                )}
+            </div>
+
+            {isPaidPlan && (
+                <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
+                    {autoRenew?.enabled && (
+                        <OutlineBtn onClick={handleDisableAutoRenew} disabled={billingLoading}>
+                            {billingLoading ? 'Memproses...' : 'Matikan Auto-Renew'}
+                        </OutlineBtn>
+                    )}
+                    <DangerBtn outline onClick={handleCancelPlan} disabled={billingLoading} style={{ width: 'auto', justifyContent: 'center' }}>
+                        {billingLoading ? 'Memproses...' : 'Batalkan Saat Periode Berakhir'}
+                    </DangerBtn>
+                </div>
+            )}
 
             {plan && (
                 <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: 12 }}>
-                    {[
-                        { label: 'Watchlist', desc: 'Maks 5 saham', icon: <CheckCircle size={14} color={SG.muted} /> },
-                        { label: 'Price Alerts', desc: 'Maks 3 alert', icon: <CheckCircle size={14} color={SG.muted} /> },
-                        { label: 'Berita Dasar', desc: 'Feed standar', icon: <CheckCircle size={14} color={SG.muted} /> },
-                        { label: 'AI News Analysis', desc: 'Upgrade ke Pro', icon: <Lock size={14} color={SG.yellow} />, locked: true },
-                        { label: 'Watchlist 50 Saham', desc: 'Upgrade ke Pro', icon: <Lock size={14} color={SG.yellow} />, locked: true },
-                        { label: 'Unlimited Alerts', desc: 'Upgrade ke Pro', icon: <Lock size={14} color={SG.yellow} />, locked: true },
-                    ].map(item => (
+                    {featureCards.map(item => (
                         <div key={item.label} style={{ background: item.locked ? 'transparent' : SG.bgMuted, border: item.locked ? `1px solid ${SG.border}` : 'none', borderRadius: 12, padding: '16px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                                 {item.icon}

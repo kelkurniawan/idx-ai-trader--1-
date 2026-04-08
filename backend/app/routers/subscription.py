@@ -8,14 +8,15 @@ Handles plan listing, subscription creation (Xendit invoice), status, and histor
 import uuid
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from ..database import get_db
 from ..models.user import User
 from ..models.subscription import PaymentHistory
-from ..services.auth_service import get_current_user
+from ..services.auth_service import get_current_user, require_admin
+from ..services.billing_ops_service import get_billing_overview, reconcile_billing_records
 from ..services.plan_service import (
     activate_trial,
     get_subscription_status,
@@ -26,7 +27,11 @@ from ..services.plan_service import (
     PLAN_FEATURES,
 )
 from ..services.xendit_service import create_invoice, create_customer, get_payment_method, tokenize_payment_method
+from ..services.request_guard import enforce_rate_limit, request_identifier
 from ..schemas.subscription import (
+    AutoRenewStatusResponse,
+    BillingOverviewResponse,
+    BillingReconciliationResponse,
     ConfirmTrialRequest,
     SubscribeRequest,
     StartTrialRequest,
@@ -101,6 +106,7 @@ async def list_plans() -> PlansListResponse:
 @router.post("/start-trial", response_model=StartTrialResponse, summary="Start free trial with payment method collection")
 async def start_trial(
     request: StartTrialRequest,
+    http_request: Request,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> StartTrialResponse:
@@ -114,6 +120,8 @@ async def start_trial(
 
     When the trial expires, the saved payment method will be auto-charged.
     """
+    enforce_rate_limit("subscription:start_trial", request_identifier(http_request, user.id), 5, 15 * 60)
+
     # Check if trial was already used
     if user.has_used_trial:
         raise HTTPException(
@@ -186,10 +194,13 @@ async def start_trial(
 @router.post("/start-trial/confirm", response_model=StartTrialResponse, summary="Confirm free trial activation")
 async def confirm_start_trial(
     request: ConfirmTrialRequest,
+    http_request: Request,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> StartTrialResponse:
     """Confirm the saved payment method is active, then activate the free trial."""
+    enforce_rate_limit("subscription:confirm_trial", request_identifier(http_request, user.id), 10, 15 * 60)
+
     if user.has_used_trial:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -251,6 +262,7 @@ async def confirm_start_trial(
 @router.post("/subscribe", response_model=InvoiceResponse, summary="Create subscription invoice")
 async def subscribe(
     request: SubscribeRequest,
+    http_request: Request,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> InvoiceResponse:
@@ -260,6 +272,8 @@ async def subscribe(
     Returns the invoice URL — frontend should redirect the user there
     to complete payment. Once paid, the Xendit webhook will activate the plan.
     """
+    enforce_rate_limit("subscription:subscribe", request_identifier(http_request, user.id), 8, 15 * 60)
+
     plan = request.plan
     billing_cycle = request.billing_cycle
 
@@ -360,3 +374,71 @@ async def get_history(
     ]
 
     return PaymentHistoryResponse(payments=payments)
+
+
+@router.get("/auto-renew", response_model=AutoRenewStatusResponse, summary="Get auto-renew status")
+async def get_auto_renew_status(user: User = Depends(get_current_user)) -> AutoRenewStatusResponse:
+    enabled = bool(user.xendit_payment_method_id)
+    message = (
+        "Auto-renew is enabled for your saved payment method."
+        if enabled
+        else "Auto-renew is disabled. Your plan will remain active until it expires."
+    )
+    return AutoRenewStatusResponse(
+        enabled=enabled,
+        current_plan=user.plan or "FREE",
+        expires_at=user.plan_expires_at,
+        message=message,
+    )
+
+
+@router.post("/auto-renew/disable", response_model=AutoRenewStatusResponse, summary="Disable auto-renew")
+async def disable_auto_renew(
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> AutoRenewStatusResponse:
+    user.xendit_payment_method_id = None
+    user.updated_at = datetime.utcnow()
+    await db.commit()
+    return AutoRenewStatusResponse(
+        enabled=False,
+        current_plan=user.plan or "FREE",
+        expires_at=user.plan_expires_at,
+        message="Auto-renew has been disabled. Your current access remains active until the end of the billing period.",
+    )
+
+
+@router.post("/cancel", response_model=AutoRenewStatusResponse, summary="Cancel at period end")
+async def cancel_at_period_end(
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> AutoRenewStatusResponse:
+    user.xendit_payment_method_id = None
+    user.updated_at = datetime.utcnow()
+    await db.commit()
+    return AutoRenewStatusResponse(
+        enabled=False,
+        current_plan=user.plan or "FREE",
+        expires_at=user.plan_expires_at,
+        message="Cancellation recorded. There will be no automatic renewal, and your plan will remain active until expiry.",
+    )
+
+
+@router.get("/admin/overview", response_model=BillingOverviewResponse, summary="Admin billing overview")
+async def admin_billing_overview(
+    admin_user: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+) -> BillingOverviewResponse:
+    _ = admin_user
+    overview = await get_billing_overview(db)
+    return BillingOverviewResponse(**overview)
+
+
+@router.post("/admin/reconcile", response_model=BillingReconciliationResponse, summary="Run billing reconciliation")
+async def admin_reconcile_billing(
+    admin_user: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+) -> BillingReconciliationResponse:
+    _ = admin_user
+    result = await reconcile_billing_records(db)
+    return BillingReconciliationResponse(**result)

@@ -25,6 +25,7 @@ settings = get_settings()
 async def _plan_expiry_cron():
     """Background task that checks for expired plans every hour."""
     import asyncio
+    from .services.billing_ops_service import reconcile_billing_records
     from .services.plan_service import check_and_downgrade_expired
 
     while True:
@@ -32,6 +33,7 @@ async def _plan_expiry_cron():
             await asyncio.sleep(3600)  # Run every hour
             async with AsyncSessionLocal() as db:
                 await check_and_downgrade_expired(db)
+                await reconcile_billing_records(db, limit=25)
         except asyncio.CancelledError:
             print("⏰ Plan expiry cron job stopped")
             break
