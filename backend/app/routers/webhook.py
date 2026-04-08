@@ -14,6 +14,7 @@ Xendit retry policy:
 """
 
 from datetime import datetime
+import hmac
 
 from fastapi import APIRouter, Request, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -45,7 +46,7 @@ def _verify_callback_token(request: Request) -> None:
 
     received_token = request.headers.get("x-callback-token", "")
 
-    if not received_token or received_token != expected_token:
+    if not received_token or not hmac.compare_digest(received_token, expected_token):
         print(f"❌ Webhook token mismatch! Received: {received_token[:10]}...")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -147,6 +148,12 @@ async def _handle_paid(payment: PaymentHistory, payload: dict, db) -> None:
     2. Activate the plan for the user
     """
     now = datetime.utcnow()
+    payload_amount = payload.get("paid_amount") or payload.get("amount")
+    if payload_amount is not None and int(payload_amount) != payment.amount_idr:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Payment amount does not match the pending invoice.",
+        )
 
     # Update payment record
     payment.status = "PAID"
@@ -156,10 +163,9 @@ async def _handle_paid(payment: PaymentHistory, payload: dict, db) -> None:
     payment.updated_at = now
 
     # Activate plan
-    metadata = payload.get("metadata", {})
-    user_id = metadata.get("user_id") or payment.user_id
-    plan = metadata.get("plan") or payment.plan
-    billing_cycle = metadata.get("billing_cycle") or payment.billing_cycle
+    user_id = payment.user_id
+    plan = payment.plan
+    billing_cycle = payment.billing_cycle
 
     subscription = await activate_plan(
         user_id=user_id,

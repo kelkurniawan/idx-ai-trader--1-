@@ -162,7 +162,16 @@ async def activate_plan(
     """
     duration_days = get_cycle_duration_days(billing_cycle)
     now = datetime.utcnow()
-    expires_at = now + timedelta(days=duration_days)
+
+    stmt = select(User).where(User.id == user_id)
+    result = await db.execute(stmt)
+    user = result.scalar_one_or_none()
+
+    entitlement_start = now
+    if user and user.plan_expires_at and user.plan_expires_at > now:
+        entitlement_start = user.plan_expires_at
+
+    expires_at = entitlement_start + timedelta(days=duration_days)
     grace_until = expires_at + timedelta(days=GRACE_PERIOD_DAYS)
 
     # Create subscription record
@@ -182,9 +191,6 @@ async def activate_plan(
     db.add(subscription)
 
     # Update user record
-    stmt = select(User).where(User.id == user_id)
-    result = await db.execute(stmt)
-    user = result.scalar_one_or_none()
     if user:
         user.plan = plan
         user.plan_expires_at = expires_at
@@ -420,7 +426,12 @@ async def check_and_downgrade_expired(db: AsyncSession) -> int:
                 user_id=user.id,
             )
 
-            if charge_result.get("status") == "SUCCEEDED":
+            if charge_result.get("status") in ("PENDING", "REQUIRES_ACTION", "AWAITING_CAPTURE"):
+                user.plan_grace_until = now + timedelta(days=1)
+                user.updated_at = now
+                charged = True
+                print(f"Auto-charge pending for user {user.id[:8]}..., keeping grace access temporarily")
+            elif charge_result.get("status") == "SUCCEEDED":
                 # Activate paid subscription
                 duration_days = get_cycle_duration_days("MONTHLY")
                 new_expires = now + timedelta(days=duration_days)
@@ -487,4 +498,3 @@ async def check_and_downgrade_expired(db: AsyncSession) -> int:
         print(f"\n📊 Plan expiry cron: {processed} user(s) processed\n")
 
     return processed
-

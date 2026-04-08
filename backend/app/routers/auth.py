@@ -31,7 +31,7 @@ from ..services.auth_service import (
 from ..services.mfa_service import (
     generate_totp_secret, get_totp_provisioning_uri, verify_totp,
     generate_otp, store_otp, retrieve_and_delete_otp,
-    send_otp_email, send_otp_whatsapp,
+    send_otp_email, send_otp_whatsapp, encrypt_totp_secret, decrypt_totp_secret,
 )
 from ..services.recaptcha_service import verify_recaptcha
 
@@ -365,7 +365,7 @@ async def mfa_verify(
     
     # Verify code based on MFA type
     if user.mfa_type == "totp":
-        if not user.mfa_secret or not verify_totp(user.mfa_secret, request.otp_code):
+        if not user.mfa_secret or not verify_totp(decrypt_totp_secret(user.mfa_secret), request.otp_code):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid authenticator code. Please try again.",
@@ -416,7 +416,7 @@ async def mfa_setup(
         qr_uri = get_totp_provisioning_uri(secret, user.email)
         
         # Save to user (not activated until verified)
-        user.mfa_secret = secret
+        user.mfa_secret = encrypt_totp_secret(secret)
         user.mfa_type = "totp"
         user.mfa_enabled = True
         await db.commit()
@@ -485,7 +485,7 @@ async def mfa_disable(
     
     # Verify code before disabling
     if user.mfa_type == "totp":
-        if not user.mfa_secret or not verify_totp(user.mfa_secret, request.otp_code):
+        if not user.mfa_secret or not verify_totp(decrypt_totp_secret(user.mfa_secret), request.otp_code):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid authenticator code.",

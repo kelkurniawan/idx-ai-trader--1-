@@ -56,12 +56,15 @@ export interface InvoiceResponse {
 
 export interface StartTrialResponse {
   message: string;
-  plan: string;
+  plan?: string | null;
   is_trial: boolean;
-  trial_ends_at: string;
-  days_remaining: number;
+  trial_ends_at?: string | null;
+  days_remaining?: number | null;
   payment_method_saved: boolean;
+  payment_method_id?: string | null;
+  payment_method_status?: string | null;
   redirect_url: string | null;
+  requires_action: boolean;
 }
 
 // ───────────────────────────────────────────────
@@ -79,6 +82,15 @@ export async function startTrial(paymentType: 'CARD' | 'EWALLET' = 'CARD'): Prom
   const res = await subFetch('/start-trial', {
     method: 'POST',
     body: JSON.stringify({ payment_type: paymentType }),
+  });
+  return handleResponse<StartTrialResponse>(res);
+}
+
+/** Confirm free-trial activation after customer finishes payment-method authorization */
+export async function confirmStartTrial(paymentMethodId: string): Promise<StartTrialResponse> {
+  const res = await subFetch('/start-trial/confirm', {
+    method: 'POST',
+    body: JSON.stringify({ payment_method_id: paymentMethodId }),
   });
   return handleResponse<StartTrialResponse>(res);
 }

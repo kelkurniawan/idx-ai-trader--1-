@@ -13,6 +13,7 @@
 
 import React, { useState, useEffect } from 'react';
 import {
+  confirmStartTrial,
   getSubscriptionStatus,
   subscribe,
   startTrial,
@@ -49,6 +50,12 @@ const SubscriptionCampaign: React.FC<SubscriptionCampaignProps> = ({ userId }) =
   const [loading, setLoading] = useState(false);
   const [trialLoading, setTrialLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const refreshSubscriptionStatus = async () => {
+    const newStatus = await getSubscriptionStatus();
+    setStatus(newStatus);
+    return newStatus;
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -122,19 +129,48 @@ const SubscriptionCampaign: React.FC<SubscriptionCampaignProps> = ({ userId }) =
     setError('');
     try {
       const result = await startTrial('CARD');
-      // If there's a redirect URL for payment method collection, open it
-      if (result.redirect_url) {
-        window.open(result.redirect_url, '_blank');
+      if (result.is_trial) {
+        await refreshSubscriptionStatus();
+        setVariant('trial_reminder');
+        setTimeout(() => {
+          setVisible(false);
+        }, 2500);
+        return;
       }
-      // Refresh status
-      const newStatus = await getSubscriptionStatus();
-      setStatus(newStatus);
-      setVariant('trial_reminder');
-      setError('');
-      // Show success briefly then auto-dismiss
-      setTimeout(() => {
-        setVisible(false);
-      }, 3000);
+
+      if (result.redirect_url) {
+        window.open(result.redirect_url, '_blank', 'noopener,noreferrer');
+      }
+
+      if (!result.payment_method_id) {
+        throw new Error('Payment method setup did not return an identifier.');
+      }
+
+      let confirmed = false;
+      for (let attempt = 0; attempt < 12; attempt += 1) {
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+        try {
+          const confirmedTrial = await confirmStartTrial(result.payment_method_id);
+          if (confirmedTrial.is_trial) {
+            confirmed = true;
+            await refreshSubscriptionStatus();
+            setVariant('trial_reminder');
+            setTimeout(() => {
+              setVisible(false);
+            }, 2500);
+            break;
+          }
+        } catch (confirmErr: any) {
+          const message = String(confirmErr?.message || '');
+          if (!message.includes('not ready yet')) {
+            throw confirmErr;
+          }
+        }
+      }
+
+      if (!confirmed) {
+        setError('Finish the payment authorization in the Xendit window, then try again in a few seconds.');
+      }
     } catch (err: any) {
       setError(err.message || 'Failed to start trial');
     } finally {

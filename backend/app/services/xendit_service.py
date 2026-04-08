@@ -288,6 +288,48 @@ async def tokenize_payment_method(
         )
 
 
+async def get_payment_method(payment_method_id: str) -> dict:
+    """
+    Retrieve a payment method from Xendit and return its latest status.
+
+    Used to confirm the customer completed any required action before
+    granting trial access or scheduling recurring charges.
+    """
+    if settings.is_development and not settings.XENDIT_SECRET_KEY:
+        return {
+            "payment_method_id": payment_method_id,
+            "status": "ACTIVE",
+            "reusability": "MULTIPLE",
+        }
+
+    headers = _get_auth_header()
+
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.get(
+                f"{XENDIT_API_BASE}/payment_methods/{payment_method_id}",
+                headers=headers,
+            )
+            if response.status_code in (200, 201):
+                data = response.json()
+                return {
+                    "payment_method_id": data["id"],
+                    "status": data.get("status", "UNKNOWN"),
+                    "reusability": data.get("reusability"),
+                }
+
+            error_data = response.json() if response.content else {}
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail=f"Failed to fetch payment method: {error_data.get('message', 'Unknown')}",
+            )
+    except httpx.RequestError:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Unable to reach payment service.",
+        )
+
+
 async def charge_saved_payment_method(
     customer_id: str,
     payment_method_id: str,
@@ -357,4 +399,3 @@ async def charge_saved_payment_method(
             "amount": amount,
             "error": str(e),
         }
-

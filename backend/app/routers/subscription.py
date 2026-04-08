@@ -17,6 +17,7 @@ from ..models.user import User
 from ..models.subscription import PaymentHistory
 from ..services.auth_service import get_current_user
 from ..services.plan_service import (
+    activate_trial,
     get_subscription_status,
     get_plan_features,
     get_price,
@@ -24,8 +25,9 @@ from ..services.plan_service import (
     BILLING_CYCLES,
     PLAN_FEATURES,
 )
-from ..services.xendit_service import create_invoice, create_customer, tokenize_payment_method
+from ..services.xendit_service import create_invoice, create_customer, get_payment_method, tokenize_payment_method
 from ..schemas.subscription import (
+    ConfirmTrialRequest,
     SubscribeRequest,
     StartTrialRequest,
     InvoiceResponse,
@@ -35,6 +37,7 @@ from ..schemas.subscription import (
     SubscriptionStatusResponse,
     PaymentHistoryItem,
     PaymentHistoryResponse,
+    StartTrialResponse,
 )
 
 router = APIRouter()
@@ -95,12 +98,12 @@ async def list_plans() -> PlansListResponse:
 # Start Free Trial (with payment collection)
 # ────────────────────────────────────────────────────────────────
 
-@router.post("/start-trial", summary="Start free trial with payment method collection")
+@router.post("/start-trial", response_model=StartTrialResponse, summary="Start free trial with payment method collection")
 async def start_trial(
     request: StartTrialRequest,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-):
+) -> StartTrialResponse:
     """
     Start a 30-day free Pro trial.
 
@@ -142,29 +145,103 @@ async def start_trial(
     )
     payment_method_id = pm_data["payment_method_id"]
 
-    # Step 3: Activate trial with payment references
+    payment_method_status = pm_data.get("status", "REQUIRES_ACTION")
+    if payment_method_status == "ACTIVE":
+        subscription = await activate_trial(
+            user_id=user.id,
+            db=db,
+            xendit_customer_id=customer_id,
+            xendit_payment_method_id=payment_method_id,
+        )
+
+        if not subscription:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Unable to activate trial. You may have already used your free trial.",
+            )
+
+        return StartTrialResponse(
+            message="Free Pro trial activated! Your payment method has been saved for auto-renewal.",
+            plan="PRO",
+            is_trial=True,
+            trial_ends_at=subscription.expires_at.isoformat(),
+            days_remaining=30,
+            payment_method_saved=True,
+            payment_method_id=payment_method_id,
+            payment_method_status=payment_method_status,
+            redirect_url=pm_data.get("redirect_url"),
+            requires_action=False,
+        )
+
+    return StartTrialResponse(
+        message="Complete payment method authorization to activate your free Pro trial.",
+        payment_method_id=payment_method_id,
+        payment_method_status=payment_method_status,
+        payment_method_saved=False,
+        redirect_url=pm_data.get("redirect_url"),
+        requires_action=True,
+    )
+
+
+@router.post("/start-trial/confirm", response_model=StartTrialResponse, summary="Confirm free trial activation")
+async def confirm_start_trial(
+    request: ConfirmTrialRequest,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> StartTrialResponse:
+    """Confirm the saved payment method is active, then activate the free trial."""
+    if user.has_used_trial:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You have already used your free trial.",
+        )
+
+    if user.plan in ("PRO", "EXPERT") and not user.plan_grace_until:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"You are already on the {user.plan} plan.",
+        )
+
+    customer_id = user.xendit_customer_id
+    if not customer_id:
+        customer_data = await create_customer(
+            user_id=user.id,
+            user_email=user.email,
+            user_name=user.name,
+        )
+        customer_id = customer_data["customer_id"]
+
+    payment_method = await get_payment_method(request.payment_method_id)
+    payment_method_status = payment_method.get("status", "UNKNOWN")
+    if payment_method_status != "ACTIVE":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Payment method is not ready yet (status: {payment_method_status}). Complete the authorization flow and try again.",
+        )
+
     subscription = await activate_trial(
         user_id=user.id,
         db=db,
         xendit_customer_id=customer_id,
-        xendit_payment_method_id=payment_method_id,
+        xendit_payment_method_id=request.payment_method_id,
     )
-
     if not subscription:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Unable to activate trial. You may have already used your free trial.",
         )
 
-    return {
-        "message": "Free Pro trial activated! Your payment method has been saved for auto-renewal.",
-        "plan": "PRO",
-        "is_trial": True,
-        "trial_ends_at": subscription.expires_at.isoformat(),
-        "days_remaining": 30,
-        "payment_method_saved": True,
-        "redirect_url": pm_data.get("redirect_url"),
-    }
+    return StartTrialResponse(
+        message="Free Pro trial activated! Your payment method has been saved for auto-renewal.",
+        plan="PRO",
+        is_trial=True,
+        trial_ends_at=subscription.expires_at.isoformat(),
+        days_remaining=30,
+        payment_method_saved=True,
+        payment_method_id=request.payment_method_id,
+        payment_method_status=payment_method_status,
+        requires_action=False,
+    )
 
 
 # ────────────────────────────────────────────────────────────────

@@ -24,6 +24,11 @@ class StartTrialRequest(BaseModel):
     payment_type: Literal["CARD", "EWALLET"] = "CARD"
 
 
+class ConfirmTrialRequest(BaseModel):
+    """Confirm payment-method setup before activating the trial."""
+    payment_method_id: str = Field(..., min_length=1, max_length=255)
+
+
 # ────────────────────────────────────────────────────────────────
 # Response Schemas
 # ────────────────────────────────────────────────────────────────
@@ -94,6 +99,20 @@ class PaymentHistoryItem(BaseModel):
 class PaymentHistoryResponse(BaseModel):
     """List of payment records."""
     payments: List[PaymentHistoryItem]
+
+
+class StartTrialResponse(BaseModel):
+    """Response when initiating trial payment-method collection."""
+    message: str
+    payment_method_id: Optional[str] = None
+    payment_method_status: Optional[str] = None
+    payment_method_saved: bool = False
+    redirect_url: Optional[str] = None
+    requires_action: bool = False
+    plan: Optional[str] = None
+    is_trial: bool = False
+    trial_ends_at: Optional[str] = None
+    days_remaining: Optional[int] = None
 
 
 class MessageResponse(BaseModel):
