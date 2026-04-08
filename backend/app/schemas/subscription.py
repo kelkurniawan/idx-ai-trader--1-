@@ -167,3 +167,41 @@ class BillingReconciliationResponse(BaseModel):
     failed_marked: int
     anomalies: List[str]
     ran_at: datetime
+
+
+class BillingSupportDetailResponse(BaseModel):
+    payment_id: str
+    invoice_id: str
+    payment_status: str
+    amount_idr: int
+    plan: str
+    billing_cycle: str
+    created_at: datetime
+    paid_at: Optional[datetime] = None
+    payment_method: Optional[str] = None
+    payment_channel: Optional[str] = None
+    user_id: str
+    user_email: str
+    user_name: str
+    current_plan: str
+    current_plan_expires_at: Optional[datetime] = None
+    auto_renew_enabled: bool
+    subscription_id: Optional[str] = None
+    subscription_status: Optional[str] = None
+    subscription_expires_at: Optional[datetime] = None
+    recommended_actions: List[str]
+    provider_refund_note: str
+
+
+class BillingRefundActionRequest(BaseModel):
+    mark_status: Literal["REFUND_REQUESTED", "REFUNDED"] = "REFUND_REQUESTED"
+    revoke_access: bool = False
+    disable_auto_renew: bool = True
+
+
+class BillingAdminActionResponse(BaseModel):
+    payment_id: str
+    payment_status: str
+    access_revoked: bool
+    auto_renew_disabled: bool
+    message: str

@@ -16,7 +16,12 @@ from ..database import get_db
 from ..models.user import User
 from ..models.subscription import PaymentHistory
 from ..services.auth_service import get_current_user, require_admin
-from ..services.billing_ops_service import get_billing_overview, reconcile_billing_records
+from ..services.billing_ops_service import (
+    apply_refund_support_action,
+    get_billing_overview,
+    get_payment_support_detail,
+    reconcile_billing_records,
+)
 from ..services.plan_service import (
     activate_trial,
     get_subscription_status,
@@ -30,8 +35,11 @@ from ..services.xendit_service import create_invoice, create_customer, get_payme
 from ..services.request_guard import enforce_rate_limit, request_identifier
 from ..schemas.subscription import (
     AutoRenewStatusResponse,
+    BillingAdminActionResponse,
     BillingOverviewResponse,
     BillingReconciliationResponse,
+    BillingRefundActionRequest,
+    BillingSupportDetailResponse,
     ConfirmTrialRequest,
     SubscribeRequest,
     StartTrialRequest,
@@ -442,3 +450,36 @@ async def admin_reconcile_billing(
     _ = admin_user
     result = await reconcile_billing_records(db)
     return BillingReconciliationResponse(**result)
+
+
+@router.get("/admin/payments/{payment_id}", response_model=BillingSupportDetailResponse, summary="Get payment support detail")
+async def admin_payment_support_detail(
+    payment_id: str,
+    admin_user: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+) -> BillingSupportDetailResponse:
+    _ = admin_user
+    result = await get_payment_support_detail(db, payment_id)
+    return BillingSupportDetailResponse(**result)
+
+
+@router.post(
+    "/admin/payments/{payment_id}/refund-support",
+    response_model=BillingAdminActionResponse,
+    summary="Record refund support action",
+)
+async def admin_refund_support_action(
+    payment_id: str,
+    request: BillingRefundActionRequest,
+    admin_user: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+) -> BillingAdminActionResponse:
+    _ = admin_user
+    result = await apply_refund_support_action(
+        db=db,
+        payment_id=payment_id,
+        mark_status=request.mark_status,
+        revoke_access=request.revoke_access,
+        disable_auto_renew=request.disable_auto_renew,
+    )
+    return BillingAdminActionResponse(**result)

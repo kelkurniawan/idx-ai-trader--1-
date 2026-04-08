@@ -114,6 +114,38 @@ export interface BillingReconciliationResult {
   ran_at: string;
 }
 
+export interface BillingSupportDetail {
+  payment_id: string;
+  invoice_id: string;
+  payment_status: string;
+  amount_idr: number;
+  plan: string;
+  billing_cycle: string;
+  created_at: string;
+  paid_at?: string | null;
+  payment_method?: string | null;
+  payment_channel?: string | null;
+  user_id: string;
+  user_email: string;
+  user_name: string;
+  current_plan: string;
+  current_plan_expires_at?: string | null;
+  auto_renew_enabled: boolean;
+  subscription_id?: string | null;
+  subscription_status?: string | null;
+  subscription_expires_at?: string | null;
+  recommended_actions: string[];
+  provider_refund_note: string;
+}
+
+export interface BillingAdminActionResult {
+  payment_id: string;
+  payment_status: string;
+  access_revoked: boolean;
+  auto_renew_disabled: boolean;
+  message: string;
+}
+
 // ───────────────────────────────────────────────
 // API Functions
 // ───────────────────────────────────────────────
@@ -177,4 +209,24 @@ export async function getAdminBillingOverview(): Promise<BillingOverview> {
 export async function runBillingReconciliation(): Promise<BillingReconciliationResult> {
   const res = await subFetch('/admin/reconcile', { method: 'POST' });
   return handleResponse<BillingReconciliationResult>(res);
+}
+
+export async function getBillingSupportDetail(paymentId: string): Promise<BillingSupportDetail> {
+  const res = await subFetch(`/admin/payments/${paymentId}`, { method: 'GET' });
+  return handleResponse<BillingSupportDetail>(res);
+}
+
+export async function recordRefundSupportAction(
+  paymentId: string,
+  payload: {
+    mark_status: 'REFUND_REQUESTED' | 'REFUNDED';
+    revoke_access: boolean;
+    disable_auto_renew: boolean;
+  }
+): Promise<BillingAdminActionResult> {
+  const res = await subFetch(`/admin/payments/${paymentId}/refund-support`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+  return handleResponse<BillingAdminActionResult>(res);
 }

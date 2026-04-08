@@ -1,10 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { AlertTriangle, CreditCard, RefreshCw, ShieldCheck, Timer, Wallet } from 'lucide-react';
 import {
+    getBillingSupportDetail,
     getAdminBillingOverview,
+    recordRefundSupportAction,
     runBillingReconciliation,
+    type BillingAdminActionResult,
     type BillingOverview,
     type BillingReconciliationResult,
+    type BillingSupportDetail,
 } from '../../services/subscriptionApi';
 
 const money = new Intl.NumberFormat('id-ID', {
@@ -42,6 +46,10 @@ const BillingOps: React.FC = () => {
     const [reconciling, setReconciling] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [reconcileResult, setReconcileResult] = useState<BillingReconciliationResult | null>(null);
+    const [supportDetail, setSupportDetail] = useState<BillingSupportDetail | null>(null);
+    const [supportLoading, setSupportLoading] = useState(false);
+    const [supportActionLoading, setSupportActionLoading] = useState(false);
+    const [supportResult, setSupportResult] = useState<BillingAdminActionResult | null>(null);
 
     const loadOverview = async (mode: 'initial' | 'refresh' = 'initial') => {
         try {
@@ -76,6 +84,47 @@ const BillingOps: React.FC = () => {
             setError(err?.message || 'Failed to run billing reconciliation.');
         } finally {
             setReconciling(false);
+        }
+    };
+
+    const handleLoadSupport = async (paymentId: string) => {
+        try {
+            setSupportLoading(true);
+            setSupportResult(null);
+            const detail = await getBillingSupportDetail(paymentId);
+            setSupportDetail(detail);
+        } catch (err: any) {
+            setError(err?.message || 'Failed to load support detail.');
+        } finally {
+            setSupportLoading(false);
+        }
+    };
+
+    const handleRefundSupportAction = async (markStatus: 'REFUND_REQUESTED' | 'REFUNDED', revokeAccess: boolean) => {
+        if (!supportDetail) return;
+        const confirmed = window.confirm(
+            markStatus === 'REFUNDED'
+                ? 'Confirm that the refund has already been processed in Xendit Dashboard and record it here?'
+                : 'Record this payment as refund requested and disable future renewal?'
+        );
+        if (!confirmed) return;
+
+        try {
+            setSupportActionLoading(true);
+            setError(null);
+            const result = await recordRefundSupportAction(supportDetail.payment_id, {
+                mark_status: markStatus,
+                revoke_access: revokeAccess,
+                disable_auto_renew: true,
+            });
+            setSupportResult(result);
+            const refreshed = await getBillingSupportDetail(supportDetail.payment_id);
+            setSupportDetail(refreshed);
+            await loadOverview('refresh');
+        } catch (err: any) {
+            setError(err?.message || 'Failed to record support action.');
+        } finally {
+            setSupportActionLoading(false);
         }
     };
 
@@ -214,6 +263,114 @@ const BillingOps: React.FC = () => {
                 </div>
             )}
 
+            {(supportDetail || supportLoading || supportResult) && (
+                <div style={{ ...cardStyle, padding: 20 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 14, flexWrap: 'wrap' }}>
+                        <div>
+                            <h3 style={{ margin: 0, fontSize: 16, fontWeight: 900, color: '#0f172a' }}>Support Action Center</h3>
+                            <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: 13 }}>Use this after checking the payment in Xendit Dashboard and your support inbox.</p>
+                        </div>
+                        {supportLoading && <span style={{ color: '#64748b', fontSize: 13, fontWeight: 700 }}>Loading payment detail...</span>}
+                    </div>
+
+                    {supportResult && (
+                        <div style={{ marginBottom: 14, padding: 14, borderRadius: 12, background: '#eff6ff', color: '#1d4ed8', border: '1px solid rgba(29, 78, 216, 0.2)' }}>
+                            <strong style={{ display: 'block', marginBottom: 4 }}>Support action saved</strong>
+                            <span style={{ fontSize: 13 }}>{supportResult.message}</span>
+                        </div>
+                    )}
+
+                    {supportDetail && (
+                        <>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: 14, marginBottom: 16 }}>
+                                <div style={{ background: '#f8fafc', borderRadius: 14, padding: 14 }}>
+                                    <p style={{ margin: '0 0 6px', color: '#64748b', fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Customer</p>
+                                    <p style={{ margin: 0, color: '#0f172a', fontWeight: 800 }}>{supportDetail.user_name}</p>
+                                    <p style={{ margin: '4px 0 0', color: '#334155', fontSize: 13 }}>{supportDetail.user_email}</p>
+                                    <p style={{ margin: '4px 0 0', color: '#334155', fontSize: 13 }}>Current plan: {supportDetail.current_plan}</p>
+                                </div>
+                                <div style={{ background: '#f8fafc', borderRadius: 14, padding: 14 }}>
+                                    <p style={{ margin: '0 0 6px', color: '#64748b', fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Payment</p>
+                                    <p style={{ margin: 0, color: '#0f172a', fontWeight: 800 }}>{supportDetail.invoice_id}</p>
+                                    <p style={{ margin: '4px 0 0', color: '#334155', fontSize: 13 }}>{money.format(supportDetail.amount_idr)} • {supportDetail.payment_status}</p>
+                                    <p style={{ margin: '4px 0 0', color: '#334155', fontSize: 13 }}>{supportDetail.plan} / {supportDetail.billing_cycle}</p>
+                                </div>
+                                <div style={{ background: '#f8fafc', borderRadius: 14, padding: 14 }}>
+                                    <p style={{ margin: '0 0 6px', color: '#64748b', fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Entitlement</p>
+                                    <p style={{ margin: 0, color: '#0f172a', fontWeight: 800 }}>{supportDetail.subscription_status || 'No linked subscription'}</p>
+                                    <p style={{ margin: '4px 0 0', color: '#334155', fontSize: 13 }}>
+                                        Expires: {supportDetail.subscription_expires_at ? dtf.format(new Date(supportDetail.subscription_expires_at)) : '-'}
+                                    </p>
+                                    <p style={{ margin: '4px 0 0', color: '#334155', fontSize: 13 }}>
+                                        Auto renew: {supportDetail.auto_renew_enabled ? 'Enabled' : 'Disabled'}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div style={{ marginBottom: 16, padding: 14, borderRadius: 12, background: '#fff7ed', border: '1px solid rgba(234, 88, 12, 0.18)' }}>
+                                <p style={{ margin: '0 0 8px', color: '#9a3412', fontWeight: 800 }}>Refund note</p>
+                                <p style={{ margin: 0, color: '#9a3412', fontSize: 13 }}>{supportDetail.provider_refund_note}</p>
+                            </div>
+
+                            <div style={{ marginBottom: 16 }}>
+                                <p style={{ margin: '0 0 8px', color: '#0f172a', fontWeight: 800 }}>Recommended next actions</p>
+                                {supportDetail.recommended_actions.map((item) => (
+                                    <p key={item} style={{ margin: '0 0 6px', color: '#334155', fontSize: 13 }}>{item}</p>
+                                ))}
+                            </div>
+
+                            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                                <button
+                                    onClick={() => handleRefundSupportAction('REFUND_REQUESTED', false)}
+                                    disabled={supportActionLoading}
+                                    style={{
+                                        border: '1px solid rgba(191, 219, 254, 0.9)',
+                                        background: '#eff6ff',
+                                        color: '#1d4ed8',
+                                        padding: '11px 14px',
+                                        borderRadius: 12,
+                                        fontWeight: 800,
+                                        cursor: supportActionLoading ? 'not-allowed' : 'pointer',
+                                    }}
+                                >
+                                    Mark Refund Requested
+                                </button>
+                                <button
+                                    onClick={() => handleRefundSupportAction('REFUNDED', false)}
+                                    disabled={supportActionLoading}
+                                    style={{
+                                        border: '1px solid rgba(16, 185, 129, 0.24)',
+                                        background: '#ecfdf5',
+                                        color: '#047857',
+                                        padding: '11px 14px',
+                                        borderRadius: 12,
+                                        fontWeight: 800,
+                                        cursor: supportActionLoading ? 'not-allowed' : 'pointer',
+                                    }}
+                                >
+                                    Mark Refunded
+                                </button>
+                                <button
+                                    onClick={() => handleRefundSupportAction('REFUNDED', true)}
+                                    disabled={supportActionLoading}
+                                    style={{
+                                        border: '1px solid rgba(239, 68, 68, 0.22)',
+                                        background: '#fef2f2',
+                                        color: '#b91c1c',
+                                        padding: '11px 14px',
+                                        borderRadius: 12,
+                                        fontWeight: 800,
+                                        cursor: supportActionLoading ? 'not-allowed' : 'pointer',
+                                    }}
+                                >
+                                    Refund And Revoke Access
+                                </button>
+                            </div>
+                        </>
+                    )}
+                </div>
+            )}
+
             <div style={{ ...cardStyle, overflow: 'hidden' }}>
                 <div style={{ padding: 20, borderBottom: '1px solid rgba(148, 163, 184, 0.18)' }}>
                     <h3 style={{ margin: 0, fontSize: 16, fontWeight: 900, color: '#0f172a' }}>Recent Payments</h3>
@@ -223,7 +380,7 @@ const BillingOps: React.FC = () => {
                     <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 760 }}>
                         <thead>
                             <tr style={{ background: '#f8fafc' }}>
-                                {['Invoice', 'User', 'Plan', 'Amount', 'Status', 'Created', 'Paid'].map((header) => (
+                                {['Invoice', 'User', 'Plan', 'Amount', 'Status', 'Created', 'Paid', 'Actions'].map((header) => (
                                     <th key={header} style={{ textAlign: 'left', padding: '14px 18px', color: '#64748b', fontSize: 12, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                                         {header}
                                     </th>
@@ -253,10 +410,26 @@ const BillingOps: React.FC = () => {
                                     </td>
                                     <td style={{ padding: '14px 18px', color: '#334155', fontSize: 13 }}>{dtf.format(new Date(payment.created_at))}</td>
                                     <td style={{ padding: '14px 18px', color: '#334155', fontSize: 13 }}>{payment.paid_at ? dtf.format(new Date(payment.paid_at)) : '-'}</td>
+                                    <td style={{ padding: '14px 18px' }}>
+                                        <button
+                                            onClick={() => handleLoadSupport(payment.id)}
+                                            style={{
+                                                border: '1px solid rgba(148, 163, 184, 0.28)',
+                                                background: 'white',
+                                                color: '#0f172a',
+                                                padding: '8px 12px',
+                                                borderRadius: 10,
+                                                fontWeight: 800,
+                                                cursor: 'pointer',
+                                            }}
+                                        >
+                                            Support
+                                        </button>
+                                    </td>
                                 </tr>
                             )) : (
                                 <tr>
-                                    <td colSpan={7} style={{ padding: 24, textAlign: 'center', color: '#64748b', fontWeight: 600 }}>
+                                    <td colSpan={8} style={{ padding: 24, textAlign: 'center', color: '#64748b', fontWeight: 600 }}>
                                         No billing records yet.
                                     </td>
                                 </tr>
