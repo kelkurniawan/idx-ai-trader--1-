@@ -30,7 +30,15 @@ import Chart from './components/Chart';
 import IndicatorCard from './components/IndicatorCard';
 import TrendAnalysis from './components/TrendAnalysis';
 import NewsFeed from './components/NewsFeed';
-import { HeaderPriceSkeleton, AnalysisSkeleton, GaugeSkeleton, TrendSkeleton } from './components/Skeletons';
+import {
+  HeaderPriceSkeleton,
+  AnalysisSkeleton,
+  AppBootSkeleton,
+  ContentPanelSkeleton,
+  GaugeSkeleton,
+  HomeDashboardSkeleton,
+  TrendSkeleton,
+} from './components/Skeletons';
 import { LoginPage, RegisterPage } from './components/Auth';
 import ProfileSetup from './components/ProfileSetup';
 import MfaVerify from './components/MfaVerify';
@@ -601,14 +609,7 @@ const App: React.FC = () => {
 
   // Loading screen while checking session cookies
   if (authLoading) {
-    return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 bg-gradient-to-tr from-emerald-500 to-cyan-500 rounded-xl flex items-center justify-center font-bold text-white shadow-lg shadow-emerald-500/20 animate-pulse">AI</div>
-          <p className="text-slate-400 text-sm">Loading...</p>
-        </div>
-      </div>
-    );
+    return <AppBootSkeleton />;
   }
 
   // Not authenticated — show landing/login/register
@@ -669,7 +670,7 @@ const App: React.FC = () => {
       created_at: new Date().toISOString(),
     };
     return (
-      <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div></div>}>
+      <Suspense fallback={<ContentPanelSkeleton fullScreen />}>
         <ProfilePageLazy
           authUser={profileAuth}
           onBack={() => setView('home')}
@@ -702,7 +703,7 @@ const App: React.FC = () => {
       );
     }
     return (
-      <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div></div>}>
+      <Suspense fallback={<ContentPanelSkeleton fullScreen />}>
         <AdminDashboard onBack={() => setView('home')} />
       </Suspense>
     );
@@ -847,14 +848,16 @@ const App: React.FC = () => {
           {/* HOME VIEW */}
           {!settingsView && view === 'home' && (
             <>
-              <HomeDashboard
-                user={user}
-                onNavigateAnalysis={() => setView('analysis')}
-                onNavigateWatchlist={() => setView('watchlist')}
-                onNavigateJournal={() => setView('journal')}
-                onSelectStock={(ticker) => handleSelectStock({ ticker, name: ticker, sector: 'Unknown' })}
-                onLogout={handleLogout}
-              />
+              <Suspense fallback={<HomeDashboardSkeleton />}>
+                <HomeDashboard
+                  user={user}
+                  onNavigateAnalysis={() => setView('analysis')}
+                  onNavigateWatchlist={() => setView('watchlist')}
+                  onNavigateJournal={() => setView('journal')}
+                  onSelectStock={(ticker) => handleSelectStock({ ticker, name: ticker, sector: 'Unknown' })}
+                  onLogout={handleLogout}
+                />
+              </Suspense>
               {/* Subscription campaign pop-up (shown based on plan status) */}
               <SubscriptionCampaign userId={user.id} />
             </>
@@ -863,39 +866,39 @@ const App: React.FC = () => {
           {/* ARCHIVED VIEWS — kept for route integrity, never render */}
           {!ARCHIVED && view === 'dashboard' && null}
           {(!ARCHIVED && (view === 'swing' || view === 'scalp')) && (
-            <Suspense fallback={<div className="flex items-center justify-center py-24"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div></div>}>
+            <Suspense fallback={<ContentPanelSkeleton />}>
               {view === 'swing' && <ChartAnalyzer type="SWING" />}
               {view === 'scalp' && <ChartAnalyzer type="SCALP" />}
             </Suspense>
           )}
           {!ARCHIVED && view === 'backtest' && (
-            <Suspense fallback={<div className="flex items-center justify-center py-24"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div></div>}>
+            <Suspense fallback={<ContentPanelSkeleton />}>
               <Backtester />
             </Suspense>
           )}
           {!ARCHIVED && view === 'community' && (
-            <Suspense fallback={<div className="flex items-center justify-center py-24"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div></div>}>
+            <Suspense fallback={<ContentPanelSkeleton />}>
               <Community currentUser={user} />
             </Suspense>
           )}
 
           {/* TRADE JOURNAL */}
           {view === 'journal' && (
-            <Suspense fallback={<div className="flex items-center justify-center py-24"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div></div>}>
+            <Suspense fallback={<ContentPanelSkeleton />}>
               <TradeJournal />
             </Suspense>
           )}
 
           {/* LEARNING HUB */}
           {view === 'learning' && (
-            <Suspense fallback={<div className="flex items-center justify-center py-24"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div></div>}>
+            <Suspense fallback={<ContentPanelSkeleton />}>
               <LearningCenter />
             </Suspense>
           )}
 
           {/* WATCHLIST */}
           {view === 'watchlist' && (
-            <Suspense fallback={<div className="flex items-center justify-center py-24"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div></div>}>
+            <Suspense fallback={<ContentPanelSkeleton />}>
               <Watchlist onAnalyze={(ticker) => handleSelectStock({ ticker, name: 'Watchlist Asset', sector: 'Unknown' })} />
             </Suspense>
           )}
@@ -1364,7 +1367,7 @@ const App: React.FC = () => {
           )}
           {/* NEWS PAGE */}
           {view === 'news' && (
-            <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2" style={{borderColor:'#22c55e'}} /></div>}>
+            <Suspense fallback={<ContentPanelSkeleton />}>
               <NewsPage onTickerClick={(t) => { handleSelectStock({ ticker: t, name: t, sector: 'Unknown' }); setView('analysis'); }} />
             </Suspense>
           )}
