@@ -57,6 +57,12 @@ python -c "import secrets; print(secrets.token_hex(32))"
 - `RATE_LIMIT_BACKEND=redis`
 - `REDIS_URL=redis://redis:6379/0`
 
+### Clerk
+
+- `CLERK_SECRET_KEY=<live clerk secret key>`
+- `CLERK_ISSUER=https://<your-clerk-instance>.clerk.accounts.dev`
+- `CLERK_JWKS_URL=https://<your-clerk-instance>.clerk.accounts.dev/.well-known/jwks.json`
+
 ### Email / OTP
 
 - `SMTP_HOST=<your smtp host>`
@@ -95,8 +101,11 @@ The repo already sets:
 - `.env.production`
   - `VITE_APP_MODE=production`
   - `VITE_API_URL=`
+  - `VITE_CLERK_PUBLISHABLE_KEY=<live clerk publishable key>`
 
 Leave `VITE_API_URL` empty if frontend and API are served from the same public domain through Caddy.
+
+Use `VITE_CLERK_PUBLISHABLE_KEY` for this repo, not `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, because the frontend is Vite-based rather than Next.js-based.
 
 ## 3. Xendit dashboard checklist
 

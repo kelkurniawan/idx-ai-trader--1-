@@ -5,7 +5,7 @@
  * Sessions are managed via HTTP-only cookies (same as authApi.ts).
  */
 
-const API_BASE = import.meta.env.VITE_API_URL || '';
+import { apiFetch } from './apiClient';
 
 // ────────────────────────────────────────────────────────────────
 // Types
@@ -98,16 +98,7 @@ export interface TradeStats {
 // ────────────────────────────────────────────────────────────────
 
 async function portfolioFetch(path: string, options: RequestInit = {}): Promise<Response> {
-  const url = `${API_BASE}/api/portfolio${path}`;
-  const res = await fetch(url, {
-    ...options,
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-  return res;
+  return apiFetch(`/api/portfolio${path}`, options);
 }
 
 async function handleResponse<T>(res: Response): Promise<T> {

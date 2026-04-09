@@ -163,7 +163,7 @@ export interface User {
   mfa_enabled?: boolean;
   mfa_type?: 'totp' | 'email_otp' | 'whatsapp_otp' | null;
   profile_complete?: boolean;
-  auth_provider?: 'local' | 'google';
+  auth_provider?: 'local' | 'google' | 'clerk';
   is_admin?: boolean;
 }
 

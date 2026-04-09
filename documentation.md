@@ -13,7 +13,7 @@ IDX AI Trader is a full-stack stock analysis platform focused on the Indonesia S
 
 The current product includes:
 
-- authentication with cookie-based sessions and MFA
+- authentication with Clerk-backed sign-in/sign-up plus local app user synchronization
 - stock analysis and AI-assisted workflows
 - portfolio, journal, and watchlist features
 - subscription plans, trial flow, renewal controls, and admin billing operations
@@ -186,13 +186,15 @@ Mounted in `backend/app/main.py`:
 
 ### Authentication model
 
-- JWT access token in HTTP-only cookie
-- optional remember-me cookie
-- Google OAuth support
-- MFA support:
-  - TOTP
-  - email OTP
-  - SMS / WhatsApp OTP
+- Clerk provides the user-facing authentication experience
+- the frontend sends Clerk bearer tokens to the Python backend
+- the backend verifies Clerk tokens and syncs users into the local `users` table using `clerk_user_id`
+- local app ownership remains the source of truth for:
+  - `is_admin`
+  - subscription state
+  - Xendit customer and payment records
+  - profile completeness and other app-specific data
+- legacy local auth paths may still exist during migration, but Clerk is now the intended primary login flow
 
 ### Security controls currently present
 
@@ -373,6 +375,24 @@ Main categories:
 - CORS
 
 Frontend production values are in `.env.production`.
+
+### Clerk environment naming note
+
+This frontend is built with Vite, so the public Clerk key must use:
+
+- `VITE_CLERK_PUBLISHABLE_KEY`
+
+Do not use:
+
+- `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
+
+That `NEXT_PUBLIC_*` prefix is for Next.js projects and will not be exposed to this Vite app.
+
+Backend Clerk values stay server-side and should use:
+
+- `CLERK_SECRET_KEY`
+- `CLERK_ISSUER`
+- `CLERK_JWKS_URL`
 
 ## 13. Local Development
 

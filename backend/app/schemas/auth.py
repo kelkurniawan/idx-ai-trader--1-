@@ -34,6 +34,13 @@ class GoogleAuthRequest(BaseModel):
     recaptcha_token: str = ""
 
 
+class ClerkSyncRequest(BaseModel):
+    """Provision or sync a local app user from a Clerk-authenticated identity."""
+    email: EmailStr
+    name: str = Field(..., min_length=1, max_length=100)
+    avatar_url: Optional[str] = None
+
+
 class MfaVerifyRequest(BaseModel):
     """MFA verification request (during login)."""
     temp_token: str   # Short-lived token issued after password check

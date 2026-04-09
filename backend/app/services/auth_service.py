@@ -20,6 +20,7 @@ from sqlalchemy import select
 from ..config import get_settings
 from ..database import get_db
 from ..models.user import User, RememberMeToken
+from ..services.clerk_service import get_local_user_for_clerk_subject, verify_clerk_token_from_request
 
 settings = get_settings()
 
@@ -253,6 +254,17 @@ async def get_current_user(
         async def get_me(user: User = Depends(get_current_user)):
             return user
     """
+    clerk_payload = verify_clerk_token_from_request(request)
+    if clerk_payload:
+        clerk_subject = clerk_payload.get("sub")
+        user = await get_local_user_for_clerk_subject(db, clerk_subject)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Clerk user is not synchronized with the local application profile yet.",
+            )
+        return user
+
     token = _extract_token_from_request(request, credentials)
     
     if not token:

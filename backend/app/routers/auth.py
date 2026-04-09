@@ -17,6 +17,7 @@ from ..database import get_db
 from ..models.user import User
 from ..schemas.auth import (
     RegisterRequest, LoginRequest, GoogleAuthRequest,
+    ClerkSyncRequest,
     MfaVerifyRequest, MfaSetupRequest, MfaDisableRequest,
     ProfileUpdateRequest,
     AuthResponse, UserResponse, MfaSetupResponse, MessageResponse,
@@ -28,6 +29,7 @@ from ..services.auth_service import (
     create_remember_me_token, revoke_remember_me_tokens,
     get_current_user,
 )
+from ..services.clerk_service import sync_clerk_user, verify_clerk_token_from_request
 from ..services.mfa_service import (
     generate_totp_secret, get_totp_provisioning_uri, verify_totp,
     generate_otp, store_otp, retrieve_and_delete_otp,
@@ -52,6 +54,7 @@ def _user_to_response(user: User) -> UserResponse:
         mfa_type=user.mfa_type,
         profile_complete=user.profile_complete,
         auth_provider=user.auth_provider,
+        is_admin=user.is_admin,
     )
 
 
@@ -342,6 +345,31 @@ async def google_auth(
         return await _handle_mfa_challenge(user, db)
     
     return await _complete_login(response, user, db)
+
+
+@router.post("/clerk/sync", response_model=UserResponse)
+async def clerk_sync(
+    request: ClerkSyncRequest,
+    http_request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    """Create or update the local app user for the currently signed-in Clerk identity."""
+    enforce_rate_limit("auth:clerk_sync", request_identifier(http_request, request.email), 20, 15 * 60)
+    payload = verify_clerk_token_from_request(http_request)
+    if not payload:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing Clerk session token.",
+        )
+
+    user = await sync_clerk_user(
+        db=db,
+        clerk_subject=payload["sub"],
+        email=request.email,
+        name=request.name,
+        avatar_url=request.avatar_url,
+    )
+    return _user_to_response(user)
 
 
 # ===========================

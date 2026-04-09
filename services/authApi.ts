@@ -6,7 +6,7 @@
  * so no manual token management is required on the frontend.
  */
 
-const API_BASE = import.meta.env.VITE_API_URL || '';
+import { apiFetch } from './apiClient';
 
 // ===========================
 // Types (matching backend schemas)
@@ -22,6 +22,7 @@ export interface AuthUser {
     mfa_type?: string | null;
     profile_complete: boolean;
     auth_provider: string;
+    is_admin?: boolean;
 }
 
 export interface AuthResponse {
@@ -50,16 +51,7 @@ export interface MessageResponse {
 // ===========================
 
 async function authFetch(path: string, options: RequestInit = {}): Promise<Response> {
-    const url = `${API_BASE}/api/auth${path}`;
-    const res = await fetch(url, {
-        ...options,
-        credentials: 'include',  // Always send cookies (HTTP-only session)
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers,
-        },
-    });
-    return res;
+    return apiFetch(`/api/auth${path}`, options);
 }
 
 async function handleResponse<T>(res: Response): Promise<T> {
@@ -190,4 +182,17 @@ export async function updateProfile(data: {
 export async function logout(): Promise<MessageResponse> {
     const res = await authFetch('/logout', { method: 'POST' });
     return handleResponse<MessageResponse>(res);
+}
+
+/** Sync current Clerk user into the local app database */
+export async function syncClerkUser(data: {
+    email: string;
+    name: string;
+    avatar_url?: string | null;
+}): Promise<AuthUser> {
+    const res = await authFetch('/clerk/sync', {
+        method: 'POST',
+        body: JSON.stringify(data),
+    });
+    return handleResponse<AuthUser>(res);
 }

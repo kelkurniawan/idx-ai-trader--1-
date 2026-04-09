@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect, useCallback, useMemo, useRef, Suspense } from 'react';
+import { useAuth, useClerk, useUser } from '@clerk/clerk-react';
 
 import {
   SAMPLE_IDX_STOCKS,
@@ -43,7 +44,8 @@ import { LoginPage, RegisterPage } from './components/Auth';
 import ProfileSetup from './components/ProfileSetup';
 import MfaVerify from './components/MfaVerify';
 import MfaSetup from './components/MfaSetup';
-import { checkAuthStatus, logout as apiLogout, getMe } from './services/authApi';
+import { getMe, syncClerkUser } from './services/authApi';
+import { setAuthTokenGetter } from './services/apiClient';
 import type { ProfileUser } from './services/profileApi';
 
 // Lazy-loaded components (only loaded when their tab/view is active)
@@ -323,10 +325,15 @@ const SidebarItem = ({ icon, label, viewId, view, setView }: { icon: React.React
 };
 
 const App: React.FC = () => {
+  const { isLoaded: clerkLoaded, isSignedIn, getToken } = useAuth();
+  const { user: clerkUser } = useUser();
+  const clerk = useClerk();
   const [user, setUser] = useState<User | null>(null);
   const [authView, setAuthView] = useState<'landing' | 'login' | 'register'>('landing');
   const [selectedPlan, setSelectedPlan] = useState<'FREE' | 'PRO' | 'EXPERT'>('FREE');
   const [authLoading, setAuthLoading] = useState(true); // Loading while checking session
+  const [authHydrationError, setAuthHydrationError] = useState<string | null>(null);
+  const [authHydrationNonce, setAuthHydrationNonce] = useState(0);
   // MFA challenge state
   const [mfaTempToken, setMfaTempToken] = useState<string | null>(null);
   const [mfaMessage, setMfaMessage] = useState('');
@@ -389,32 +396,59 @@ const App: React.FC = () => {
 
   const pollingInProgress = useRef(false);
 
-  // On mount: check if user has a valid session via HTTP-only cookies
+  const mapBackendUser = useCallback((backendUser: any): User => ({
+    id: backendUser.id,
+    name: backendUser.name,
+    email: backendUser.email,
+    avatar: backendUser.avatar ?? undefined,
+    phone_number: backendUser.phone_number ?? undefined,
+    mfa_enabled: backendUser.mfa_enabled,
+    mfa_type: backendUser.mfa_type as any,
+    profile_complete: backendUser.profile_complete,
+    auth_provider: backendUser.auth_provider as any,
+    is_admin: backendUser.is_admin ?? false,
+  }), []);
+
   useEffect(() => {
-    const checkSession = async () => {
+    setAuthTokenGetter(async () => {
+      const token = await getToken();
+      return token ?? null;
+    });
+    return () => setAuthTokenGetter(null);
+  }, [getToken]);
+
+  useEffect(() => {
+    const hydrateClerkSession = async () => {
+      if (!clerkLoaded) return;
+      if (!isSignedIn || !clerkUser) {
+        setUser(null);
+        setAuthHydrationError(null);
+        setAuthLoading(false);
+        return;
+      }
+
       try {
-        const status = await checkAuthStatus();
-        if (status.authenticated && status.user) {
-          setUser({
-            id: status.user.id,
-            name: status.user.name,
-            email: status.user.email,
-            avatar: status.user.avatar ?? undefined,
-            phone_number: status.user.phone_number ?? undefined,
-            mfa_enabled: status.user.mfa_enabled,
-            mfa_type: status.user.mfa_type as any,
-            profile_complete: status.user.profile_complete,
-            auth_provider: status.user.auth_provider as any,
-          });
-        }
-      } catch {
-        // Not authenticated — stay on login
+        await syncClerkUser({
+          email: clerkUser.primaryEmailAddress?.emailAddress || '',
+          name: clerkUser.fullName || clerkUser.username || clerkUser.primaryEmailAddress?.emailAddress || 'IDX User',
+          avatar_url: clerkUser.imageUrl || null,
+        });
+        const fresh = await getMe();
+        setUser(mapBackendUser(fresh));
+        setAuthHydrationError(null);
+        setAuthView('login');
+        setView('home');
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unable to finish Clerk sign-in.';
+        console.error('Clerk session hydration failed:', error);
+        setUser(null);
+        setAuthHydrationError(message);
       } finally {
         setAuthLoading(false);
       }
     };
-    checkSession();
-  }, []);
+    hydrateClerkSession();
+  }, [clerkLoaded, isSignedIn, clerkUser, mapBackendUser, authHydrationNonce]);
 
   useEffect(() => {
     // Skip polling entirely in mock mode — no network calls needed
@@ -468,11 +502,7 @@ const App: React.FC = () => {
   };
 
   const handleLogout = async () => {
-    try {
-      await apiLogout();
-    } catch {
-      // Clear locally even if API fails
-    }
+    await clerk.signOut();
     setUser(null);
     setAuthView('login');
     setMfaTempToken(null);
@@ -614,6 +644,44 @@ const App: React.FC = () => {
 
   // Not authenticated — show landing/login/register
   if (!user) {
+    if (authHydrationError && isSignedIn) {
+      return (
+        <div className="min-h-screen bg-slate-950 text-slate-50 flex items-center justify-center p-6">
+          <div className="w-full max-w-xl rounded-3xl border border-slate-800 bg-slate-900/90 p-8 shadow-2xl">
+            <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-500/15 text-xl text-rose-300">
+              !
+            </div>
+            <h1 className="text-2xl font-bold">We signed you in, but app setup failed</h1>
+            <p className="mt-3 text-sm leading-6 text-slate-300">
+              Your Clerk session is active, but the app could not finish syncing your local profile.
+            </p>
+            <div className="mt-5 rounded-2xl bg-slate-950/80 p-4 text-sm text-slate-300">
+              <p className="font-semibold text-slate-100">Latest error</p>
+              <p className="mt-2 break-words font-mono text-xs text-amber-300">{authHydrationError}</p>
+            </div>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <button
+                onClick={() => {
+                  setAuthLoading(true);
+                  setAuthHydrationError(null);
+                  setAuthHydrationNonce((value) => value + 1);
+                }}
+                className="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-600"
+              >
+                Retry
+              </button>
+              <button
+                onClick={handleLogout}
+                className="rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200 hover:bg-slate-800"
+              >
+                Sign out
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     // MFA challenge screen
     if (mfaTempToken) {
       return (
@@ -665,7 +733,7 @@ const App: React.FC = () => {
       theme_preference: (user as any).theme_preference || 'dark',
       mfa_enabled: user.mfa_enabled || false,
       mfa_type: user.mfa_type ?? null,
-      auth_provider: user.auth_provider || 'local',
+      auth_provider: user.auth_provider || 'clerk',
       profile_complete: user.profile_complete || false,
       created_at: new Date().toISOString(),
     };
@@ -826,22 +894,34 @@ const App: React.FC = () => {
           {/* MFA Settings panel (overlays main content when active) */}
           {settingsView === 'mfa' && (
             <div className="animate-fade-in pb-12 md:pb-20">
-              <MfaSetup
-                mfaEnabled={user.mfa_enabled || false}
-                mfaType={user.mfa_type}
-                hasPhone={!!user.phone_number}
-                onMfaChanged={async () => {
-                  try {
-                    const fresh = await getMe();
-                    setUser({
-                      ...user,
-                      mfa_enabled: fresh.mfa_enabled,
-                      mfa_type: fresh.mfa_type as any,
-                    });
-                  } catch { /* ignore */ }
-                }}
-                onBack={() => setSettingsView(null)}
-              />
+              {user.auth_provider === 'clerk' ? (
+                <div className="sg-surface rounded-3xl p-8 text-center space-y-4">
+                  <h2 className="text-xl font-black" style={{ color: SG.textPrimary }}>Security Managed By Clerk</h2>
+                  <p className="text-sm font-medium" style={{ color: SG.textMuted }}>
+                    Passwords, MFA, and sign-in methods are now managed through Clerk for a cleaner authentication experience.
+                  </p>
+                  <button onClick={() => setSettingsView(null)} className="px-5 py-3 rounded-xl font-bold" style={{ background: SG.green, color: '#0a0f10' }}>
+                    Back
+                  </button>
+                </div>
+              ) : (
+                <MfaSetup
+                  mfaEnabled={user.mfa_enabled || false}
+                  mfaType={user.mfa_type}
+                  hasPhone={!!user.phone_number}
+                  onMfaChanged={async () => {
+                    try {
+                      const fresh = await getMe();
+                      setUser({
+                        ...user,
+                        mfa_enabled: fresh.mfa_enabled,
+                        mfa_type: fresh.mfa_type as any,
+                      });
+                    } catch { /* ignore */ }
+                  }}
+                  onBack={() => setSettingsView(null)}
+                />
+              )}
             </div>
           )}
 

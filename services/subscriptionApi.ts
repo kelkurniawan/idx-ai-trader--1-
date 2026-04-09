@@ -5,18 +5,10 @@
  * Handles plan listing, subscription status checks, trial activation, and invoice creation.
  */
 
-const API_BASE = import.meta.env.VITE_API_URL || '';
+import { apiFetch } from './apiClient';
 
 async function subFetch(path: string, options: RequestInit = {}): Promise<Response> {
-  const url = `${API_BASE}/api/subscription${path}`;
-  return fetch(url, {
-    ...options,
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
+  return apiFetch(`/api/subscription${path}`, options);
 }
 
 async function handleResponse<T>(res: Response): Promise<T> {

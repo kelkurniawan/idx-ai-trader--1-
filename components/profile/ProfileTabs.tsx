@@ -4,6 +4,7 @@ import {
     AlertCircle, CheckCircle, Eye, EyeOff, Copy, RefreshCw, Trash2,
     Smartphone, Lock, LogOut, ChevronLeft, Monitor, Settings, Info, Chrome
 } from 'lucide-react';
+import { UserProfile as ClerkUserProfile } from '@clerk/clerk-react';
 import { useProfile } from '../../hooks/useProfile';
 import { useMfa } from '../../hooks/useMfa';
 import { useNotifications } from '../../hooks/useNotifications';
@@ -220,7 +221,11 @@ export const AccountTab: React.FC<{ authUser: ProfileUser; onUserUpdate: (u: Pro
                     <AlertCircle size={16} color={SG.red} />
                     <h3 style={{ color: SG.red, fontSize: 13, fontWeight: 800, fontFamily: SG.sans, margin: 0, textTransform: 'uppercase' }}>Danger Zone</h3>
                 </div>
-                {!showDelete ? (
+                {authUser.auth_provider === 'clerk' ? (
+                    <p style={{ color: SG.muted, fontSize: 13, fontFamily: SG.sans, margin: 0 }}>
+                        Account deletion and primary login credentials are managed by Clerk. Use the Clerk account center in the Security tab for identity-level changes.
+                    </p>
+                ) : !showDelete ? (
                     <>
                         <p style={{ color: SG.muted, fontSize: 13, fontFamily: SG.sans, marginBottom: 16, marginTop: 4 }}>Menghapus akun bersifat permanen. Semua data kamu akan hilang.</p>
                         <DangerBtn outline onClick={() => setShowDelete(true)} style={{ width: 'fit-content' }}>Hapus Akun</DangerBtn>
@@ -252,6 +257,38 @@ export const AccountTab: React.FC<{ authUser: ProfileUser; onUserUpdate: (u: Pro
 export const SecurityTab: React.FC<{ authUser: ProfileUser }> = ({ authUser }) => {
     const p = useProfile(authUser);
     const mfa = useMfa();
+
+    if (authUser.auth_provider === 'clerk') {
+        return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                <Toast type="info" msg="Authentication, password, MFA, and device security are managed by Clerk. Your billing and app profile still stay inside IDX AI Trader." />
+                <Card style={{ padding: 20 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                        <Shield size={18} color="#3b82f6" />
+                        <h3 style={{ color: SG.text, fontSize: 16, fontWeight: 800, fontFamily: SG.sans, margin: 0 }}>Account Security Center</h3>
+                    </div>
+                    <p style={{ color: SG.muted, fontSize: 13, fontFamily: SG.sans, marginTop: 0, marginBottom: 16 }}>
+                        Use Clerk to manage sign-in methods, multi-factor authentication, active sessions, and identity details.
+                    </p>
+                    <div style={{ borderRadius: 16, overflow: 'hidden', border: `1px solid ${SG.border}` }}>
+                        <ClerkUserProfile
+                            routing="hash"
+                            appearance={{
+                                variables: {
+                                    colorPrimary: '#10b981',
+                                    colorBackground: '#0f172a',
+                                    colorInputBackground: '#020617',
+                                    colorInputText: '#f8fafc',
+                                    colorText: '#f8fafc',
+                                    colorTextSecondary: '#94a3b8',
+                                },
+                            }}
+                        />
+                    </div>
+                </Card>
+            </div>
+        );
+    }
     
     // Change password state
     const [curPass, setCurPass] = useState('');

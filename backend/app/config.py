@@ -90,6 +90,12 @@ class Settings(BaseSettings):
     # Prod: Create OAuth 2.0 Client ID at https://console.cloud.google.com/apis/credentials
     # Set the Client ID here and configure authorized redirect URIs in Google Console
     GOOGLE_OAUTH_CLIENT_ID: str = ""
+
+    # Clerk Authentication
+    CLERK_PUBLISHABLE_KEY: str = ""
+    CLERK_SECRET_KEY: str = ""
+    CLERK_ISSUER: str = ""
+    CLERK_JWKS_URL: str = ""
     
     # Profile picture uploads
     # Dev: Stored locally on disk

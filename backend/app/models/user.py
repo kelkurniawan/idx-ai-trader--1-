@@ -29,6 +29,7 @@ class User(Base):
     # Auth provider: "local" for email/password, "google" for Google OAuth
     auth_provider = Column(String(20), default="local", nullable=False)
     google_id = Column(String(255), unique=True, nullable=True)
+    clerk_user_id = Column(String(255), unique=True, nullable=True, index=True)
 
     # Profile fields
     profile_picture_url = Column(String(500), nullable=True)

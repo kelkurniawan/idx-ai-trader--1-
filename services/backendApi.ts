@@ -17,7 +17,9 @@ import {
 } from '../types';
 
 // Backend API base URL - configurable for different environments
-const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+import { API_BASE, buildAuthHeaders } from './apiClient';
+
+const API_BASE_URL = API_BASE;
 
 // Track backend availability
 let backendAvailable = true;
@@ -52,12 +54,11 @@ async function checkBackendHealth(): Promise<boolean> {
  * Generic fetch wrapper with error handling
  */
 async function apiFetch<T>(endpoint: string, options?: RequestInit): Promise<T> {
+  const headers = await buildAuthHeaders(options?.headers);
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
+    credentials: 'include',
     ...options,
+    headers,
   });
 
   if (!response.ok) {
@@ -427,6 +428,7 @@ export async function analyzeChartImage(
     const response = await fetch(`${API_BASE_URL}/api/analyze/chart`, {
       method: 'POST',
       body: formData,
+      credentials: 'include',
     });
 
     if (!response.ok) {

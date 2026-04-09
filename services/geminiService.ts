@@ -18,13 +18,12 @@ import {
   NewsItem,
   ChartVisionAnalysis,
 } from '../types';
+import { API_BASE, buildAuthHeaders } from './apiClient';
 import { generateMockStockData } from './marketDataService';
 
 // ---------------------------------------------------------------------------
 // Base URL — reads from same env var used by authApi.ts / backendApi.ts
 // ---------------------------------------------------------------------------
-const API_BASE = import.meta.env.VITE_API_URL || '';
-
 // ---------------------------------------------------------------------------
 // Internal helpers
 // ---------------------------------------------------------------------------
@@ -32,7 +31,7 @@ const API_BASE = import.meta.env.VITE_API_URL || '';
 async function aiGet<T>(path: string): Promise<T> {
   const res = await fetch(`${API_BASE}/api/ai${path}`, {
     method: 'GET',
-    headers: { 'Content-Type': 'application/json' },
+    headers: await buildAuthHeaders(),
     credentials: 'include',
   });
   if (!res.ok) {
@@ -44,7 +43,7 @@ async function aiGet<T>(path: string): Promise<T> {
 async function aiPost<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(`${API_BASE}/api/ai${path}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: await buildAuthHeaders(),
     credentials: 'include',
     body: JSON.stringify(body),
   });
@@ -84,6 +83,7 @@ export const analyzeChartWithVision = async (
   const res = await fetch(`${API_BASE}/api/ai/chart-vision`, {
     method: 'POST',
     credentials: 'include',
+    headers: await buildAuthHeaders(),
     body: form,
     // Do NOT set Content-Type — browser sets multipart boundary automatically
   });

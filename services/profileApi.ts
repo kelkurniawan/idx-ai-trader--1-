@@ -5,7 +5,7 @@
  * Pattern mirrors authApi.ts: native fetch + credentials: 'include'.
  */
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+import { apiFetch } from './apiClient';
 
 // ─── Types (matching backend schemas/profile.py) ─────────────────────────────
 
@@ -79,11 +79,7 @@ export interface ApiMessage {
 // ─── Transport ────────────────────────────────────────────────────────────────
 
 async function profileFetch(path: string, options: RequestInit = {}): Promise<Response> {
-    return fetch(`${API_BASE}/api/profile${path}`, {
-        ...options,
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json', ...options.headers },
-    });
+    return apiFetch(`/api/profile${path}`, options);
 }
 
 async function handle<T>(res: Response): Promise<T> {
