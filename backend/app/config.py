@@ -142,13 +142,39 @@ class Settings(BaseSettings):
     # Dev: Leave empty — invoices will be mocked (no real Xendit calls)
     # Prod: Register at https://dashboard.xendit.co/ and set the vars below
     # XENDIT_SECRET_KEY: Your secret API key (test or live mode)
+
+    # ===========================
+    # MFA Encryption
+    # ===========================
+    # AES-256-CBC key for encrypting TOTP secrets at rest.
+    # Generate: python -c "import secrets; print(secrets.token_hex(32))"
+    # Leave empty in dev .env ("") — uses an insecure deterministic fallback.
+    MFA_ENCRYPTION_KEY: str
+    # Issuer name displayed in authenticator apps (e.g. "sahamgue")
+    TOTP_ISSUER: str = "sahamgue"
+
+    # ===========================
+    # Twilio SMS (for SMS OTP MFA)
+    # ===========================
+    # Dev: Leave empty — SMS OTPs will be printed to console
+    # Prod: Register at https://twilio.com and set the vars below
+    TWILIO_ACCOUNT_SID: str = ""
+    TWILIO_AUTH_TOKEN: str = ""
+    TWILIO_PHONE_NUMBER: str = ""  # Your Twilio phone number, e.g. +12345678900
+
+    # ===========================
+    # Xendit Payment Gateway
+    # ===========================
+    # Dev: Leave empty — invoices will be mocked (no real Xendit calls)
+    # Prod: Register at https://dashboard.xendit.co/ and set the vars below
+    # XENDIT_SECRET_KEY: Your secret API key (test or live mode)
     # XENDIT_WEBHOOK_TOKEN: Verification token from Dashboard → Webhooks
     XENDIT_SECRET_KEY: str = ""
     XENDIT_WEBHOOK_TOKEN: str = ""
     XENDIT_ENVIRONMENT: str = "TEST"  # "TEST" or "LIVE"
     XENDIT_SUCCESS_URL: str = "http://localhost:5173/payment/success"
     XENDIT_FAILURE_URL: str = "http://localhost:5173/payment/failed"
-    
+
     @property
     def is_development(self) -> bool:
         """Check if running in development mode."""
@@ -158,27 +184,27 @@ class Settings(BaseSettings):
     def is_production(self) -> bool:
         """Check if running in production mode."""
         return self.ENVIRONMENT == "production"
-    
+        
     @property
     def use_mock_data(self) -> bool:
         """Use mock data in development and staging."""
         return self.ENVIRONMENT in ("development", "staging")
-    
+        
     @property
     def enable_ai_calls(self) -> bool:
-        """Only enable AI calls in production to save credits."""
-        return self.ENVIRONMENT == "production" and bool(self.GEMINI_API_KEY)
-    
+        """Enable AI calls when API key exists (even in dev with free tier)."""
+        return bool(self.GEMINI_API_KEY)
+        
     @property
     def cors_origins_list(self) -> list[str]:
         """Parse CORS origins into a list."""
         return [origin.strip() for origin in self.CORS_ORIGINS.split(",")]
-    
+        
     @property
     def use_mock_google(self) -> bool:
         """Use mock Google OAuth when no client ID is configured."""
         return not bool(self.GOOGLE_OAUTH_CLIENT_ID)
-    
+        
     @property
     def use_mock_email(self) -> bool:
         """Print OTPs to console when no SMTP is configured."""

@@ -1,7 +1,7 @@
 import { prisma } from '../db/prisma';
 import { scrapeAllFeeds } from './scraper';
 import { summarizeAndScore } from './groq';
-import { enrichBatch } from './claude';
+import { enrichBatch } from './provider';
 import { isNewUrl, isBatchDup } from './dedup';
 
 const RELEVANCE_THRESHOLD = parseFloat(process.env.RELEVANCE_THRESHOLD ?? '0.6');
