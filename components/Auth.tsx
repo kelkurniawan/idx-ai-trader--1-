@@ -52,7 +52,7 @@ const AuthShell: React.FC<{ title: string; subtitle: string; children: React.Rea
 );
 
 export const LoginPage: React.FC<AuthProps> = ({ onSwitch }) => (
-  <AuthShell title="Welcome Back" subtitle="Sign in with a cleaner, secure account flow powered by Clerk">
+  <AuthShell title="Welcome Back" subtitle="Sign in with your email and password through Clerk's secured account flow">
     <SignIn
       routing="virtual"
       signUpUrl="#register"
@@ -65,6 +65,9 @@ export const LoginPage: React.FC<AuthProps> = ({ onSwitch }) => (
         Sign up
       </button>
     </p>
+    <p className="mt-3 text-center text-xs text-slate-500">
+      Recommended launch setup: verified email, password sign-in, authenticator app MFA, and backup codes.
+    </p>
   </AuthShell>
 );
 
@@ -74,7 +77,7 @@ export const RegisterPage: React.FC<AuthProps> = ({ onSwitch, selectedPlan }) =>
     subtitle={
       selectedPlan
         ? `Create your account and continue with the ${selectedPlan} onboarding path`
-        : 'Create your account with a modern Clerk-powered authentication flow'
+        : 'Create your account with email verification and password-based sign-in powered by Clerk'
     }
   >
     <SignUp
@@ -88,6 +91,9 @@ export const RegisterPage: React.FC<AuthProps> = ({ onSwitch, selectedPlan }) =>
       <button onClick={onSwitch} className="text-emerald-400 hover:text-emerald-300 font-medium hover:underline">
         Sign in
       </button>
+    </p>
+    <p className="mt-3 text-center text-xs text-slate-500">
+      Configure allowed sign-in methods in Clerk Dashboard under User &amp; Authentication.
     </p>
   </AuthShell>
 );

@@ -63,6 +63,20 @@ python -c "import secrets; print(secrets.token_hex(32))"
 - `CLERK_ISSUER=https://<your-clerk-instance>.clerk.accounts.dev`
 - `CLERK_JWKS_URL=https://<your-clerk-instance>.clerk.accounts.dev/.well-known/jwks.json`
 
+Clerk Dashboard launch settings:
+
+- enable `Email address`
+- enable `Password`
+- require email verification
+- enable authenticator app MFA
+- enable backup codes
+- enable brute-force/account lockout protection
+- disable unused sign-in methods unless intentionally needed:
+  - phone auth
+  - social logins
+  - passwordless email links
+  - passwordless email codes
+
 ### Email / OTP
 
 - `SMTP_HOST=<your smtp host>`

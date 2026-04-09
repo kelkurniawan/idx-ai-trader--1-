@@ -196,6 +196,24 @@ Mounted in `backend/app/main.py`:
   - profile completeness and other app-specific data
 - legacy local auth paths may still exist during migration, but Clerk is now the intended primary login flow
 
+### Recommended Clerk launch configuration
+
+For a paid launch, the recommended Clerk configuration is:
+
+- email address sign-in enabled
+- password enabled
+- email verification required at sign-up
+- authenticator app MFA enabled
+- backup codes enabled
+- account lockout / brute-force protection enabled
+- disable unused methods unless intentionally needed:
+  - phone auth
+  - social logins
+  - passwordless email links
+  - passwordless email codes
+
+These settings are configured in Clerk Dashboard under `User & Authentication`, not only in the React code.
+
 ### Security controls currently present
 
 - HTTP-only auth cookies
@@ -393,6 +411,13 @@ Backend Clerk values stay server-side and should use:
 - `CLERK_SECRET_KEY`
 - `CLERK_ISSUER`
 - `CLERK_JWKS_URL`
+
+Clerk Dashboard should also be configured to match the intended launch auth policy:
+
+- email + password as the primary method
+- verified email required
+- MFA enabled
+- backup codes enabled
 
 ## 13. Local Development
 
