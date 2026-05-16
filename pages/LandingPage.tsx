@@ -248,7 +248,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, onGetStarted }) => {
           <span className="font-black">SahamGue</span>
         </div>
         <p>&copy; {new Date().getFullYear()} SahamGue. All rights reserved.</p>
-        <p className="mt-2 text-xs opacity-50">Data powered by IDX. AI analysis is not financial advice.</p>
+        <div className="mt-3 flex flex-wrap items-center justify-center gap-4 text-xs">
+          <a href="/terms.html" className="hover:text-emerald-400 transition-colors">Terms</a>
+          <a href="/privacy.html" className="hover:text-emerald-400 transition-colors">Privacy</a>
+        </div>
+        <p className="mt-2 text-xs opacity-50">Market data and AI analysis are informational only, not financial advice.</p>
       </footer>
 
     </div>

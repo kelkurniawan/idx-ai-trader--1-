@@ -57,7 +57,7 @@ async function authFetch(path: string, options: RequestInit = {}): Promise<Respo
 async function handleResponse<T>(res: Response): Promise<T> {
     if (!res.ok) {
         const error = await res.json().catch(() => ({ detail: 'Network error' }));
-        throw new Error(error.detail || `Request failed with status ${res.status}`);
+        throw new Error(error?.error?.message || error.detail || `Request failed with status ${res.status}`);
     }
     return res.json();
 }
@@ -102,6 +102,33 @@ export async function login(data: {
         }),
     });
     return handleResponse<AuthResponse>(res);
+}
+
+/** Request a password reset link */
+export async function forgotPassword(data: {
+    email: string;
+    recaptcha_token?: string;
+}): Promise<MessageResponse> {
+    const res = await authFetch('/password/forgot', {
+        method: 'POST',
+        body: JSON.stringify({
+            email: data.email,
+            recaptcha_token: data.recaptcha_token || '',
+        }),
+    });
+    return handleResponse<MessageResponse>(res);
+}
+
+/** Reset password with an emailed one-time token */
+export async function resetPassword(data: {
+    token: string;
+    new_password: string;
+}): Promise<MessageResponse> {
+    const res = await authFetch('/password/reset', {
+        method: 'POST',
+        body: JSON.stringify(data),
+    });
+    return handleResponse<MessageResponse>(res);
 }
 
 /** Google OAuth login/register */

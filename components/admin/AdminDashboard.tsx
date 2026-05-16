@@ -2,15 +2,17 @@ import React, { useState } from 'react';
 import BillingOps from './BillingOps';
 import DataImport from './DataImport';
 import NewsManager from './NewsManager';
+import OpsMonitor from './OpsMonitor';
 import StockManager from './StockManager';
 
-type AdminTab = 'stocks' | 'news' | 'import' | 'billing';
+type AdminTab = 'ops' | 'stocks' | 'news' | 'import' | 'billing';
 
 interface AdminDashboardProps {
     onBack: () => void;
 }
 
 const tabs: { id: AdminTab; label: string; icon: string }[] = [
+    { id: 'ops', label: 'Ops Monitor', icon: 'OM' },
     { id: 'stocks', label: 'Stock Overrides', icon: 'SO' },
     { id: 'news', label: 'News Manager', icon: 'NM' },
     { id: 'import', label: 'Import / Export', icon: 'IE' },
@@ -18,7 +20,7 @@ const tabs: { id: AdminTab; label: string; icon: string }[] = [
 ];
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack }) => {
-    const [activeTab, setActiveTab] = useState<AdminTab>('stocks');
+    const [activeTab, setActiveTab] = useState<AdminTab>('ops');
 
     return (
         <div className="min-h-screen flex flex-col bg-[#F8FAFC] dark:bg-slate-950 text-slate-900 dark:text-slate-50 transition-colors">
@@ -68,6 +70,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack }) => {
             </div>
 
             <div className="max-w-7xl mx-auto p-4 md:p-6 flex-1 w-full">
+                {activeTab === 'ops' && <OpsMonitor />}
                 {activeTab === 'stocks' && <StockManager />}
                 {activeTab === 'news' && <NewsManager />}
                 {activeTab === 'import' && <DataImport />}

@@ -197,6 +197,50 @@ async def send_otp_email(email: str, code: str) -> bool:
         return False
 
 
+async def send_password_reset_email(email: str, reset_url: str, expires_minutes: int) -> bool:
+    """Send a password reset link by email, or print it in development."""
+    if settings.use_mock_email:
+        print("\n" + "=" * 50)
+        print("PASSWORD RESET (DEV MODE - Console Output)")
+        print(f"   To: {email}")
+        print(f"   Link: {reset_url}")
+        print(f"   Expires in: {expires_minutes} minutes")
+        print("=" * 50 + "\n")
+        return True
+
+    try:
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = "Reset your IDX AI Trader password"
+        msg["From"] = settings.SMTP_FROM
+        msg["To"] = email
+
+        html_body = f"""
+        <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 20px;">
+            <h2 style="color: #10b981;">IDX AI Trader</h2>
+            <p>Use the button below to reset your password.</p>
+            <p>
+                <a href="{reset_url}" style="display:inline-block;background:#10b981;color:#fff;text-decoration:none;padding:12px 18px;border-radius:10px;font-weight:bold;">
+                    Reset password
+                </a>
+            </p>
+            <p style="color: #64748b; font-size: 12px;">
+                This link expires in {expires_minutes} minutes. If you did not request it, you can ignore this email.
+            </p>
+        </div>
+        """
+        msg.attach(MIMEText(html_body, "html"))
+
+        with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT) as server:
+            server.starttls()
+            server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
+            server.send_message(msg)
+
+        return True
+    except Exception as e:
+        print(f"Password reset email send failed: {e}")
+        return False
+
+
 # ===========================
 # WhatsApp OTP Delivery
 # ===========================

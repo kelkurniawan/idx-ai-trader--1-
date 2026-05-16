@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { ClerkProvider } from '@clerk/clerk-react';
 import App from './App';
+import AppErrorBoundary from './components/AppErrorBoundary';
 import { ThemeProvider } from './context/ThemeContext';
 
 const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
@@ -48,7 +49,9 @@ if (!clerkPublishableKey) {
     <React.StrictMode>
       <ClerkProvider publishableKey={clerkPublishableKey}>
         <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-          <App />
+          <AppErrorBoundary>
+            <App />
+          </AppErrorBoundary>
         </ThemeProvider>
       </ClerkProvider>
     </React.StrictMode>

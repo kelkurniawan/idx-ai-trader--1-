@@ -9,6 +9,7 @@ from typing import Optional, List, Literal
 
 from pydantic import BaseModel, ConfigDict, field_validator
 
+from .validators import clean_text, clean_ticker
 
 # ────────────────────────────────────────────────────────────────
 # Holdings
@@ -24,10 +25,12 @@ class HoldingCreate(BaseModel):
     @field_validator("ticker")
     @classmethod
     def uppercase_ticker(cls, v: str) -> str:
-        v = v.strip().upper()
-        if len(v) > 10 or len(v) == 0:
-            raise ValueError("Ticker must be 1-10 characters")
-        return v
+        return clean_ticker(v)
+
+    @field_validator("notes")
+    @classmethod
+    def sanitize_notes(cls, v: Optional[str]) -> Optional[str]:
+        return clean_text(v, max_length=1000, field_name="Notes")
 
     @field_validator("avg_buy_price", "current_price")
     @classmethod
@@ -64,6 +67,11 @@ class HoldingUpdate(BaseModel):
             raise ValueError("Lot must be greater than 0")
         return v
 
+    @field_validator("notes")
+    @classmethod
+    def sanitize_notes(cls, v: Optional[str]) -> Optional[str]:
+        return clean_text(v, max_length=1000, field_name="Notes")
+
 
 class HoldingResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -99,10 +107,7 @@ class TradeCreate(BaseModel):
     @field_validator("ticker")
     @classmethod
     def uppercase_ticker(cls, v: str) -> str:
-        v = v.strip().upper()
-        if len(v) > 10 or len(v) == 0:
-            raise ValueError("Ticker must be 1-10 characters")
-        return v
+        return clean_ticker(v)
 
     @field_validator("entry_price")
     @classmethod
@@ -125,6 +130,11 @@ class TradeCreate(BaseModel):
             raise ValueError("Lot must be greater than 0")
         return v
 
+    @field_validator("notes")
+    @classmethod
+    def sanitize_notes(cls, v: Optional[str]) -> Optional[str]:
+        return clean_text(v, max_length=1000, field_name="Notes")
+
 
 class TradeUpdate(BaseModel):
     exit_price: Optional[int] = None
@@ -137,6 +147,11 @@ class TradeUpdate(BaseModel):
         if v is not None and v <= 0:
             raise ValueError("Exit price must be greater than 0")
         return v
+
+    @field_validator("notes", "strategy")
+    @classmethod
+    def sanitize_text_fields(cls, v: Optional[str]) -> Optional[str]:
+        return clean_text(v, max_length=1000, field_name="Trade field")
 
 
 class TradeResponse(BaseModel):

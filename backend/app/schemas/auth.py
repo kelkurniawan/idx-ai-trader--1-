@@ -5,7 +5,9 @@ Pydantic models for request/response validation in auth endpoints.
 """
 
 from typing import Optional, Literal
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
+
+from .validators import clean_email, clean_required_text, clean_text, clean_url
 
 
 # ===========================
@@ -19,6 +21,16 @@ class RegisterRequest(BaseModel):
     password: str = Field(..., min_length=8, max_length=128)
     recaptcha_token: str = ""  # Empty string skips check if RECAPTCHA_ENABLED=False
 
+    @field_validator("email", mode="before")
+    @classmethod
+    def normalize_email(cls, v: str) -> str:
+        return clean_email(str(v))
+
+    @field_validator("name")
+    @classmethod
+    def normalize_name(cls, v: str) -> str:
+        return clean_required_text(v, min_length=2, max_length=100, field_name="Name")
+
 
 class LoginRequest(BaseModel):
     """User login request."""
@@ -26,6 +38,11 @@ class LoginRequest(BaseModel):
     password: str
     recaptcha_token: str = ""
     remember_me: bool = False
+
+    @field_validator("email", mode="before")
+    @classmethod
+    def normalize_email(cls, v: str) -> str:
+        return clean_email(str(v))
 
 
 class GoogleAuthRequest(BaseModel):
@@ -39,6 +56,38 @@ class ClerkSyncRequest(BaseModel):
     email: EmailStr
     name: str = Field(..., min_length=1, max_length=100)
     avatar_url: Optional[str] = None
+
+    @field_validator("email", mode="before")
+    @classmethod
+    def normalize_email(cls, v: str) -> str:
+        return clean_email(str(v))
+
+    @field_validator("name")
+    @classmethod
+    def normalize_name(cls, v: str) -> str:
+        return clean_required_text(v, min_length=1, max_length=100, field_name="Name")
+
+    @field_validator("avatar_url")
+    @classmethod
+    def normalize_avatar_url(cls, v: Optional[str]) -> Optional[str]:
+        return clean_url(v, field_name="Avatar URL")
+
+
+class ForgotPasswordRequest(BaseModel):
+    """Request a password reset link for a local-account email address."""
+    email: EmailStr
+    recaptcha_token: str = ""
+
+    @field_validator("email", mode="before")
+    @classmethod
+    def normalize_email(cls, v: str) -> str:
+        return clean_email(str(v))
+
+
+class ResetPasswordRequest(BaseModel):
+    """Reset a local-account password using a one-time token."""
+    token: str = Field(..., min_length=32, max_length=512)
+    new_password: str = Field(..., min_length=8, max_length=128)
 
 
 class MfaVerifyRequest(BaseModel):
@@ -62,6 +111,23 @@ class ProfileUpdateRequest(BaseModel):
     name: Optional[str] = Field(None, min_length=2, max_length=100)
     phone_number: Optional[str] = Field(None, max_length=30)
     profile_picture_url: Optional[str] = None
+
+    @field_validator("name")
+    @classmethod
+    def normalize_name(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        return clean_required_text(v, min_length=2, max_length=100, field_name="Name")
+
+    @field_validator("phone_number")
+    @classmethod
+    def normalize_phone(cls, v: Optional[str]) -> Optional[str]:
+        return clean_text(v, max_length=30, field_name="Phone number")
+
+    @field_validator("profile_picture_url")
+    @classmethod
+    def normalize_profile_picture_url(cls, v: Optional[str]) -> Optional[str]:
+        return clean_url(v, field_name="Profile picture URL")
 
 
 # ===========================

@@ -1,0 +1,35 @@
+monitors:
+  - name: SahamGue gateway health
+    type: http
+    url: https://your-domain.com/healthz
+    method: GET
+    expected_status: 200
+    expected_body: ok
+    interval_seconds: 60
+
+  - name: SahamGue backend health
+    type: http
+    url: https://your-domain.com/health
+    method: GET
+    expected_status: 200
+    expected_json:
+      status: healthy
+    interval_seconds: 60
+
+  - name: SahamGue subscription plans
+    type: http
+    url: https://your-domain.com/api/subscription/plans
+    method: GET
+    expected_status: 200
+    interval_seconds: 300
+
+alerts:
+  channels:
+    - ops-webhook
+    - email
+  notify_on:
+    - downtime
+    - ssl_expiry_14_days
+    - response_time_p95_over_2000ms
+    - xendit_webhook_failure
+    - gemini_quota_warning

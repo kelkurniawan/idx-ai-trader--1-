@@ -15,9 +15,23 @@ branch_labels = None
 depends_on = None
 
 
+def _has_column(table_name: str, column_name: str) -> bool:
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    return any(column["name"] == column_name for column in inspector.get_columns(table_name))
+
+
+def _has_index(table_name: str, index_name: str) -> bool:
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    return any(index["name"] == index_name for index in inspector.get_indexes(table_name))
+
+
 def upgrade() -> None:
-    op.add_column("users", sa.Column("clerk_user_id", sa.String(length=255), nullable=True))
-    op.create_index(op.f("ix_users_clerk_user_id"), "users", ["clerk_user_id"], unique=True)
+    if not _has_column("users", "clerk_user_id"):
+        op.add_column("users", sa.Column("clerk_user_id", sa.String(length=255), nullable=True))
+    if not _has_index("users", "ix_users_clerk_user_id"):
+        op.create_index(op.f("ix_users_clerk_user_id"), "users", ["clerk_user_id"], unique=True)
 
 
 def downgrade() -> None:

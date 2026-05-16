@@ -40,7 +40,7 @@ import {
   HomeDashboardSkeleton,
   TrendSkeleton,
 } from './components/Skeletons';
-import { LoginPage, RegisterPage } from './components/Auth';
+import { ForgotPasswordPage, LoginPage, RegisterPage, ResetPasswordPage } from './components/Auth';
 import ProfileSetup from './components/ProfileSetup';
 import MfaVerify from './components/MfaVerify';
 import MfaSetup from './components/MfaSetup';
@@ -329,7 +329,8 @@ const App: React.FC = () => {
   const { user: clerkUser } = useUser();
   const clerk = useClerk();
   const [user, setUser] = useState<User | null>(null);
-  const [authView, setAuthView] = useState<'landing' | 'login' | 'register'>('landing');
+  const [authView, setAuthView] = useState<'landing' | 'login' | 'register' | 'forgot' | 'reset'>('landing');
+  const [resetToken, setResetToken] = useState<string | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<'FREE' | 'PRO' | 'EXPERT'>('FREE');
   const [authLoading, setAuthLoading] = useState(true); // Loading while checking session
   const [authHydrationError, setAuthHydrationError] = useState<string | null>(null);
@@ -416,6 +417,15 @@ const App: React.FC = () => {
     });
     return () => setAuthTokenGetter(null);
   }, [getToken]);
+
+  useEffect(() => {
+    const token = new URLSearchParams(window.location.search).get('resetToken');
+    if (token) {
+      setResetToken(token);
+      setAuthView('reset');
+      setAuthLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     const hydrateClerkSession = async () => {
@@ -704,7 +714,20 @@ const App: React.FC = () => {
         />
       );
     }
-    if (authView === 'login') return <LoginPage onLogin={handleLogin} onSwitch={() => setAuthView('register')} onMfaRequired={handleMfaRequired} />;
+    if (authView === 'forgot') return <ForgotPasswordPage onBack={() => setAuthView('login')} />;
+    if (authView === 'reset' && resetToken) {
+      return <ResetPasswordPage token={resetToken} onDone={() => { setResetToken(null); setAuthView('login'); }} />;
+    }
+    if (authView === 'login') {
+      return (
+        <LoginPage
+          onLogin={handleLogin}
+          onSwitch={() => setAuthView('register')}
+          onForgot={() => setAuthView('forgot')}
+          onMfaRequired={handleMfaRequired}
+        />
+      );
+    }
     return <RegisterPage selectedPlan={selectedPlan} onLogin={handleLogin} onSwitch={() => setAuthView('login')} onMfaRequired={handleMfaRequired} />;
   }
 
@@ -924,6 +947,13 @@ const App: React.FC = () => {
               )}
             </div>
           )}
+
+          <div
+            className="rounded-2xl px-4 py-3 text-xs md:text-sm font-semibold"
+            style={{ background: 'rgba(250, 204, 21, 0.08)', border: '1px solid rgba(250, 204, 21, 0.22)', color: SG.textSecond }}
+          >
+            SahamGue analysis is informational only and is not financial advice. Verify market data independently before making trading decisions.
+          </div>
 
           {/* HOME VIEW */}
           {!settingsView && view === 'home' && (

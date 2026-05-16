@@ -7,6 +7,7 @@ and the FastAPI dependency for extracting the current user from requests.
 
 import uuid
 import hashlib
+import secrets
 from datetime import datetime, timedelta
 from typing import Optional
 
@@ -19,7 +20,7 @@ from sqlalchemy import select
 
 from ..config import get_settings
 from ..database import get_db
-from ..models.user import User, RememberMeToken
+from ..models.user import User, RememberMeToken, PasswordResetToken
 from ..services.clerk_service import get_local_user_for_clerk_subject, verify_clerk_token_from_request
 
 settings = get_settings()
@@ -171,6 +172,11 @@ def _hash_remember_token(raw_token: str) -> str:
     return hashlib.sha256(raw_token.encode()).hexdigest()
 
 
+def hash_one_time_token(raw_token: str) -> str:
+    """Hash one-time bearer tokens before database storage."""
+    return hashlib.sha256(raw_token.encode("utf-8")).hexdigest()
+
+
 async def create_remember_me_token(db: AsyncSession, user_id: str) -> str:
     """
     Create a new remember-me token, store its hash in DB, return the raw token.
@@ -219,6 +225,46 @@ async def revoke_remember_me_tokens(db: AsyncSession, user_id: str) -> None:
     from sqlalchemy import delete
     await db.execute(delete(RememberMeToken).where(RememberMeToken.user_id == user_id))
     await db.commit()
+
+
+async def create_password_reset_token(db: AsyncSession, user_id: str) -> str:
+    """Create a one-time password reset token and return the raw token."""
+    from sqlalchemy import delete
+
+    await db.execute(delete(PasswordResetToken).where(PasswordResetToken.user_id == user_id))
+    raw_token = secrets.token_urlsafe(48)
+    db.add(
+        PasswordResetToken(
+            user_id=user_id,
+            token_hash=hash_one_time_token(raw_token),
+            expires_at=datetime.utcnow() + timedelta(minutes=settings.PASSWORD_RESET_EXPIRE_MINUTES),
+        )
+    )
+    await db.commit()
+    return raw_token
+
+
+async def consume_password_reset_token(db: AsyncSession, raw_token: str) -> Optional[User]:
+    """Return the token owner if valid, then mark the token consumed."""
+    token_hash = hash_one_time_token(raw_token)
+    stmt = select(PasswordResetToken).where(
+        PasswordResetToken.token_hash == token_hash,
+        PasswordResetToken.used_at.is_(None),
+        PasswordResetToken.expires_at > datetime.utcnow(),
+    )
+    result = await db.execute(stmt)
+    db_token = result.scalar_one_or_none()
+    if not db_token:
+        return None
+
+    user_stmt = select(User).where(User.id == db_token.user_id)
+    user_result = await db.execute(user_stmt)
+    user = user_result.scalar_one_or_none()
+    if not user:
+        return None
+
+    db_token.used_at = datetime.utcnow()
+    return user
 
 
 # ===========================

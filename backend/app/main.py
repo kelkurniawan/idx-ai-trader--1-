@@ -5,21 +5,32 @@ Main entry point for the backend API server.
 """
 
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+import logging
+import uuid
+from time import perf_counter
+from urllib.parse import urlparse
+
+from fastapi import FastAPI, HTTPException, status
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
-from starlette.responses import Response
+from starlette.responses import JSONResponse, Response
 
 from .config import get_settings
 from .database import engine, Base, AsyncSessionLocal
 from .rate_limiter import limiter, _rate_limit_exceeded_handler, RateLimitExceeded
 from . import models  # noqa: F401
-from .routers import stocks, market_analyzer, predictions, auth, profile, ai, portfolio, strip
+from .routers import stocks, market_analyzer, predictions, auth, profile, ai, portfolio, strip, admin_ops
 from .routers import subscription as subscription_router
 from .routers import webhook as webhook_router
+from .services.ops_metrics import ops_metrics
+from .services.alert_service import send_ops_alert
+from .services.request_guard import enforce_rate_limit, request_identifier
 
 settings = get_settings()
+logger = logging.getLogger(__name__)
 
 
 async def _plan_expiry_cron():
@@ -39,6 +50,11 @@ async def _plan_expiry_cron():
             break
         except Exception as e:
             print(f"❌ Plan expiry cron error: {e}")
+            await send_ops_alert(
+                "Critical background job failure",
+                "Plan expiry or billing reconciliation failed.",
+                {"error": str(e)},
+            )
             await asyncio.sleep(60)  # Wait a minute before retrying on error
 
 
@@ -50,7 +66,8 @@ async def lifespan(app: FastAPI):
     print(f"📊 Mock data: {'enabled' if settings.use_mock_data else 'disabled'}")
     print(f"🤖 AI calls: {'enabled' if settings.enable_ai_calls else 'disabled (dev mode)'}")
     
-    # Initialize DB async with retries
+    # Initialize DB async with retries. In production, schema changes are
+    # handled only by Alembic migrations before the app starts.
     import asyncio
     from sqlalchemy.exc import OperationalError
     max_retries = 5
@@ -58,7 +75,8 @@ async def lifespan(app: FastAPI):
     for attempt in range(max_retries):
         try:
             async with engine.begin() as conn:
-                await conn.run_sync(Base.metadata.create_all)
+                if not settings.is_production:
+                    await conn.run_sync(Base.metadata.create_all)
             print("✅ Successfully connected to the database.")
             break
         except Exception as e:
@@ -107,6 +125,66 @@ app = FastAPI(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
+
+def _request_id(request: Request) -> str:
+    return getattr(request.state, "request_id", "unknown")
+
+
+def _error_payload(code: str, message: str, request: Request) -> dict:
+    return {
+        "error": {
+            "code": code,
+            "message": message,
+            "request_id": _request_id(request),
+        }
+    }
+
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    code = {
+        400: "bad_request",
+        401: "unauthenticated",
+        403: "forbidden",
+        404: "not_found",
+        409: "conflict",
+        422: "validation_error",
+        429: "rate_limited",
+    }.get(exc.status_code, "request_failed")
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=_error_payload(code, str(exc.detail), request),
+        headers=exc.headers,
+    )
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    logger.info("Validation error request_id=%s errors=%s", _request_id(request), exc.errors())
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content=_error_payload("validation_error", "Please check the highlighted fields and try again.", request),
+    )
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    logger.exception("Unhandled API exception request_id=%s path=%s", _request_id(request), request.url.path)
+    await send_ops_alert(
+        "Critical API failure",
+        "An unhandled backend exception returned a 500 response.",
+        {
+            "request_id": _request_id(request),
+            "path": request.url.path,
+            "method": request.method,
+            "error": str(exc),
+        },
+    )
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content=_error_payload("internal_error", "Something went wrong. Please try again shortly.", request),
+    )
+
 # Security Headers Middleware
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
@@ -120,6 +198,97 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         return response
 
 app.add_middleware(SecurityHeadersMiddleware)
+
+
+class RequestIdMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        request_id = request.headers.get("x-request-id") or str(uuid.uuid4())
+        request.state.request_id = request_id
+        response: Response = await call_next(request)
+        response.headers["X-Request-ID"] = request_id
+        return response
+
+
+app.add_middleware(RequestIdMiddleware)
+
+
+class OriginGuardMiddleware(BaseHTTPMiddleware):
+    """Reject browser API calls from origins outside the configured app domains."""
+
+    EXEMPT_PREFIXES = ("/health", "/docs", "/redoc", "/openapi.json", "/api/webhooks/xendit")
+
+    async def dispatch(self, request: Request, call_next):
+        if not settings.STRICT_ORIGIN_CHECK or not request.url.path.startswith("/api"):
+            return await call_next(request)
+        if any(request.url.path.startswith(prefix) for prefix in self.EXEMPT_PREFIXES):
+            return await call_next(request)
+
+        allowed = set(settings.cors_origins_list)
+        origin = request.headers.get("origin")
+        referer = request.headers.get("referer")
+        referer_origin = ""
+        if referer:
+            parsed = urlparse(referer)
+            referer_origin = f"{parsed.scheme}://{parsed.netloc}" if parsed.scheme and parsed.netloc else ""
+
+        presented_origin = origin or referer_origin
+        if presented_origin and presented_origin not in allowed:
+            return JSONResponse(
+                status_code=status.HTTP_403_FORBIDDEN,
+                content=_error_payload("forbidden_origin", "This API can only be used from the official app domain.", request),
+            )
+
+        return await call_next(request)
+
+
+app.add_middleware(OriginGuardMiddleware)
+
+
+class GlobalRateLimitMiddleware(BaseHTTPMiddleware):
+    """Apply a coarse per-client API rate limit before route-level limits."""
+
+    EXEMPT_PREFIXES = ("/health", "/docs", "/redoc", "/openapi.json")
+
+    async def dispatch(self, request: Request, call_next):
+        if request.url.path.startswith("/api") and not any(request.url.path.startswith(prefix) for prefix in self.EXEMPT_PREFIXES):
+            try:
+                enforce_rate_limit(
+                    "api:global",
+                    request_identifier(request),
+                    settings.GLOBAL_API_RATE_LIMIT_PER_MINUTE,
+                    60,
+                )
+            except HTTPException as exc:
+                return JSONResponse(
+                    status_code=exc.status_code,
+                    content=_error_payload("rate_limited", str(exc.detail), request),
+                    headers=exc.headers,
+                )
+        return await call_next(request)
+
+
+app.add_middleware(GlobalRateLimitMiddleware)
+
+
+class OpsMetricsMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        started = perf_counter()
+        status_code = 500
+        try:
+            response: Response = await call_next(request)
+            status_code = response.status_code
+            return response
+        finally:
+            duration_ms = (perf_counter() - started) * 1000
+            ops_metrics.record(request.url.path, status_code, duration_ms)
+
+
+app.add_middleware(OpsMetricsMiddleware)
+
+app.add_middleware(
+    TrustedHostMiddleware,
+    allowed_hosts=settings.trusted_hosts_list,
+)
 
 # Strict CORS Middleware
 app.add_middleware(
@@ -141,6 +310,7 @@ app.include_router(portfolio.router, prefix="/api/portfolio", tags=["Portfolio"]
 app.include_router(strip.router, prefix="/api/strip", tags=["Strip"])
 app.include_router(subscription_router.router, prefix="/api/subscription", tags=["Subscription"])
 app.include_router(webhook_router.router, prefix="/api/webhooks/xendit", tags=["Webhooks"])
+app.include_router(admin_ops.router, prefix="/api/admin", tags=["Admin Ops"])
 
 # Serve uploaded avatar files
 import os

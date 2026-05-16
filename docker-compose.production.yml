@@ -60,7 +60,11 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.frontend
+      args:
+        VITE_CLERK_PUBLISHABLE_KEY: ${VITE_CLERK_PUBLISHABLE_KEY}
+        VITE_API_URL: ${VITE_API_URL:-}
     environment:
+      APP_SITE_ADDRESS: ${APP_SITE_ADDRESS:-:8080}
       PYTHON_BACKEND_UPSTREAM: python_backend:8000
       NODE_BACKEND_UPSTREAM: node_backend:3001
     depends_on:
@@ -68,6 +72,8 @@ services:
       - node_backend
     ports:
       - "8080:8080"
+      - "80:80"
+      - "443:443"
     restart: unless-stopped
 
 volumes:

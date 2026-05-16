@@ -1,9 +1,8 @@
 {
 	admin off
-	auto_https off
 }
 
-:8080 {
+{$APP_SITE_ADDRESS::8080} {
 	encode zstd gzip
 
 	header {

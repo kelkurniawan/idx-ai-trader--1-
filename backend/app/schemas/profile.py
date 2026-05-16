@@ -9,6 +9,7 @@ from datetime import datetime
 from typing import Optional, List
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
+from .validators import clean_email, clean_required_text, clean_text, clean_url
 
 # ────────────────────────────────────────────────────────────────
 # Shared helpers
@@ -38,7 +39,24 @@ class ProfileUpdateRequest(BaseModel):
     @field_validator("phone")
     @classmethod
     def validate_phone(cls, v: Optional[str]) -> Optional[str]:
-        return _validate_phone(v)
+        return _validate_phone(clean_text(v, max_length=30, field_name="Phone"))
+
+    @field_validator("display_name")
+    @classmethod
+    def sanitize_display_name(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        return clean_required_text(v, min_length=2, max_length=100, field_name="Display name")
+
+    @field_validator("avatar_url")
+    @classmethod
+    def sanitize_avatar_url(cls, v: Optional[str]) -> Optional[str]:
+        return clean_url(v, field_name="Avatar URL")
+
+    @field_validator("bio")
+    @classmethod
+    def sanitize_bio(cls, v: Optional[str]) -> Optional[str]:
+        return clean_text(v, max_length=500, field_name="Bio")
 
 
 class ProfileResponse(BaseModel):
@@ -82,6 +100,11 @@ class ChangeEmailRequest(BaseModel):
     new_email: EmailStr
     current_password: str
 
+    @field_validator("new_email", mode="before")
+    @classmethod
+    def normalize_email(cls, v: str) -> str:
+        return clean_email(str(v))
+
 
 class VerifyEmailOTPRequest(BaseModel):
     otp: str = Field(..., min_length=6, max_length=6)
@@ -121,7 +144,7 @@ class SetupSMSOTPRequest(BaseModel):
     @field_validator("phone")
     @classmethod
     def validate_phone(cls, v: Optional[str]) -> Optional[str]:
-        return _validate_phone(v)
+        return _validate_phone(clean_text(v, max_length=30, field_name="Phone"))
 
 
 class VerifyOTPRequest(BaseModel):

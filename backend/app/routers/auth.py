@@ -7,6 +7,7 @@ All session tokens are managed via HTTP-only cookies (no localStorage for tokens
 
 from datetime import datetime
 from typing import Optional
+from urllib.parse import urlencode
 
 from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -17,7 +18,7 @@ from ..database import get_db
 from ..models.user import User
 from ..schemas.auth import (
     RegisterRequest, LoginRequest, GoogleAuthRequest,
-    ClerkSyncRequest,
+    ClerkSyncRequest, ForgotPasswordRequest, ResetPasswordRequest,
     MfaVerifyRequest, MfaSetupRequest, MfaDisableRequest,
     ProfileUpdateRequest,
     AuthResponse, UserResponse, MfaSetupResponse, MessageResponse,
@@ -27,13 +28,15 @@ from ..services.auth_service import (
     create_access_token, create_temp_mfa_token, decode_token,
     set_access_token_cookie, set_remember_me_cookie, clear_auth_cookies,
     create_remember_me_token, revoke_remember_me_tokens,
+    create_password_reset_token, consume_password_reset_token,
     get_current_user,
 )
 from ..services.clerk_service import sync_clerk_user, verify_clerk_token_from_request
 from ..services.mfa_service import (
     generate_totp_secret, get_totp_provisioning_uri, verify_totp,
     generate_otp, store_otp, retrieve_and_delete_otp,
-    send_otp_email, send_otp_whatsapp, encrypt_totp_secret, decrypt_totp_secret,
+    send_otp_email, send_otp_whatsapp, send_password_reset_email,
+    encrypt_totp_secret, decrypt_totp_secret,
 )
 from ..services.recaptcha_service import verify_recaptcha
 from ..services.request_guard import enforce_rate_limit, request_identifier
@@ -229,6 +232,54 @@ async def login(
     return await _complete_login(response, user, db, remember_me=request.remember_me)
 
 
+@router.post("/password/forgot", response_model=MessageResponse)
+async def forgot_password(
+    request: ForgotPasswordRequest,
+    http_request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    """Send a short-lived password reset link for local password accounts."""
+    enforce_rate_limit("auth:forgot_password", request_identifier(http_request, request.email), 5, 15 * 60)
+
+    stmt = select(User).where(User.email == request.email, User.deleted_at.is_(None))
+    result = await db.execute(stmt)
+    user = result.scalar_one_or_none()
+    if user and user.password_hash:
+        raw_token = await create_password_reset_token(db, user.id)
+        reset_url = f"{settings.PUBLIC_APP_URL.rstrip('/')}/?{urlencode({'resetToken': raw_token})}"
+        await send_password_reset_email(user.email, reset_url, settings.PASSWORD_RESET_EXPIRE_MINUTES)
+
+    return MessageResponse(
+        message="If an account exists for that email, a password reset link has been sent.",
+        success=True,
+    )
+
+
+@router.post("/password/reset", response_model=MessageResponse)
+async def reset_password(
+    request: ResetPasswordRequest,
+    http_request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    """Reset a local password using a one-time expiring token."""
+    enforce_rate_limit("auth:reset_password", request_identifier(http_request), 8, 15 * 60)
+
+    user = await consume_password_reset_token(db, request.token)
+    if not user or user.deleted_at is not None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This password reset link is invalid or expired.",
+        )
+
+    user.password_hash = hash_password(request.new_password)
+    user.auth_provider = "local" if user.auth_provider == "local" else user.auth_provider
+    user.updated_at = datetime.utcnow()
+    await revoke_remember_me_tokens(db, user.id)
+    await db.commit()
+
+    return MessageResponse(message="Password reset successful. You can sign in with your new password.", success=True)
+
+
 # ===========================
 # Google OAuth
 # ===========================
@@ -360,6 +411,16 @@ async def clerk_sync(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Missing Clerk session token.",
+        )
+    token_email = (
+        payload.get("email")
+        or payload.get("primary_email_address")
+        or payload.get("email_address")
+    )
+    if token_email and token_email.strip().lower() != request.email:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Clerk session email does not match the requested local profile email.",
         )
 
     user = await sync_clerk_user(

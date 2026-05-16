@@ -32,9 +32,13 @@ class Settings(BaseSettings):
     HOST: str = "0.0.0.0"
     PORT: int = 8000
     DEBUG: bool = True
+    PUBLIC_APP_URL: str = "http://localhost:5173"
     
     # CORS
     CORS_ORIGINS: str = "http://localhost:3000,http://localhost:3001,http://localhost:5173"
+    TRUSTED_HOSTS: str = "localhost,127.0.0.1,0.0.0.0"
+    STRICT_ORIGIN_CHECK: bool = True
+    GLOBAL_API_RATE_LIMIT_PER_MINUTE: int = 300
     
     # Future: IDX API Configuration
     IDX_API_KEY: str = ""
@@ -55,6 +59,7 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     JWT_REMEMBER_ME_EXPIRE_DAYS: int = 30
+    PASSWORD_RESET_EXPIRE_MINUTES: int = 30
     
     # reCAPTCHA v2 (Invisible)
     # Dev: Google's official test keys — always pass verification
@@ -175,6 +180,100 @@ class Settings(BaseSettings):
     XENDIT_SUCCESS_URL: str = "http://localhost:5173/payment/success"
     XENDIT_FAILURE_URL: str = "http://localhost:5173/payment/failed"
 
+    def validate_production_ready(self) -> None:
+        """Fail fast when production is configured with unsafe defaults."""
+        if not self.is_production:
+            return
+
+        errors: list[str] = []
+
+        def missing_or_placeholder(value: str, *extra_placeholders: str) -> bool:
+            normalized = (value or "").strip().lower()
+            placeholders = {
+                "",
+                "change-me",
+                "change_me",
+                "replace_me",
+                "replace-with-real-value",
+                "replace_with_live_secret",
+                "replace_with_live_site_key",
+                "replace_with_live_google_client_id",
+                "replace_with_live_gemini_key",
+                "replace_with_live_xendit_secret",
+                "replace_with_live_webhook_token",
+                "replace_with_64_hex_chars",
+                *[item.lower() for item in extra_placeholders],
+            }
+            return (
+                normalized in placeholders
+                or normalized.startswith("replace_")
+                or normalized.startswith("replace-with")
+                or "your-domain" in normalized
+            )
+
+        def require(name: str, value: str, *extra_placeholders: str) -> None:
+            if missing_or_placeholder(value, *extra_placeholders):
+                errors.append(f"{name} must be set to a real production value.")
+
+        require("JWT_SECRET_KEY", self.JWT_SECRET_KEY)
+        require("MFA_ENCRYPTION_KEY", self.MFA_ENCRYPTION_KEY)
+        if len(self.JWT_SECRET_KEY.strip()) < 32:
+            errors.append("JWT_SECRET_KEY must be at least 32 characters.")
+        if len(self.MFA_ENCRYPTION_KEY.strip()) != 64:
+            errors.append("MFA_ENCRYPTION_KEY must be a 64-character hex string.")
+
+        if not self.DATABASE_URL.startswith(("postgresql://", "postgresql+asyncpg://")):
+            errors.append("DATABASE_URL must use PostgreSQL in production.")
+        if self.DEBUG:
+            errors.append("DEBUG must be false in production.")
+        require("PUBLIC_APP_URL", self.PUBLIC_APP_URL)
+
+        require("CLERK_PUBLISHABLE_KEY", self.CLERK_PUBLISHABLE_KEY)
+        require("CLERK_SECRET_KEY", self.CLERK_SECRET_KEY)
+        if not self.CLERK_PUBLISHABLE_KEY.startswith("pk_live_"):
+            errors.append("CLERK_PUBLISHABLE_KEY must be a live Clerk publishable key.")
+        if not self.CLERK_SECRET_KEY.startswith("sk_live_"):
+            errors.append("CLERK_SECRET_KEY must be a live Clerk secret key.")
+        if not self.CLERK_ISSUER and not self.CLERK_JWKS_URL:
+            errors.append("CLERK_ISSUER or CLERK_JWKS_URL must be configured.")
+
+        require("GOOGLE_OAUTH_CLIENT_ID", self.GOOGLE_OAUTH_CLIENT_ID)
+        require("GEMINI_API_KEY", self.GEMINI_API_KEY)
+        require("RECAPTCHA_SECRET_KEY", self.RECAPTCHA_SECRET_KEY, "6leixactaaaaagg-vfi1tnrwxmznfuojj4wifjwe")
+        if not self.RECAPTCHA_ENABLED:
+            errors.append("RECAPTCHA_ENABLED must be true in production.")
+
+        if self.OTP_STORE_BACKEND != "redis":
+            errors.append("OTP_STORE_BACKEND must be redis in production.")
+        if self.RATE_LIMIT_BACKEND != "redis":
+            errors.append("RATE_LIMIT_BACKEND must be redis in production.")
+        require("REDIS_URL", self.REDIS_URL)
+
+        require("XENDIT_SECRET_KEY", self.XENDIT_SECRET_KEY)
+        require("XENDIT_WEBHOOK_TOKEN", self.XENDIT_WEBHOOK_TOKEN)
+        if self.XENDIT_ENVIRONMENT.upper() != "LIVE":
+            errors.append("XENDIT_ENVIRONMENT must be LIVE in production.")
+        require("XENDIT_SUCCESS_URL", self.XENDIT_SUCCESS_URL)
+        require("XENDIT_FAILURE_URL", self.XENDIT_FAILURE_URL)
+
+        cors_origins = self.cors_origins_list
+        if "*" in cors_origins:
+            errors.append("CORS_ORIGINS must not include '*' in production.")
+        if any("localhost" in origin or "127.0.0.1" in origin for origin in cors_origins):
+            errors.append("CORS_ORIGINS must not include localhost in production.")
+        if not self.trusted_hosts_list:
+            errors.append("TRUSTED_HOSTS must list your production API host.")
+        if any(host in {"*", "localhost", "127.0.0.1", "0.0.0.0"} for host in self.trusted_hosts_list):
+            errors.append("TRUSTED_HOSTS must not include wildcard or localhost hosts in production.")
+        if self.GLOBAL_API_RATE_LIMIT_PER_MINUTE < 60:
+            errors.append("GLOBAL_API_RATE_LIMIT_PER_MINUTE should be at least 60 for production users.")
+        if self.PASSWORD_RESET_EXPIRE_MINUTES < 10 or self.PASSWORD_RESET_EXPIRE_MINUTES > 60:
+            errors.append("PASSWORD_RESET_EXPIRE_MINUTES must be between 10 and 60 in production.")
+
+        if errors:
+            formatted = "\n - ".join(errors)
+            raise RuntimeError(f"Production configuration is not launch-ready:\n - {formatted}")
+
     @property
     def is_development(self) -> bool:
         """Check if running in development mode."""
@@ -199,6 +298,11 @@ class Settings(BaseSettings):
     def cors_origins_list(self) -> list[str]:
         """Parse CORS origins into a list."""
         return [origin.strip() for origin in self.CORS_ORIGINS.split(",")]
+
+    @property
+    def trusted_hosts_list(self) -> list[str]:
+        """Parse trusted hosts into a list for Host header validation."""
+        return [host.strip() for host in self.TRUSTED_HOSTS.split(",") if host.strip()]
         
     @property
     def use_mock_google(self) -> bool:
@@ -224,4 +328,6 @@ class Settings(BaseSettings):
 @lru_cache()
 def get_settings() -> Settings:
     """Get cached settings instance."""
-    return Settings()
+    settings = Settings()
+    settings.validate_production_ready()
+    return settings

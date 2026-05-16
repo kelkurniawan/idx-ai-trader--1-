@@ -1,9 +1,11 @@
 # Environment files — NEVER commit these
 .env
 .env.local
+.env.production
 .env.*.local
 **/.env
 **/.env.local
+**/.env.production
 
 # Dependencies
 **/node_modules/
@@ -11,6 +13,7 @@
 **/*.pyc
 .venv/
 venv/
+.pytest_cache/
 
 # Build outputs
 dist/
@@ -23,7 +26,18 @@ build/
 
 # Logs
 *.log
+*log*.txt
 npm-debug.log*
+tsc_output*.txt
+**/ts_errors.txt
+**/tsc-errors*.txt
+
+# Local databases and user uploads
+*.db
+*.sqlite
+*.sqlite3
+uploads/
+**/uploads/
 
 # OS
 .DS_Store

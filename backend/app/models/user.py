@@ -87,3 +87,22 @@ class RememberMeToken(Base):
 
     # Relationships
     user = relationship("User", back_populates="remember_me_tokens")
+
+
+class PasswordResetToken(Base):
+    """
+    One-time password reset tokens.
+
+    Only a SHA-256 hash is stored. The raw token appears once in the reset link
+    sent to the user's email address and expires quickly.
+    """
+    __tablename__ = "password_reset_tokens"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    token_hash = Column(String(64), nullable=False, unique=True, index=True)
+    expires_at = Column(DateTime, nullable=False, index=True)
+    used_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User")

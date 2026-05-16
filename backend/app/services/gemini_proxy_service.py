@@ -17,11 +17,29 @@ import logging
 from datetime import datetime
 from typing import Optional
 
+from fastapi import HTTPException, status
+
 from ..config import get_settings
 from ..services.genai_client import async_generate_content, response_text
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
+
+
+def _raise_or_mock_unavailable(feature: str) -> None:
+    if settings.is_production:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"{feature} is unavailable because Gemini is not configured.",
+        )
+
+
+def _raise_or_mock_failure(feature: str, exc: Exception) -> None:
+    if settings.is_production:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"{feature} failed. Please try again later.",
+        ) from exc
 
 
 # ---------------------------------------------------------------------------
@@ -40,6 +58,7 @@ async def analyze_chart_vision(base64_image: str, trading_type: str) -> dict:
         dict matching ChartVisionAnalysis schema expected by frontend.
     """
     if not settings.GEMINI_API_KEY:
+        _raise_or_mock_unavailable("Chart vision analysis")
         return _mock_chart_vision(trading_type)
 
     try:
@@ -66,6 +85,7 @@ async def analyze_chart_vision(base64_image: str, trading_type: str) -> dict:
         return json.loads(text)
 
     except Exception as exc:
+        _raise_or_mock_failure("Chart vision analysis", exc)
         logger.warning("Gemini chart vision failed, returning mock: %s", exc)
         return _mock_chart_vision(trading_type)
 
@@ -114,6 +134,7 @@ async def get_realtime_stock_data(ticker: str) -> dict:
     and optionally sources.
     """
     if not settings.GEMINI_API_KEY:
+        _raise_or_mock_unavailable("Realtime stock data")
         return _mock_realtime(ticker)
 
     try:
@@ -170,6 +191,7 @@ async def get_realtime_stock_data(ticker: str) -> dict:
         }
 
     except Exception as exc:
+        _raise_or_mock_failure("Realtime stock data", exc)
         logger.warning("Gemini realtime failed for %s, returning mock: %s", ticker, exc)
         return _mock_realtime(ticker)
 
@@ -202,6 +224,7 @@ async def fetch_stock_news(ticker: str, company_name: str) -> list:
     Returns list of dicts with: title, source, url, snippet, publishedAt.
     """
     if not settings.GEMINI_API_KEY:
+        _raise_or_mock_unavailable("Stock news")
         return []
 
     try:
@@ -230,6 +253,7 @@ async def fetch_stock_news(ticker: str, company_name: str) -> list:
         return []
 
     except Exception as exc:
+        _raise_or_mock_failure("Stock news", exc)
         logger.warning("Gemini stock news failed for %s: %s", ticker, exc)
         return []
 
@@ -258,6 +282,7 @@ async def analyze_stock(
         dict matching AIAnalysisResult shape expected by frontend.
     """
     if not settings.GEMINI_API_KEY:
+        _raise_or_mock_unavailable("Stock analysis")
         return _mock_stock_analysis(ticker, real_time_data)
 
     try:
@@ -333,6 +358,7 @@ verdict (object with rating, suitability {{growth, value, dividend}}, pros, cons
         }
 
     except Exception as exc:
+        _raise_or_mock_failure("Stock analysis", exc)
         logger.warning("Gemini stock analysis failed for %s: %s", ticker, exc)
         return _mock_stock_analysis(ticker, real_time_data)
 
