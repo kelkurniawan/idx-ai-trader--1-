@@ -13,14 +13,18 @@ morgan.token('response-time-ms', (_req: Request, res: Response) => {
  * Dev:  coloured, human-readable (tiny format)
  * Prod: JSON-structured for log aggregators (e.g. Datadog, CloudWatch)
  */
+const jsonLogger = morgan((tokens, req, res) => JSON.stringify({
+  level: 'INFO',
+  method:  tokens.method(req, res),
+  url:     tokens.url(req, res),
+  status:  tokens.status(req, res),
+  ms:      tokens['response-time'](req, res),
+  ip:      tokens['remote-addr'](req, res),
+  ts:      new Date().toISOString(),
+}));
+
+const devLogger = morgan('dev');
+
 export const requestLogger = process.env.NODE_ENV === 'production'
-  ? morgan((tokens, req, res) => JSON.stringify({
-      level: 'INFO',
-      method:  tokens.method(req, res),
-      url:     tokens.url(req, res),
-      status:  tokens.status(req, res),
-      ms:      tokens['response-time'](req, res),
-      ip:      tokens['remote-addr'](req, res),
-      ts:      new Date().toISOString(),
-    }))
-  : morgan('dev');
+  ? jsonLogger
+  : devLogger;

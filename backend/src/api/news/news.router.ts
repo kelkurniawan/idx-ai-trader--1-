@@ -134,7 +134,7 @@ router.get('/personalized', async (req: Request, res: Response, next: NextFuncti
  */
 router.get('/ticker/:code', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const code = (req.params.code as string).toUpperCase();
+    const code = String(req.params.code).toUpperCase();
     if (!/^[A-Z]{1,5}$/.test(code)) {
       return res.status(400).json({ error: 'Invalid ticker code format' });
     }
@@ -170,7 +170,7 @@ router.get('/ticker/:code', async (req: Request, res: Response, next: NextFuncti
  */
 router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const id = req.params.id as string;
+    const id = String(req.params.id);
     const item = await getNewsById(id);
     if (!item) return res.status(404).json({ error: 'Article not found' });
     incrementViews(id);
