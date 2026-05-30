@@ -1,6 +1,6 @@
-# ────────────────────────────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------
 # Node.js News Microservice Dockerfile
-# ────────────────────────────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------
 
 FROM node:20-alpine AS builder
 
@@ -35,5 +35,8 @@ COPY --from=builder /app/prisma ./prisma
 
 EXPOSE 3001
 
-# Command runs Prisma migrations and then starts the server
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/server.js"]
+# Normalize DATABASE_URL for Prisma, then run migrations and start the server.
+# Prisma only accepts postgresql:// (or postgres://). If a SQLAlchemy-style
+# "postgresql+asyncpg://" URL is supplied (the Python service format), strip the
+# "+asyncpg" so the same Neon connection string works for either backend.
+CMD ["sh", "-c", "export DATABASE_URL=$(printf '%s' \"$DATABASE_URL\" | sed -e 's|postgresql+asyncpg://|postgresql://|') && npx prisma migrate deploy && node dist/server.js"]
