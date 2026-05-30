@@ -1,10 +1,18 @@
 import OpenAI from 'openai';
 import { ArticleBatchInput, ClaudeBatchResult, ClaudeEnrichedItem } from './claude';
 
-const deepseek = new OpenAI({
-  baseURL: 'https://api.deepseek.com',
-  apiKey: process.env.DEEPSEEK_API_KEY || '',
-});
+// Lazy client: instantiate on first use, not at import time, so a missing
+// DEEPSEEK_API_KEY does not crash the whole server at boot.
+let _deepseek: OpenAI | null = null;
+function getDeepSeek(): OpenAI {
+  if (!_deepseek) {
+    _deepseek = new OpenAI({
+      baseURL: 'https://api.deepseek.com',
+      apiKey: process.env.DEEPSEEK_API_KEY || '',
+    });
+  }
+  return _deepseek;
+}
 
 // ─── System prompt – stable across all batch calls ───────────
 const SYSTEM_PROMPT = `You are a senior equity analyst for the Indonesian stock market (IDX/BEI).
@@ -52,7 +60,7 @@ export async function enrichBatchDeepSeek(
   let outputTokens = 0;
 
   try {
-    const resp = await deepseek.chat.completions.create({
+    const resp = await getDeepSeek().chat.completions.create({
       model: 'deepseek-chat',
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },

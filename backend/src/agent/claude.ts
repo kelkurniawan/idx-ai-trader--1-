@@ -1,6 +1,14 @@
 import Anthropic from '@anthropic-ai/sdk';
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
+// Lazy client: instantiate on first use, not at import time, so a missing
+// ANTHROPIC_API_KEY does not crash the whole server at boot.
+let _anthropic: Anthropic | null = null;
+function getAnthropic(): Anthropic {
+  if (!_anthropic) {
+    _anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY ?? '' });
+  }
+  return _anthropic;
+}
 
 // ─── Types ────────────────────────────────────────────────────
 export interface ArticleBatchInput {
@@ -81,7 +89,7 @@ export async function enrichBatch(
   let outputTokens = 0;
 
   try {
-    const resp = await anthropic.messages.create({
+    const resp = await getAnthropic().messages.create({
       model: 'claude-sonnet-4-5',
       max_tokens: 3000,
       temperature: 0.1,

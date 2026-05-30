@@ -1,7 +1,16 @@
 import Groq from 'groq-sdk';
 import { RawArticle } from './scraper';
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY! });
+// Lazy client: instantiate on first use, not at import time, so a missing
+// GROQ_API_KEY does not crash the whole server at boot. A missing key only
+// fails the (try/catch-wrapped) call below, which returns null for that article.
+let _groq: Groq | null = null;
+function getGroq(): Groq {
+  if (!_groq) {
+    _groq = new Groq({ apiKey: process.env.GROQ_API_KEY ?? '' });
+  }
+  return _groq;
+}
 
 // ─── Types ────────────────────────────────────────────────────
 export interface GroqResult {
@@ -35,7 +44,7 @@ export async function summarizeAndScore(
   article: RawArticle
 ): Promise<GroqResult | null> {
   try {
-    const resp = await groq.chat.completions.create({
+    const resp = await getGroq().chat.completions.create({
       model: 'llama-3.3-70b-versatile',
       response_format: { type: 'json_object' },
       max_tokens: 300,
