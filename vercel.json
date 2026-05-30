@@ -10,7 +10,7 @@
     },
     {
       "source": "/api/:path*",
-      "destination": "https://REPLACE_PYTHON_BACKEND_URL/api/:path*"
+      "destination": "https://sahamgue-api.onrender.com/api/:path*"
     }
   ]
 }
