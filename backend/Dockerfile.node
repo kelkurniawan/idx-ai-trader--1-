@@ -35,8 +35,14 @@ COPY --from=builder /app/prisma ./prisma
 
 EXPOSE 3001
 
-# Normalize DATABASE_URL for Prisma, then run migrations and start the server.
-# Prisma only accepts postgresql:// (or postgres://). If a SQLAlchemy-style
-# "postgresql+asyncpg://" URL is supplied (the Python service format), strip the
-# "+asyncpg" so the same Neon connection string works for either backend.
-CMD ["sh", "-c", "export DATABASE_URL=$(printf '%s' \"$DATABASE_URL\" | sed -e 's|postgresql+asyncpg://|postgresql://|') && npx prisma migrate deploy && node dist/server.js"]
+# Startup:
+#  1. Normalize DATABASE_URL for Prisma. Prisma only accepts postgresql:// /
+#     postgres://; strip a SQLAlchemy-style "+asyncpg" suffix if present so the
+#     same Neon connection string works for either backend.
+#  2. Sync the Prisma-owned tables with `db push`. This is a SHARED database
+#     (Python owns users/sessions; Prisma owns news_sources/news_items/
+#     agent_runs/user_personalizations). `migrate deploy` fails with P3005 on a
+#     non-empty shared schema, whereas `db push` creates only the tables in the
+#     Prisma schema and leaves the Python-owned tables untouched.
+#  3. Start the server.
+CMD ["sh", "-c", "export DATABASE_URL=$(printf '%s' \"$DATABASE_URL\" | sed -e 's|postgresql+asyncpg://|postgresql://|') && npx prisma db push --skip-generate && node dist/server.js"]
