@@ -35,19 +35,23 @@ After rewriting history, every collaborator must re-clone or carefully reset the
 
 ## 3. Production Environment
 
-Set these in the deployment platform, not in committed files:
+For the **free tier deployment** (Vercel + Render + Neon + Upstash + Resend) use `backend/.env.free.example` as the template — it includes provider-specific notes and free-tier connection string formats.
+
+For a **Docker / VPS deployment** use `backend/.env.production.example`.
+
+Set all vars in the deployment platform dashboard, never in committed files:
 
 ```text
 ENVIRONMENT=production
 DEBUG=false
-DATABASE_URL=postgresql+asyncpg://...
+DATABASE_URL=postgresql+asyncpg://...   # Neon direct URL (free) or your Postgres host
 JWT_SECRET_KEY=<64+ random chars>
 MFA_ENCRYPTION_KEY=<64 hex chars>
 CLERK_PUBLISHABLE_KEY=pk_live_...
 CLERK_SECRET_KEY=sk_live_...
 CLERK_ISSUER=https://...
 GOOGLE_OAUTH_CLIENT_ID=...
-GEMINI_API_KEY=...
+GEMINI_API_KEY=...                       # Free: 1 500 req/day on Gemini Flash
 RECAPTCHA_SECRET_KEY=...
 RECAPTCHA_ENABLED=true
 OTP_STORE_BACKEND=redis
