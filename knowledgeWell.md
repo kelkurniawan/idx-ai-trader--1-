@@ -265,3 +265,32 @@ The command-prompt prefix in Settings reflects the Root Directory: it should rea
 6. **Render "Language"** auto-detects from repo files. For a Python app in a JS monorepo, you must explicitly pick **Docker** or **Python 3**, and set **Root Directory = `backend`**.
 7. **Render free tier sleeps** after 15 min idle; first request after sleep takes ~50s (cold start). Not an error.
 8. **Shell scripts need LF line endings** — `.gitattributes` has `*.sh text eol=lf` so Windows checkouts don't corrupt `docker-entrypoint.sh`.
+
+---
+
+## ✅ Final State — Deployment Successful
+
+After resolving all 12 errors above, the full stack is **live and working** (login, profile sync, and the news service all functional).
+
+**Live services**
+| Component | URL | Runtime |
+|---|---|---|
+| Frontend (SPA + `/api/*` rewrites) | `https://idx-ai-trader-1.vercel.app` | Vercel |
+| Python API (`sahamgue-api`) | `https://sahamgue-api.onrender.com` | Render — Python 3, Root Dir `backend`, start `alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000` |
+| Node news API (`sahamgue-news`) | `https://sahamgue-news.onrender.com` | Render — Docker, `Dockerfile.node` |
+| PostgreSQL | Neon (`public` = Python, `news` = Prisma) | — |
+| Redis | Upstash | — |
+| Email | Resend SMTP | — |
+
+**What finally made login work:** creating the missing `sahamgue-api` Python web service with the correct **Root Directory = `backend`** (not the Dockerfile path). Once `sahamgue-api.onrender.com/health` returned `{"status":"healthy"}`, the Vercel rewrite delivered `/api/auth/clerk/sync` to a live backend and Clerk profile hydration succeeded — no frontend or `vercel.json` changes were needed.
+
+**Health check confidence sequence (use this to verify a healthy deploy):**
+```bash
+curl https://sahamgue-api.onrender.com/health      # {"status":"healthy", ...}
+curl https://sahamgue-news.onrender.com/health     # {"status":"ok", ...}
+# then open the app and sign in — profile sync should complete
+```
+
+**Post-launch reminders (not blockers):**
+- Currently `ENVIRONMENT=staging` with `pk_test_`/`sk_test_` Clerk keys and Xendit `TEST`. To go fully production: switch to `ENVIRONMENT=production`, live `pk_live_`/`sk_live_` Clerk keys, live Xendit, register reCAPTCHA for the domain, and set `RECAPTCHA_ENABLED=true` — then `validate_production_ready()` enforces the rest.
+- First request after 15 min idle is slow (~50s) on Render free tier — expected, not a bug.
