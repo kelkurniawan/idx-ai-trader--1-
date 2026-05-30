@@ -33,16 +33,11 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
 
+# Startup script: normalizes DATABASE_URL, scopes Prisma to the "news" schema,
+# runs db push (creating only the Prisma-owned tables), then starts the server.
+COPY docker-entrypoint.sh ./docker-entrypoint.sh
+RUN chmod +x docker-entrypoint.sh
+
 EXPOSE 3001
 
-# Startup:
-#  1. Normalize DATABASE_URL for Prisma. Prisma only accepts postgresql:// /
-#     postgres://; strip a SQLAlchemy-style "+asyncpg" suffix if present so the
-#     same Neon connection string works for either backend.
-#  2. Sync the Prisma-owned tables with `db push`. This is a SHARED database
-#     (Python owns users/sessions; Prisma owns news_sources/news_items/
-#     agent_runs/user_personalizations). `migrate deploy` fails with P3005 on a
-#     non-empty shared schema, whereas `db push` creates only the tables in the
-#     Prisma schema and leaves the Python-owned tables untouched.
-#  3. Start the server.
-CMD ["sh", "-c", "export DATABASE_URL=$(printf '%s' \"$DATABASE_URL\" | sed -e 's|postgresql+asyncpg://|postgresql://|') && npx prisma db push --skip-generate && node dist/server.js"]
+CMD ["sh", "./docker-entrypoint.sh"]
