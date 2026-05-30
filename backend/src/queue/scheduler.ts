@@ -59,7 +59,6 @@ export function startScheduler(): void {
     },
     {
       timezone: 'UTC',
-      scheduled: true,
     }
   );
 
