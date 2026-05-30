@@ -4,6 +4,8 @@ Database Configuration
 SQLite for development, PostgreSQL-ready for production.
 """
 
+from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode
+
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.orm import declarative_base
 
@@ -19,13 +21,30 @@ if db_url.startswith("postgresql://"):
 elif db_url.startswith("sqlite://"):
     db_url = db_url.replace("sqlite://", "sqlite+aiosqlite://", 1)
 
+# asyncpg does not accept libpq-style query parameters (e.g. sslmode,
+# channel_binding) that providers like Neon/Supabase append to the URL.
+# Passing them through SQLAlchemy raises:
+#   TypeError: connect() got an unexpected keyword argument 'sslmode'
+# Strip them here and translate SSL intent into an asyncpg `ssl` connect arg.
+connect_args: dict = {}
+if "asyncpg" in db_url:
+    parts = urlsplit(db_url)
+    query = dict(parse_qsl(parts.query))
+    sslmode = query.pop("sslmode", None)
+    query.pop("channel_binding", None)  # libpq-only, unsupported by asyncpg
+    db_url = urlunsplit(parts._replace(query=urlencode(query)))
+    # Any sslmode other than an explicit "disable" means: use TLS.
+    if (sslmode or "require") != "disable":
+        connect_args["ssl"] = True
+elif "sqlite" in db_url:
+    connect_args["check_same_thread"] = False
+
 # Create async engine
 engine = create_async_engine(
     db_url,
     echo=False,
     future=True,
-    # SQLite-specific args
-    connect_args={"check_same_thread": False} if "sqlite" in db_url else {}
+    connect_args=connect_args,
 )
 
 # Async Session factory
