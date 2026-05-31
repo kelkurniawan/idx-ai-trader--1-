@@ -113,7 +113,7 @@ All Gemini AI calls are proxied through `app/services/gemini_proxy_service.py` �
 
 ### Node.js News Backend (`backend/src/`)
 
-Express server on :3001 with BullMQ + Redis job queues. Routes: `/api/news` (public + admin). AI pipeline uses Anthropic Claude and Groq. Swagger UI at `/api-docs`.
+Express server on :3001. Routes: `/api/news` (public + admin). The news agent runs **in-process in the background** (`src/queue/queue.ts` → `runAgentInBackground`, single-flight `concurrency:1`) — BullMQ was removed because it hangs and drains the Upstash free quota on a sleeping free-tier instance. Dedup still uses Redis (`src/cache/redis.ts`, full `REDIS_URL`). AI pipeline: **Groq** summarizes + classifies `impactLevel` (always runs, free); optional DeepSeek/Anthropic enrichment adds tickers/impact when keys are set. Triggered by GitHub Actions (`.github/workflows/daily-data.yml`) hitting the secret-guarded `POST /api/news/agent/trigger`. Swagger UI at `/api-docs`.
 
 ### Strict Table Ownership (see `ARCHITECTURE.md`)
 
@@ -144,6 +144,29 @@ Leaving `SMTP_HOST`, `GEMINI_API_KEY`, `GOOGLE_OAUTH_CLIENT_ID`, `WHATSAPP_ACCES
 
 ### Production Checklist
 Run `python scripts/production_preflight.py` before any production deploy. The app calls `settings.validate_production_ready()` at startup and raises immediately on any unsafe configuration.
+
+---
+
+## API Documentation & Monitoring
+
+### Interactive API Docs (dev only)
+| Endpoint | URL | Notes |
+|---|---|---|
+| FastAPI Swagger UI | `http://localhost:8000/docs` | Try endpoints in-browser |
+| FastAPI ReDoc | `http://localhost:8000/redoc` | Clean reference layout |
+| FastAPI OpenAPI JSON | `http://localhost:8000/openapi.json` | Import into Postman/Insomnia |
+| Node.js Swagger UI | `http://localhost:3001/api-docs` | News + agent endpoints |
+| Node.js Health | `http://localhost:3001/health` | Service health check |
+
+### Admin Ops Monitor
+Built-in dashboard: **Admin tab → Ops Monitor** (requires `is_admin=true` on User).
+Underlying API: `GET /api/admin/ops/overview`
+
+### Python Models (SQLAlchemy)
+`users`, `remember_me_tokens`, `password_reset_tokens`, `notification_preferences`, `user_sessions`, `portfolio_holdings`, `trade_journal_entries`, `broker_cash`, `stocks`, `stock_prices`, `watchlist`, `subscriptions`, `payment_history`, `analysis_cache`
+
+### Node.js Models (Prisma)
+`news_sources`, `news_items`, `agent_runs`, `user_personalizations`
 
 ---
 
