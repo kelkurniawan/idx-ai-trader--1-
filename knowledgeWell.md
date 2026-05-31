@@ -294,3 +294,89 @@ curl https://sahamgue-news.onrender.com/health     # {"status":"ok", ...}
 **Post-launch reminders (not blockers):**
 - Currently `ENVIRONMENT=staging` with `pk_test_`/`sk_test_` Clerk keys and Xendit `TEST`. To go fully production: switch to `ENVIRONMENT=production`, live `pk_live_`/`sk_live_` Clerk keys, live Xendit, register reCAPTCHA for the domain, and set `RECAPTCHA_ENABLED=true` — then `validate_production_ready()` enforces the rest.
 - First request after 15 min idle is slow (~50s) on Render free tier — expected, not a bug.
+
+---
+
+# Part 2 — Real Data Pipeline Activation (v1.9.0)
+
+Turning on real data (stocks + news) surfaced a second wave of issues. Same format: **Where / Symptom / Cause / Fix.**
+
+## 13. Python startup — asyncpg rejects Neon's `sslmode` / `channel_binding`
+
+**Where:** `sahamgue-api` first boot with the real Neon DB.
+
+**Error**
+```
+TypeError: connect() got an unexpected keyword argument 'sslmode'
+```
+
+**Cause:** Neon appends libpq-only params (`sslmode`, `channel_binding`) to `DATABASE_URL`; `asyncpg` (via SQLAlchemy) doesn't accept them as kwargs.
+
+**Fix:** In `backend/app/database.py`, strip those params and translate SSL intent into an asyncpg connect arg:
+```python
+if "asyncpg" in db_url:
+    parts = urlsplit(db_url)
+    query = dict(parse_qsl(parts.query))
+    sslmode = query.pop("sslmode", None)
+    query.pop("channel_binding", None)
+    db_url = urlunsplit(parts._replace(query=urlencode(query)))
+    if (sslmode or "require") != "disable":
+        connect_args["ssl"] = True
+```
+> Alembic uses sync `psycopg2`, which *does* understand `sslmode=require` — so the plain URL is fine for migrations.
+
+## 14. News trigger hangs 120s — BullMQ dropped Upstash auth + TLS
+
+**Where:** `POST /api/news/agent/trigger` → `agentQueue.add()`.
+
+**Symptom:** `curl: (28) Operation timed out after 120002 ms` — the request never responds.
+
+**Cause:** `src/queue/queue.ts` built the BullMQ connection from only `host` + `port` of `REDIS_URL`, dropping the **password** and **TLS** that Upstash requires (`rediss://default:TOKEN@...`). With `maxRetriesPerRequest: null` (BullMQ default), ioredis retries forever instead of erroring → the `.add()` hangs.
+
+**Fix (first attempt):** build a full ioredis connection (username/password, `tls: {}` for `rediss://`, `maxRetriesPerRequest: null`). This was then superseded by #15.
+
+> Contrast: `src/cache/redis.ts` (used by dedup) passes the **whole `REDIS_URL` string** to `new Redis(url)` — ioredis parses `rediss://` (TLS + auth) natively, so it always worked. Prefer passing the full URL over hand-extracting host/port.
+
+## 15. BullMQ is the wrong fit for a sleeping free instance
+
+**Where:** the news agent queue/worker.
+
+**Cause:** even with a correct connection, BullMQ's worker **polls Redis continuously** (blocking commands), which drains Upstash's free **10k-commands/day** quota, and its blocking connections hang when the Render free instance sleeps/cold-starts.
+
+**Fix:** removed BullMQ entirely. `src/queue/queue.ts` now exposes `runAgentInBackground(runId)` — a fire-and-forget that runs `runAgentPipeline` in the Node process with a single in-process `running` flag for `concurrency:1`. The trigger returns `202` immediately; the external GitHub Actions trigger keeps the instance awake for the short run. Dedup still uses Redis via `cache/redis.ts`.
+
+## 16. "Still hanging" after a fix — it was the deploy transition
+
+**Where:** retesting the news trigger right after a push.
+
+**Symptom:** trigger kept timing out even though the code was fixed; `/health` returned 200 the whole time.
+
+**Cause:** Render serves the **old** version (health 200) until the new Docker build finishes and cuts over. Docker deploys here take ~4–6 min including queue time. Testing too early hits the old code.
+
+**Fix / lesson:** confirm the new revision is actually **Live** (Render → service → Events shows the new commit) before concluding a fix failed. A read endpoint that works while a write/trigger hangs is a strong hint you're hitting mixed/old code — or an isolated write path (see #14).
+
+## 17. News tabs Hot/Critical/Popular were empty
+
+**Where:** `GET /api/news/feed?tab=...` and the React News tab.
+
+**Cause:** the feed filtered `where.category = tab`, but on the free tier (Groq summary only, no DeepSeek/Anthropic enrichment key) every article is tagged `category='latest'`, `impactLevel='medium'`. So only Latest/Personalized filled.
+
+**Fix:** (a) Groq now classifies `impactLevel` on every article (it always runs, free); (b) feed tabs became **field-based views** (`critical` = high-impact, `hot` = meaningful recent, `popular` = by views, `latest` = all); (c) removed the client-side double-filter in `NewsPage.tsx`. Critical stays empty until genuinely market-moving news is scraped — that's correct, not a bug.
+
+## 18. One bad ticker cascade-failed the whole price ingest (caught in review)
+
+**Where:** `price_ingest_service.py` → `ingest_all`.
+
+**Cause:** the per-ticker `except` logged and continued but did **not** roll back. On PostgreSQL, a failed write leaves the shared async session in a pending-rollback state, so every subsequent ticker raises `PendingRollbackError` — one bad ticker poisons the run. (Invisible in SQLite tests.)
+
+**Fix:** `await db.rollback()` in the `except` before continuing, plus a test that verifies isolation + rollback via a spy.
+
+---
+
+## General Lessons (Part 2)
+
+9. **Pass the whole `REDIS_URL` to ioredis** (`new Redis(url)`) rather than hand-extracting host/port — it parses `rediss://` TLS + auth for you. Hand-rolled connections silently drop them.
+10. **BullMQ + Upstash free + sleeping instance = bad combo** (quota drain + hang-forever). For low-volume, externally-triggered work, run the job in-process in the background instead of a Redis queue.
+11. **`maxRetriesPerRequest: null` turns a bad connection into an infinite hang**, not an error. If something "hangs forever" against Redis, suspect connection config (auth/TLS) first.
+12. **Wait for the deploy to be Live before re-testing.** Render serves the old build (health 200) during the cutover; a fix can look broken simply because it isn't deployed yet.
+13. **Real data is dark by default.** `USE_REAL_PRICES=false` and an empty `INTERNAL_API_SECRET` mean the pipeline ships safely; flip env vars + set GitHub Actions secrets to activate. Verify with `curl .../api/analyze/BBCA` → `data_source: "live"`.
