@@ -84,3 +84,51 @@ async def fetch_yahoo_history(ticker: str, range_: str = "1y") -> list[dict]:
     except Exception as exc:  # noqa: BLE001 - any failure -> empty, caller falls back
         logger.warning("[PriceIngest] Yahoo fetch failed for %s: %s", symbol, exc)
         return []
+
+
+async def seed_stocks(db: AsyncSession) -> int:
+    """Insert any missing tickers from SAMPLE_IDX_STOCKS into `stocks`. Idempotent."""
+    existing = set(
+        (await db.execute(select(Stock.ticker))).scalars().all()
+    )
+    added = 0
+    for s in SAMPLE_IDX_STOCKS:
+        if s["ticker"] in existing:
+            continue
+        db.add(Stock(ticker=s["ticker"], name=s["name"], sector=s["sector"]))
+        added += 1
+    await db.commit()
+    return added
+
+
+async def upsert_prices(db: AsyncSession, ticker: str, rows: list[dict]) -> int:
+    """Insert new (ticker, date) rows and update existing ones in place. Idempotent."""
+    ticker = ticker.upper()
+    existing_dates = {
+        d for (d,) in (
+            await db.execute(
+                select(StockPrice.date).where(StockPrice.ticker == ticker)
+            )
+        ).all()
+    }
+    written = 0
+    for r in rows:
+        if r["date"] in existing_dates:
+            existing = (await db.execute(
+                select(StockPrice).where(
+                    StockPrice.ticker == ticker, StockPrice.date == r["date"]
+                )
+            )).scalar_one()
+            existing.open = r["open"]
+            existing.high = r["high"]
+            existing.low = r["low"]
+            existing.close = r["close"]
+            existing.volume = r["volume"]
+        else:
+            db.add(StockPrice(
+                ticker=ticker, date=r["date"], open=r["open"], high=r["high"],
+                low=r["low"], close=r["close"], volume=r["volume"],
+            ))
+        written += 1
+    await db.commit()
+    return written
