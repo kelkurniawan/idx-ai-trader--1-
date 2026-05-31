@@ -160,6 +160,9 @@ async def ingest_all(db: AsyncSession, throttle_seconds: float = 0.3) -> dict:
             else:
                 failed_tickers.append(ticker)
         except Exception as exc:  # noqa: BLE001
+            # Roll back so a failed ticker's pending transaction does not poison
+            # the shared session and cascade-fail every remaining ticker.
+            await db.rollback()
             logger.warning("[PriceIngest] ticker %s failed: %s", ticker, exc)
             failed_tickers.append(ticker)
         await _real_sleep(throttle_seconds)
