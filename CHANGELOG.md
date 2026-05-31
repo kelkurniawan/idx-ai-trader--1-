@@ -3,6 +3,20 @@
 
 All notable changes to the IDX AI Trader project will be documented in this file.
 
+## [1.9.1] - Any-Ticker Coverage & Analyze Fix - 2026-05-31
+
+### Added
+- **On-Demand Ticker Resolution:** Any valid IDX ticker is now searchable, not just the curated ~93. `price_ingest_service.resolve_ticker()` fetches an unknown ticker from Yahoo Finance on first lookup, persists its OHLCV plus a `stocks` row, so subsequent reads are served instantly from the DB. Wired into `stocks.py` (`/`, `/{ticker}`, `/price`, `/history`) and `market_analyzer.py` (profile resolution): each reads the DB first, resolves on-demand on a miss, and only falls back to the curated mock / `404` for genuinely invalid tickers. Verified live: `TPIA` (non-curated) resolves to its real price/volume on first search.
+- **Merged Stock Universe:** `GET /api/stocks` now returns the curated universe unioned with every on-demand-resolved ticker (`stock_repository.get_all_profiles_from_db`), so the browse list grows as tickers are searched.
+- **Analyze Regression Test:** Added `backend/tests/test_analyze_endpoint.py` exercising the full `/api/analyze` payload for both a curated sector and an on-demand (`"IDX"`) sector, so the endpoint can't silently 500 again.
+
+### Changed
+- **Background Price Ingest:** `POST /api/internal/refresh-prices` now starts the full-universe ingest in the background (`run_ingest_in_background`, single-flight) and returns `202` immediately, instead of running synchronously and risking an HTTP timeout on a large universe.
+
+### Fixed
+- **`/api/analyze` 500 for every ticker:** `fundamental_service.py` referenced `SignalType`, `FundamentalData`, `InvestmentVerdict`, and `QualitativeAnalysis` but imported only `QuantitativeAnalysis` and `AnalysisApproach`, so every `GET /api/analyze/{ticker}` raised `NameError → 500`. The frontend had masked this by silently falling back to Gemini/mock. Imported all referenced schema classes; the Market Analysis tab now serves real backend analysis (signals, fundamentals, verdict).
+- **Config test isolation:** `test_real_data_config.py` constructs `Settings(_env_file=None, ...)` so the "safe defaults" assertions hold regardless of values in the developer's local `backend/.env`.
+
 ## [1.9.0] - Real Data Pipeline & Free-Tier Go-Live - 2026-05-31
 
 ### Added

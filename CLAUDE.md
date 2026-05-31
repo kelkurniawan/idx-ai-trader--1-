@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **IDX AI Trader / SahamGue** is an AI-powered stock analysis SPA for the Indonesia Stock Exchange (IDX). It is a dual-backend monorepo: a Python FastAPI core API and a Node.js Express news microservice share a single PostgreSQL database, fronted by a React 19/Vite SPA and a Caddy reverse proxy.
 
-Current version: **1.9.0** (see [CHANGELOG.md](CHANGELOG.md) for full history).
+Current version: **1.9.1** (see [CHANGELOG.md](CHANGELOG.md) for full history).
 
 ---
 
@@ -115,11 +115,14 @@ All Gemini AI calls are proxied through `app/services/gemini_proxy_service.py` �
 
 Express server on :3001. Routes: `/api/news` (public + admin). The news agent runs **in-process in the background** (`src/queue/queue.ts` → `runAgentInBackground`, single-flight `concurrency:1`) — BullMQ was removed because it hangs and drains the Upstash free quota on a sleeping free-tier instance. Dedup still uses Redis (`src/cache/redis.ts`, full `REDIS_URL`). AI pipeline: **Groq** summarizes + classifies `impactLevel` (always runs, free); optional DeepSeek/Anthropic enrichment adds tickers/impact when keys are set. Triggered by GitHub Actions (`.github/workflows/daily-data.yml`) hitting the secret-guarded `POST /api/news/agent/trigger`. Swagger UI at `/api-docs`.
 
-### Real Data Pipeline & Triggers (v1.9.0)
+### Real Data Pipeline & Triggers (v1.9.x)
 
 Live data is **dark by default** — flipped on via env vars, not code.
 
 - **Stock prices:** `app/services/price_ingest_service.py` fetches 1y daily OHLCV per ticker from Yahoo Finance (`{TICKER}.JK`) into the `stock_prices` table. When `USE_REAL_PRICES=true`, `stocks.py` / `market_analyzer.py` read real data from the DB (via `stock_repository.py`) and fall back to the mock generator per ticker. `data_source` reports `"live"`/`"mock"`.
+- **Any-ticker coverage (on-demand):** reads go **DB → on-demand Yahoo resolve → curated mock / 404**. `resolve_ticker()` fetches an unknown ticker on first search, persists its prices + a `stocks` row (so it's fast thereafter), and `get_all_stocks` unions curated + resolved tickers. Only genuinely invalid tickers 404.
+- **Ingest is backgrounded:** `POST /api/internal/refresh-prices` calls `run_ingest_in_background()` (single-flight) and returns `202` immediately — the full-universe scrape runs on the event loop so the trigger can't time out.
+- **`/api/analyze`** computes signals/fundamentals/verdict server-side; `fundamental_service.py` must import every `schemas.analysis` class it uses (a missing import silently 500s the whole endpoint, masked by the frontend's Gemini/mock fallback — see `test_analyze_endpoint.py`).
 - **News:** the Node agent (`src/agent/pipeline.ts`) scrapes RSS → Groq summarizes + classifies `impactLevel` → optional DeepSeek/Anthropic enrichment → stores in `news_items` (in the Prisma-owned `news` Postgres schema). Tabs are field-based views over `impactLevel`/`views`/recency.
 - **Triggers:** both are fired by **GitHub Actions** (`.github/workflows/daily-data.yml`), not internal timers (Render free instances sleep). The workflow hits `POST /api/internal/refresh-prices` (Python) and `POST /api/news/agent/trigger` (Node), both guarded by the shared `INTERNAL_API_SECRET` header.
 - **Production topology:** live deploy is **Vercel** (frontend + `/api/*` rewrites in `vercel.json`) + **Render** (`sahamgue-api` Python, `sahamgue-news` Node) + **Neon** (Postgres) + **Upstash** (Redis) + **Resend** (email). Caddy (below) is for local/Docker only. See `DEPLOYMENT.md`, `knowledgeWell.md`, and `docs/hardening-followups.md`.
