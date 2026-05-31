@@ -3,6 +3,30 @@
 
 All notable changes to the IDX AI Trader project will be documented in this file.
 
+## [1.9.0] - Real Data Pipeline & Free-Tier Go-Live - 2026-05-31
+
+### Added
+- **Real Stock Prices (Yahoo Finance):** Added `backend/app/services/price_ingest_service.py` to fetch 1 year of daily OHLCV per IDX ticker (`.JK` symbols) from Yahoo Finance and upsert it into the existing `stock_prices` table, with per-ticker error isolation and a polite throttle. Seeds the `stocks` universe idempotently.
+- **DB-Backed Analysis Read Path:** Added `backend/app/services/stock_repository.py` and rewired `stocks.py` / `market_analyzer.py` so technicals, signals, and prices are computed from stored real OHLCV when `USE_REAL_PRICES=true`, falling back to the deterministic mock per ticker. `data_source` now reports `"live"` vs `"mock"` honestly.
+- **Internal Trigger Endpoint:** Added secret-guarded `POST /api/internal/refresh-prices` (`backend/app/routers/internal.py`) protected by `INTERNAL_API_SECRET`, plus the `USE_REAL_PRICES` config flag.
+- **Groq Impact Classification:** Extended the Groq summarizer to classify `impactLevel` (breaking/high/medium/low) on every article — it always runs on the free tier, giving real signal for the news tabs.
+- **Field-Based News Tabs:** The `/api/news/feed` tabs (Hot/Critical/Popular/Latest) are now computed VIEWS over `impactLevel` / `views` / recency instead of a stored `category` string, so all tabs populate from real data.
+- **News Tab UX:** Wired the React News tab to the real `/api/news/*` endpoints (it previously rendered a hardcoded `DUMMY_NEWS` array) and added a manual **Refresh** control plus a **"new articles available"** indicator.
+- **GitHub Actions Scheduler:** Added `.github/workflows/daily-data.yml` to trigger the daily stock ingest (16:30 WIB) and news agent (08:30 WIB) externally — required because Render free services sleep and internal timers don't fire.
+- **Free-Tier Deployment:** Added `vercel.json` (edge rewrites replacing the Caddy gateway), `backend/.env.free.example` (Neon + Upstash + Resend + Clerk template), and rewrote `DEPLOYMENT.md` with a Vercel + Render + Neon + Upstash + Resend zero-cost path.
+- **Documentation:** Added `CLAUDE.md` (repo guide), `knowledgeWell.md` (deployment error→fix log), `docs/hardening-followups.md` (optional robustness backlog), and the real-data design spec + implementation plan under `docs/superpowers/`.
+
+### Changed
+- **News Agent Architecture:** Replaced **BullMQ + Redis** job queues with an in-process background runner (`runAgentInBackground`, single-flight `concurrency:1`). BullMQ hangs and drains the Upstash free command quota on a sleeping free-tier instance; the agent now runs in the Node process after the trigger returns `202` immediately. Dedup still uses Redis via `src/cache/redis.ts`.
+- **Operational Docs:** Updated `PRODUCTION_RUNBOOK.md` and `CLAUDE.md` for the free-tier providers and the new pipeline.
+
+### Fixed
+- **asyncpg SSL Crash:** `database.py` now strips libpq-only query params (`sslmode`, `channel_binding`) that Neon appends and translates SSL intent into an asyncpg `ssl=True` connect arg — fixes the `connect() got an unexpected keyword argument 'sslmode'` startup crash.
+- **Prisma on a Shared DB:** Resolved P1012 (SQLAlchemy `+asyncpg` URL rejected by Prisma), P3005 (non-empty shared schema), and a destructive `db push` by isolating Prisma in a dedicated `news` Postgres schema via `backend/docker-entrypoint.sh` (Python keeps `public`).
+- **BullMQ ↔ Upstash:** Built a full ioredis connection (auth + TLS) from `REDIS_URL` before retiring BullMQ entirely (see Changed).
+- **Boot Crashes:** Lazily instantiate the Groq/Anthropic/DeepSeek SDK clients so a missing API key no longer crashes the news server at import; fixed `node-cron` v4 breaking change and several TypeScript build errors in the news backend.
+- **Ingest Resilience:** Added `await db.rollback()` on a per-ticker ingest failure so one bad ticker can't cascade-fail the rest of the run on PostgreSQL.
+
 ## [1.8.0] - Pre-Deployment Security Hardening - 2026-05-17
 
 ### Added
