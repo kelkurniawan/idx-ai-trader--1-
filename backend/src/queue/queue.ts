@@ -1,11 +1,27 @@
 import { Queue, Worker, QueueEvents } from 'bullmq';
 import { runAgentPipeline } from '../agent/pipeline';
 
-// ─── Queue definition ─────────────────────────────────────────
-const connection = {
-  host: process.env.REDIS_URL ? new URL(process.env.REDIS_URL).hostname : 'localhost',
-  port: process.env.REDIS_URL ? parseInt(new URL(process.env.REDIS_URL).port || '6379') : 6379,
-};
+// ─── Connection ───────────────────────────────────────────────
+// Build a full ioredis connection from REDIS_URL so it works with hosted
+// providers like Upstash: include auth (username/password) and TLS for
+// rediss:// URLs. `maxRetriesPerRequest: null` is REQUIRED by BullMQ.
+function buildConnection() {
+  const url = process.env.REDIS_URL;
+  if (!url) {
+    return { host: 'localhost', port: 6379, maxRetriesPerRequest: null as null };
+  }
+  const u = new URL(url);
+  return {
+    host: u.hostname,
+    port: Number(u.port || 6379),
+    username: u.username ? decodeURIComponent(u.username) : undefined,
+    password: u.password ? decodeURIComponent(u.password) : undefined,
+    tls: u.protocol === 'rediss:' ? {} : undefined,
+    maxRetriesPerRequest: null as null,
+  };
+}
+
+const connection = buildConnection();
 
 export const agentQueue = new Queue('agent-runs', {
   connection,
