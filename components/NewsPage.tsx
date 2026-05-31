@@ -586,7 +586,7 @@ export const NewsPage: React.FC<NewsPageProps> = ({ onTickerClick }) => {
     // For real API data, items are already tab-filtered server-side; categories array may not be present
     if (tab === 'hot')          return base.filter(n => (n.categories?.includes('hot') ?? true));
     if (tab === 'latest')       return [...base].sort((a,b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
-    if (tab === 'critical')     return base.filter(n => ['breaking','high'].includes(n.impactLevel));
+    if (tab === 'critical')     return base; // server already filters to critical-worthy items
     if (tab === 'popular')      return [...base].sort((a,b) => b.views - a.views);
     return base;
   }, [tab, filterByChip, newsItems]);

@@ -142,7 +142,13 @@ export async function runAgentPipeline(agentRunId: string): Promise<void> {
               isLive: false,
               isActive: true,
               category: enriched.category ?? 'latest',
-              impactLevel: enriched.impactLevel ?? 'medium',
+              // Prefer a non-neutral provider impact; otherwise fall back to
+              // Groq's classification (the provider returns an explicit
+              // 'medium' on its no-API-key neutral path, so '?? ' is not enough).
+              impactLevel:
+                enriched.impactLevel && enriched.impactLevel !== 'medium'
+                  ? enriched.impactLevel
+                  : (groq!.impactLevel ?? 'medium'),
               tickers: enriched.tickers ?? [],
               aiConfidence: enriched.aiConfidence ?? 50,
               whyRelevant: enriched.whyRelevant ?? [],

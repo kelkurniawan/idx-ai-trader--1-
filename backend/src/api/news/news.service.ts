@@ -31,17 +31,39 @@ export async function getNewsFeed(
   const { tab, category, page, limit } = query;
   const where: any = { isActive: true };
 
-  // tab and category can overlap; tab takes precedence
+  // Tabs are VIEWS over the data (computed from impactLevel / views / recency),
+  // not a stored `category` string — because most items are tagged 'latest'.
+  // A `category` query param (non-tab) still filters by the stored category.
+  let orderBy: any = { publishedAt: 'desc' as const };
+
   if (tab && ['hot', 'latest', 'critical', 'popular'].includes(tab)) {
-    where.category = tab;
+    switch (tab) {
+      case 'critical':
+        // Genuinely market-moving news only.
+        where.OR = [
+          { impactLevel: { in: ['breaking', 'high', 'regulatory'] } },
+          { category: 'critical' },
+        ];
+        break;
+      case 'hot':
+        // Recent, meaningful news (everything but low-impact noise).
+        where.OR = [
+          { impactLevel: { in: ['breaking', 'high', 'medium', 'fundamental'] } },
+          { isLive: true },
+          { category: 'hot' },
+        ];
+        break;
+      case 'popular':
+        orderBy = { views: 'desc' as const };
+        break;
+      case 'latest':
+      default:
+        // all active, newest first (default orderBy)
+        break;
+    }
   } else if (category) {
     where.category = category;
   }
-
-  const orderBy =
-    tab === 'popular'
-      ? { views: 'desc' as const }
-      : { publishedAt: 'desc' as const };
 
   const [rows, total] = await Promise.all([
     prisma.newsItem.findMany({
