@@ -1,6 +1,6 @@
 // RESTYLED: SahamGue Design System
 // AI News Feature — Production-ready with dummy data stubs
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Home, LineChart, Eye, Newspaper, ClipboardList, BookOpen } from 'lucide-react';
 
 // ─────────────────────────────────────────────────────────
@@ -30,7 +30,7 @@ export interface EstimatedImpact {
 export interface NewsItem {
   id: string; headline: string; summary: string;
   source: NewsSource; publishedAt: string;
-  categories: NewsCategory[];
+  categories?: NewsCategory[];
   impactLevel: ImpactLevel;
   tickers: string[]; aiConfidence: number;
   estimatedImpact: EstimatedImpact[];
@@ -508,9 +508,64 @@ interface NewsPageProps {
 export const NewsPage: React.FC<NewsPageProps> = ({ onTickerClick }) => {
   const [tab, setTab] = useState<typeof TABS[number]['id']>('personalized');
   const [filterChip, setFilterChip] = useState('Semua');
-  const [loading] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [hasNewArticles, setHasNewArticles] = useState(false);
+  const newestSeenRef = useRef<string | null>(null);
 
   const WATCHLIST = ['BBCA','TLKM','GOTO','BBRI','ASII'];
+
+  const fetchForTab = useCallback(async (): Promise<NewsItem[]> => {
+    if (tab === 'personalized') {
+      return fetchPersonalizedNews(WATCHLIST, []);
+    }
+    return fetchNewsByCategory(tab, 1);
+  }, [tab]);
+
+  const loadNews = useCallback(async () => {
+    setLoading(true);
+    try {
+      const items = await fetchForTab();
+      setNewsItems(items);
+      newestSeenRef.current = items[0]?.publishedAt ?? newestSeenRef.current;
+      setHasNewArticles(false);
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchForTab]);
+
+  useEffect(() => { loadNews(); }, [loadNews]);
+
+  const refreshFeed = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      const items = await fetchForTab();
+      setNewsItems(items);
+      newestSeenRef.current = items[0]?.publishedAt ?? newestSeenRef.current;
+      setHasNewArticles(false);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [fetchForTab]);
+
+  const checkForNewArticles = useCallback(async () => {
+    const latest = await fetchForTab();
+    const newest = latest[0]?.publishedAt ?? null;
+    if (newestSeenRef.current && newest && newest > newestSeenRef.current) {
+      setHasNewArticles(true);
+    }
+  }, [fetchForTab]);
+
+  useEffect(() => {
+    const onFocus = () => { checkForNewArticles(); };
+    window.addEventListener('focus', onFocus);
+    const id = window.setInterval(checkForNewArticles, 5 * 60 * 1000);
+    return () => {
+      window.removeEventListener('focus', onFocus);
+      window.clearInterval(id);
+    };
+  }, [checkForNewArticles]);
 
   const filterByChip = useCallback((news: NewsItem[]) => {
     if (filterChip === 'Semua') return news;
@@ -526,14 +581,15 @@ export const NewsPage: React.FC<NewsPageProps> = ({ onTickerClick }) => {
   }, [filterChip]);
 
   const getNews = useCallback(() => {
-    const base = filterByChip(DUMMY_NEWS);
+    const base = filterByChip(newsItems);
     if (tab === 'personalized') return base.filter(n => WATCHLIST.some(t => n.tickers.includes(t))).slice(0,8);
-    if (tab === 'hot')          return base.filter(n => n.categories.includes('hot'));
-    if (tab === 'latest')       return base.sort((a,b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
+    // For real API data, items are already tab-filtered server-side; categories array may not be present
+    if (tab === 'hot')          return base.filter(n => (n.categories?.includes('hot') ?? true));
+    if (tab === 'latest')       return [...base].sort((a,b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
     if (tab === 'critical')     return base.filter(n => ['breaking','high'].includes(n.impactLevel));
     if (tab === 'popular')      return [...base].sort((a,b) => b.views - a.views);
     return base;
-  }, [tab, filterByChip]);
+  }, [tab, filterByChip, newsItems]);
 
   const news = getNews();
 
@@ -551,10 +607,24 @@ export const NewsPage: React.FC<NewsPageProps> = ({ onTickerClick }) => {
               ✦ Ditenagai AI Agent
             </p>
           </div>
-          <button className="w-9 h-9 rounded-xl flex items-center justify-center"
-            style={{ background: SG.bgMuted }}>
-            <span style={{ fontSize: 18 }}>🔍</span>
-          </button>
+          <div className="flex items-center gap-2">
+            {hasNewArticles && (
+              <button onClick={refreshFeed}
+                className="rounded-full px-3 py-1 text-[11px] font-bold"
+                style={{ background: SG.accent, color: SG.bgBase, fontFamily: SG.sans }}>
+                ● Berita baru — refresh
+              </button>
+            )}
+            <button onClick={refreshFeed} disabled={isRefreshing}
+              className="rounded-xl px-3 h-9 flex items-center text-[12px] font-semibold"
+              style={{ background: SG.bgMuted, color: SG.textPrimary, fontFamily: SG.sans }}>
+              {isRefreshing ? '…' : '↻ Refresh'}
+            </button>
+            <button className="w-9 h-9 rounded-xl flex items-center justify-center"
+              style={{ background: SG.bgMuted }}>
+              <span style={{ fontSize: 18 }}>🔍</span>
+            </button>
+          </div>
         </div>
 
         {/* Tab row */}

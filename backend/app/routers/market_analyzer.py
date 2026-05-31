@@ -6,7 +6,8 @@ Priority #1: Complete market analysis endpoints.
 
 from datetime import datetime
 from typing import Optional
-from fastapi import APIRouter, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
+from sqlalchemy.ext.asyncio import AsyncSession
 import base64
 
 from ..schemas.stock import TechnicalIndicators, RealTimePrice, TimeFrame
@@ -32,13 +33,15 @@ from ..services.fundamental_service import (
     fetch_real_fundamentals_with_ai
 )
 from ..config import get_settings
+from ..database import get_db
+from ..services import stock_repository as repo
 
 router = APIRouter()
 settings = get_settings()
 
 
 @router.get("/{ticker}", response_model=MarketAnalysis)
-async def get_complete_analysis(ticker: str):
+async def get_complete_analysis(ticker: str, db: AsyncSession = Depends(get_db)):
     """
     **Complete Market Analysis** (Priority #1)
     
@@ -59,9 +62,20 @@ async def get_complete_analysis(ticker: str):
     if not profile:
         raise HTTPException(status_code=404, detail=f"Stock {ticker} not found")
     
-    # Get price data
-    realtime = market_data_service.get_realtime_price(ticker)
-    history = market_data_service.generate_mock_history(ticker, days=200)
+    # Real data when available, else deterministic mock.
+    realtime = None
+    db_history = []
+    if settings.USE_REAL_PRICES:
+        realtime = await repo.get_latest_price_from_db(db, ticker)
+        db_history = await repo.get_history_from_db(db, ticker, days=200)
+
+    used_real_prices = bool(db_history)
+    if used_real_prices:
+        history = db_history
+    else:
+        history = market_data_service.generate_mock_history(ticker, days=200)
+
+    realtime = realtime or market_data_service.get_realtime_price(ticker)
     prices = [d.price for d in history]
     volumes = [d.volume for d in history]
     
@@ -141,7 +155,7 @@ async def get_complete_analysis(ticker: str):
         quantitative=quantitative,
         approach=approach,
         last_updated=datetime.now(),
-        data_source="mock" if settings.use_mock_data else "live",
+        data_source="live" if used_real_prices else "mock",
     )
 
 

@@ -47,7 +47,11 @@ class Settings(BaseSettings):
     # Fundamental Analysis Configuration
     USE_REAL_FUNDAMENTALS: bool = False
     FUNDAMENTAL_DATA_SOURCE: Literal["mock", "gemini", "idx_api"] = "mock"
-    
+
+    # Real Data Pipeline
+    USE_REAL_PRICES: bool = False          # When True, read prices from DB/Yahoo instead of mock
+    INTERNAL_API_SECRET: str = ""          # Shared secret guarding internal trigger endpoints
+
     # ===========================
     # Authentication & Security
     # ===========================

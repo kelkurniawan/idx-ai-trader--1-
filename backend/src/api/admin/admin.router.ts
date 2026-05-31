@@ -6,6 +6,44 @@ import { prisma } from '../../db/prisma';
 
 const router = Router();
 
+// Shared handler — queues an agent run.
+async function triggerAgentRun(req: Request, res: Response, next: NextFunction) {
+  try {
+    const run = await prisma.agentRun.create({
+      data: { agentType: 'manual_trigger', status: 'running' },
+    });
+
+    const job = await agentQueue.add(
+      'run-agent',
+      { agentRunId: run.id },
+      {
+        attempts: 2,
+        backoff: { type: 'exponential', delay: 10_000 },
+        removeOnComplete: 50,
+        removeOnFail: 20,
+      }
+    );
+
+    res.status(202).json({
+      message: 'Agent queued',
+      agentRunId: run.id,
+      jobId: job.id,
+    });
+  } catch (e) {
+    next(e);
+  }
+}
+
+// Internal scheduler path: registered BEFORE the admin middleware below so a
+// valid X-Internal-Secret skips the JWT requirement. Otherwise fall through.
+router.post('/agent/trigger', (req: Request, res: Response, next: NextFunction) => {
+  const secret = process.env.INTERNAL_API_SECRET;
+  if (secret && req.header('x-internal-secret') === secret) {
+    return triggerAgentRun(req, res, next);
+  }
+  return next();
+});
+
 // All admin routes: strict rate limiting + JWT admin role
 router.use(adminLimiter, requireJwt, requireRole('admin'));
 
@@ -36,32 +74,7 @@ router.use(adminLimiter, requireJwt, requireRole('admin'));
  *       429:
  *         description: Rate limit exceeded
  */
-router.post('/agent/trigger', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const run = await prisma.agentRun.create({
-      data: { agentType: 'manual_trigger', status: 'running' },
-    });
-
-    const job = await agentQueue.add(
-      'run-agent',
-      { agentRunId: run.id },
-      {
-        attempts: 2,
-        backoff: { type: 'exponential', delay: 10_000 },
-        removeOnComplete: 50,
-        removeOnFail: 20,
-      }
-    );
-
-    res.status(202).json({
-      message: 'Agent queued',
-      agentRunId: run.id,
-      jobId: job.id,
-    });
-  } catch (e) {
-    next(e);
-  }
-});
+router.post('/agent/trigger', triggerAgentRun);
 
 /**
  * @swagger
