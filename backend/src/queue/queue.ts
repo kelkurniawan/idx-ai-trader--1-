@@ -1,66 +1,36 @@
-import { Queue, Worker, QueueEvents } from 'bullmq';
 import { runAgentPipeline } from '../agent/pipeline';
 
-// ─── Connection ───────────────────────────────────────────────
-// Build a full ioredis connection from REDIS_URL so it works with hosted
-// providers like Upstash: include auth (username/password) and TLS for
-// rediss:// URLs. `maxRetriesPerRequest: null` is REQUIRED by BullMQ.
-function buildConnection() {
-  const url = process.env.REDIS_URL;
-  if (!url) {
-    return { host: 'localhost', port: 6379, maxRetriesPerRequest: null as null };
-  }
-  const u = new URL(url);
-  return {
-    host: u.hostname,
-    port: Number(u.port || 6379),
-    username: u.username ? decodeURIComponent(u.username) : undefined,
-    password: u.password ? decodeURIComponent(u.password) : undefined,
-    tls: u.protocol === 'rediss:' ? {} : undefined,
-    maxRetriesPerRequest: null as null,
-  };
+// ─── Background agent runner (no BullMQ) ──────────────────────
+// We intentionally avoid BullMQ/Redis for the agent here. On a free, sleeping
+// Render instance, BullMQ's worker constantly polls Redis (draining the Upstash
+// free command quota) and its blocking connections hang the process. Instead we
+// run the pipeline in the background of the Node process — the external trigger
+// (GitHub Actions / cron) keeps the instance awake for the short run.
+//
+// A single in-process flag enforces concurrency:1 (one run at a time), mirroring
+// the previous BullMQ worker behavior. Dedup still uses Redis via cache/redis.ts,
+// which connects correctly from the full REDIS_URL.
+
+let running = false;
+
+export function isAgentRunning(): boolean {
+  return running;
 }
 
-const connection = buildConnection();
-
-export const agentQueue = new Queue('agent-runs', {
-  connection,
-  defaultJobOptions: {
-    attempts: 2,
-    backoff: { type: 'exponential', delay: 15_000 },
-    removeOnComplete: { count: 50 },
-    removeOnFail:     { count: 20 },
-  },
-});
-
-// ─── Worker: single concurrency to prevent parallel DB writes ─
-const worker = new Worker(
-  'agent-runs',
-  async (job) => {
-    const { agentRunId } = job.data as { agentRunId: string };
-    console.log(`[Queue] Processing job ${job.id} — agentRunId: ${agentRunId}`);
-    await runAgentPipeline(agentRunId);
-  },
-  {
-    connection,
-    concurrency: 1,  // one agent run at a time
+/**
+ * Fire-and-forget: start the agent pipeline in the background.
+ * Returns { started } — false if a run is already in progress (so callers can
+ * respond immediately without queuing a duplicate run).
+ */
+export function runAgentInBackground(agentRunId: string): { started: boolean } {
+  if (running) {
+    return { started: false };
   }
-);
-
-// ─── Worker event listeners ───────────────────────────────────
-worker.on('completed', (job) => {
-  console.log(`[Queue] ✅ Job ${job.id} completed`);
-});
-
-worker.on('failed', (job, err) => {
-  console.error(`[Queue] ❌ Job ${job?.id} failed:`, err.message);
-});
-
-// ─── Queue events (for monitoring) ───────────────────────────
-const queueEvents = new QueueEvents('agent-runs', { connection });
-
-queueEvents.on('waiting', ({ jobId }) =>
-  console.log(`[Queue] Job ${jobId} waiting`)
-);
-
-export { worker };
+  running = true;
+  void runAgentPipeline(agentRunId)
+    .catch((err) => console.error('[Agent] Background run failed:', err))
+    .finally(() => {
+      running = false;
+    });
+  return { started: true };
+}

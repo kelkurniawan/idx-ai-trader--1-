@@ -1,6 +1,6 @@
 import cron from 'node-cron';
 import { prisma } from '../db/prisma';
-import { agentQueue } from './queue';
+import { runAgentInBackground } from './queue';
 
 // IDX Market Hours (WIB = UTC+7):
 //   Pre-market:    08:45 – 09:00 WIB = 01:45 – 02:00 UTC
@@ -42,17 +42,15 @@ export function startScheduler(): void {
           data: { agentType: 'scheduled', status: 'running' },
         });
 
-        await agentQueue.add(
-          'run-agent',
-          { agentRunId: run.id },
-          {
-            jobId: `scheduled-${run.id}`,  // stable ID prevents queue floods
-            attempts: 2,
-            backoff: { type: 'exponential', delay: 15_000 },
-          }
-        );
-
-        console.log(`[Scheduler] Queued agent run: ${run.id}`);
+        const { started } = runAgentInBackground(run.id);
+        if (started) {
+          console.log(`[Scheduler] Started agent run: ${run.id}`);
+        } else {
+          await prisma.agentRun
+            .update({ where: { id: run.id }, data: { status: 'skipped', finishedAt: new Date() } })
+            .catch(() => {});
+          console.log('[Scheduler] Skipped — a run is already in progress');
+        }
       } catch (err) {
         console.error('[Scheduler] Failed to queue agent run:', err);
       }

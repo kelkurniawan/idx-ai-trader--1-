@@ -1,33 +1,35 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { requireJwt, requireRole } from '../../middleware/auth';
 import { adminLimiter } from '../../middleware/rateLimiter';
-import { agentQueue } from '../../queue/queue';
+import { runAgentInBackground } from '../../queue/queue';
 import { prisma } from '../../db/prisma';
 
 const router = Router();
 
-// Shared handler — queues an agent run.
+// Shared handler — starts an agent run in the background and responds immediately.
 async function triggerAgentRun(req: Request, res: Response, next: NextFunction) {
   try {
     const run = await prisma.agentRun.create({
       data: { agentType: 'manual_trigger', status: 'running' },
     });
 
-    const job = await agentQueue.add(
-      'run-agent',
-      { agentRunId: run.id },
-      {
-        attempts: 2,
-        backoff: { type: 'exponential', delay: 10_000 },
-        removeOnComplete: 50,
-        removeOnFail: 20,
-      }
-    );
+    const { started } = runAgentInBackground(run.id);
+
+    if (!started) {
+      await prisma.agentRun
+        .update({ where: { id: run.id }, data: { status: 'skipped', finishedAt: new Date() } })
+        .catch(() => {});
+      return res.status(202).json({
+        message: 'An agent run is already in progress',
+        agentRunId: run.id,
+        started: false,
+      });
+    }
 
     res.status(202).json({
-      message: 'Agent queued',
+      message: 'Agent run started',
       agentRunId: run.id,
-      jobId: job.id,
+      started: true,
     });
   } catch (e) {
     next(e);
