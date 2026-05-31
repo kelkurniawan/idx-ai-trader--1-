@@ -4,7 +4,9 @@ from backend.app.config import Settings
 def _base(**overrides):
     values = {"JWT_SECRET_KEY": "x" * 64, "MFA_ENCRYPTION_KEY": "y" * 64}
     values.update(overrides)
-    return Settings(**values)
+    # _env_file=None so the test asserts true code defaults, independent of the
+    # developer's local backend/.env (which may set USE_REAL_PRICES, etc.).
+    return Settings(_env_file=None, **values)
 
 
 def test_real_data_flags_have_safe_defaults():

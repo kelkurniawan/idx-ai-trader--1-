@@ -175,3 +175,73 @@ async def ingest_all(db: AsyncSession, throttle_seconds: float = 0.3) -> dict:
     }
     logger.info("[PriceIngest] run complete: %s", summary)
     return summary
+
+
+# ---------------------------------------------------------------------------
+# On-demand resolution (any ticker) + background ingest
+# ---------------------------------------------------------------------------
+
+async def ensure_stock_row(db: AsyncSession, ticker: str, name: Optional[str] = None,
+                           sector: str = "IDX") -> None:
+    """Insert a `stocks` row for `ticker` if it does not already exist."""
+    ticker = ticker.upper()
+    exists = (
+        await db.execute(select(Stock.ticker).where(Stock.ticker == ticker))
+    ).scalar_one_or_none()
+    if exists:
+        return
+    db.add(Stock(ticker=ticker, name=name or ticker, sector=sector))
+    await db.commit()
+
+
+async def resolve_ticker(db: AsyncSession, ticker: str) -> bool:
+    """On-demand: fetch a ticker from Yahoo and persist its prices + a stocks row.
+
+    Returns True if Yahoo returned data (a real, tradable IDX ticker), else False.
+    Used by the read path so a user can search ANY valid IDX ticker even if it
+    was never in the curated seed list; the first lookup persists it for fast
+    reads thereafter.
+    """
+    ticker = ticker.upper()
+    rows = await fetch_yahoo_history(ticker)
+    if not rows:
+        return False
+    await upsert_prices(db, ticker, rows)
+    await ensure_stock_row(db, ticker)
+    return True
+
+
+# Single-flight guard for the background ingest (mirrors concurrency:1).
+_ingest_running = False
+
+
+def is_ingest_running() -> bool:
+    return _ingest_running
+
+
+def run_ingest_in_background() -> dict:
+    """Start a full ingest run in the background and return immediately.
+
+    The daily scrape of the whole universe takes minutes — far longer than an
+    HTTP request should block — so the trigger endpoint kicks this off and
+    responds 202 while it runs on the event loop.
+    """
+    global _ingest_running
+    if _ingest_running:
+        return {"started": False, "message": "An ingest run is already in progress"}
+    _ingest_running = True
+
+    async def _run() -> None:
+        global _ingest_running
+        from ..database import AsyncSessionLocal
+        try:
+            async with AsyncSessionLocal() as db:
+                summary = await ingest_all(db)
+                logger.info("[PriceIngest] background run complete: %s", summary)
+        except Exception as exc:  # noqa: BLE001
+            logger.error("[PriceIngest] background run failed: %s", exc)
+        finally:
+            _ingest_running = False
+
+    asyncio.create_task(_run())
+    return {"started": True, "message": "Price ingest started in background"}

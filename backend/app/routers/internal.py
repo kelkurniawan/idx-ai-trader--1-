@@ -4,11 +4,9 @@ Called by the GitHub Actions scheduler (not by browsers).
 """
 
 from fastapi import APIRouter, Depends, Header, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..config import get_settings
-from ..database import get_db
-from ..services.price_ingest_service import ingest_all
+from ..services.price_ingest_service import run_ingest_in_background
 
 router = APIRouter()
 settings = get_settings()
@@ -24,9 +22,10 @@ def _require_internal_secret(x_internal_secret: str | None = Header(default=None
 
 
 @router.post("/refresh-prices")
-async def refresh_prices(
-    db: AsyncSession = Depends(get_db),
-    _: None = Depends(_require_internal_secret),
-):
-    """Run the daily Yahoo Finance price ingest for all tickers."""
-    return await ingest_all(db)
+async def refresh_prices(_: None = Depends(_require_internal_secret)):
+    """Kick off the daily Yahoo Finance price ingest in the background.
+
+    Returns 202 immediately — the full-universe scrape runs on the event loop
+    so the HTTP trigger never times out.
+    """
+    return run_ingest_in_background()

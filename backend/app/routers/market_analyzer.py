@@ -35,6 +35,7 @@ from ..services.fundamental_service import (
 from ..config import get_settings
 from ..database import get_db
 from ..services import stock_repository as repo
+from ..services import price_ingest_service as ingest
 
 router = APIRouter()
 settings = get_settings()
@@ -56,12 +57,16 @@ async def get_complete_analysis(ticker: str, db: AsyncSession = Depends(get_db))
     This is the main endpoint for the Market Analyzer tab.
     """
     ticker = ticker.upper()
-    
-    # Get stock profile
+
+    # Resolve the stock profile: curated list → stored row → on-demand Yahoo.
     profile = market_data_service.get_stock_profile(ticker)
+    if not profile and settings.USE_REAL_PRICES:
+        profile = await repo.get_profile_from_db(db, ticker)
+        if not profile and await ingest.resolve_ticker(db, ticker):
+            profile = await repo.get_profile_from_db(db, ticker)
     if not profile:
         raise HTTPException(status_code=404, detail=f"Stock {ticker} not found")
-    
+
     # Real data when available, else deterministic mock.
     realtime = None
     db_history = []

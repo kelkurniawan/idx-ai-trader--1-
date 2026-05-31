@@ -5,8 +5,28 @@ from typing import Optional
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..models.stock import StockPrice
-from ..schemas.stock import StockDataPoint, RealTimePrice
+from ..models.stock import Stock, StockPrice
+from ..schemas.stock import StockDataPoint, RealTimePrice, StockProfile
+
+
+async def get_profile_from_db(db: AsyncSession, ticker: str) -> Optional[StockProfile]:
+    """Return a StockProfile from the `stocks` table, or None if not stored."""
+    ticker = ticker.upper()
+    row = (
+        await db.execute(select(Stock).where(Stock.ticker == ticker))
+    ).scalar_one_or_none()
+    if not row:
+        return None
+    return StockProfile(ticker=row.ticker, name=row.name, sector=row.sector or "IDX")
+
+
+async def get_all_profiles_from_db(db: AsyncSession) -> list[StockProfile]:
+    """Return every stored stock as a StockProfile (curated + on-demand)."""
+    rows = (await db.execute(select(Stock).order_by(Stock.ticker))).scalars().all()
+    return [
+        StockProfile(ticker=r.ticker, name=r.name, sector=r.sector or "IDX")
+        for r in rows
+    ]
 
 
 async def get_history_from_db(db: AsyncSession, ticker: str, days: int = 365) -> list[StockDataPoint]:
