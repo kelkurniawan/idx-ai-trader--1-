@@ -23,6 +23,10 @@ settings = get_settings()
 
 YAHOO_CHART_URL = "https://query1.finance.yahoo.com/v8/finance/chart/{symbol}"
 
+# Captured at import time so that test monkeypatches on asyncio.sleep do not
+# cause infinite recursion when the patched sleep tries to call asyncio.sleep.
+_real_sleep = asyncio.sleep
+
 
 def parse_yahoo_chart(payload: dict) -> list[dict]:
     """Convert a Yahoo chart JSON payload into a list of OHLCV row dicts.
@@ -132,3 +136,39 @@ async def upsert_prices(db: AsyncSession, ticker: str, rows: list[dict]) -> int:
         written += 1
     await db.commit()
     return written
+
+
+async def ingest_one(db: AsyncSession, ticker: str) -> int:
+    """Fetch + upsert a single ticker. Returns rows written (0 if Yahoo failed)."""
+    rows = await fetch_yahoo_history(ticker)
+    if not rows:
+        return 0
+    return await upsert_prices(db, ticker, rows)
+
+
+async def ingest_all(db: AsyncSession, throttle_seconds: float = 0.3) -> dict:
+    """Seed stocks, then fetch + upsert every ticker. Per-ticker failures are isolated."""
+    await seed_stocks(db)
+    updated = 0
+    failed_tickers: list[str] = []
+    for s in SAMPLE_IDX_STOCKS:
+        ticker = s["ticker"]
+        try:
+            written = await ingest_one(db, ticker)
+            if written > 0:
+                updated += 1
+            else:
+                failed_tickers.append(ticker)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("[PriceIngest] ticker %s failed: %s", ticker, exc)
+            failed_tickers.append(ticker)
+        await _real_sleep(throttle_seconds)
+
+    summary = {
+        "updated": updated,
+        "failed": len(failed_tickers),
+        "failed_tickers": failed_tickers,
+        "total": len(SAMPLE_IDX_STOCKS),
+    }
+    logger.info("[PriceIngest] run complete: %s", summary)
+    return summary
