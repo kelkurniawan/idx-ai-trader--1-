@@ -23,6 +23,7 @@ from .database import engine, Base, AsyncSessionLocal
 from .rate_limiter import limiter, _rate_limit_exceeded_handler, RateLimitExceeded
 from . import models  # noqa: F401
 from .routers import stocks, market_analyzer, predictions, auth, profile, ai, portfolio, strip, admin_ops
+from .routers import internal as internal_router
 from .routers import subscription as subscription_router
 from .routers import webhook as webhook_router
 from .services.ops_metrics import ops_metrics
@@ -311,6 +312,7 @@ app.include_router(strip.router, prefix="/api/strip", tags=["Strip"])
 app.include_router(subscription_router.router, prefix="/api/subscription", tags=["Subscription"])
 app.include_router(webhook_router.router, prefix="/api/webhooks/xendit", tags=["Webhooks"])
 app.include_router(admin_ops.router, prefix="/api/admin", tags=["Admin Ops"])
+app.include_router(internal_router.router, prefix="/api/internal", tags=["Internal"])
 
 # Serve uploaded avatar files
 import os
