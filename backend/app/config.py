@@ -151,32 +151,6 @@ class Settings(BaseSettings):
     # Dev: Leave empty — invoices will be mocked (no real Xendit calls)
     # Prod: Register at https://dashboard.xendit.co/ and set the vars below
     # XENDIT_SECRET_KEY: Your secret API key (test or live mode)
-
-    # ===========================
-    # MFA Encryption
-    # ===========================
-    # AES-256-CBC key for encrypting TOTP secrets at rest.
-    # Generate: python -c "import secrets; print(secrets.token_hex(32))"
-    # Leave empty in dev .env ("") — uses an insecure deterministic fallback.
-    MFA_ENCRYPTION_KEY: str
-    # Issuer name displayed in authenticator apps (e.g. "sahamgue")
-    TOTP_ISSUER: str = "sahamgue"
-
-    # ===========================
-    # Twilio SMS (for SMS OTP MFA)
-    # ===========================
-    # Dev: Leave empty — SMS OTPs will be printed to console
-    # Prod: Register at https://twilio.com and set the vars below
-    TWILIO_ACCOUNT_SID: str = ""
-    TWILIO_AUTH_TOKEN: str = ""
-    TWILIO_PHONE_NUMBER: str = ""  # Your Twilio phone number, e.g. +12345678900
-
-    # ===========================
-    # Xendit Payment Gateway
-    # ===========================
-    # Dev: Leave empty — invoices will be mocked (no real Xendit calls)
-    # Prod: Register at https://dashboard.xendit.co/ and set the vars below
-    # XENDIT_SECRET_KEY: Your secret API key (test or live mode)
     # XENDIT_WEBHOOK_TOKEN: Verification token from Dashboard → Webhooks
     XENDIT_SECRET_KEY: str = ""
     XENDIT_WEBHOOK_TOKEN: str = ""

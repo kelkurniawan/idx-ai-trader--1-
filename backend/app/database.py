@@ -40,11 +40,18 @@ elif "sqlite" in db_url:
     connect_args["check_same_thread"] = False
 
 # Create async engine
+# pool_pre_ping=True  — validates connections before use so that stale connections
+#                       from Neon/Supabase auto-suspend are silently recycled instead
+#                       of raising a ConnectionDoesNotExistError (→ HTTP 500).
+# pool_recycle=300    — force-recycle connections every 5 min to match Neon's
+#                       auto-suspend window on free-tier instances.
 engine = create_async_engine(
     db_url,
     echo=False,
     future=True,
     connect_args=connect_args,
+    pool_pre_ping=True,
+    pool_recycle=300,
 )
 
 # Async Session factory

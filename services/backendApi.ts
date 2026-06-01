@@ -64,8 +64,15 @@ async function apiFetch<T>(endpoint: string, options?: RequestInit): Promise<T> 
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ detail: 'Request failed' }));
-    throw new Error(error.detail || `API Error: ${response.status}`);
+    // Backend can return two shapes:
+    //   FastAPI default:       { detail: "..." }
+    //   Custom error handler:  { error: { code: "...", message: "..." } }
+    const body = await response.json().catch(() => ({}));
+    const message =
+      body?.detail ||
+      body?.error?.message ||
+      `API Error: ${response.status}`;
+    throw new Error(message);
   }
 
   return response.json();

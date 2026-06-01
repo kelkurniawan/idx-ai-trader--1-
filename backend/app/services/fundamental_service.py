@@ -83,6 +83,32 @@ def load_manual_override(ticker: str) -> Dict[str, Any]:
     return None
 
 
+# market_data.py uses broad sector labels (e.g. "Financials") while
+# SECTOR_FUNDAMENTALS keys use domain names (e.g. "Banking").
+# Map known mismatches so the right ranges are applied.
+_SECTOR_ALIAS: dict[str, str] = {
+    "Financials":       "Banking",
+    "Finance":          "Banking",
+    "Banks":            "Banking",
+    "Basic Materials":  "Mining",
+    "Materials":        "Mining",
+    "Energy":           "Mining",       # closest proxy
+    "Industrials":      "Infrastructure",
+    "Utilities":        "Infrastructure",
+    "Telecommunication":"Infrastructure",
+    "Telecom":          "Infrastructure",
+    "Healthcare":       "Default",
+    "IDX":              "Default",      # on-demand-resolved tickers
+}
+
+
+def _resolve_sector(sector: str) -> str:
+    """Normalise a broad sector label to a SECTOR_FUNDAMENTALS key."""
+    if sector in SECTOR_FUNDAMENTALS:
+        return sector
+    return _SECTOR_ALIAS.get(sector, "Default")
+
+
 def generate_mock_fundamentals(ticker: str, sector: str = "Default") -> FundamentalData:
     """
     Generate realistic mock fundamental data based on sector.
@@ -99,6 +125,8 @@ def generate_mock_fundamentals(ticker: str, sector: str = "Default") -> Fundamen
     if override and "fundamentals" in override:
         return FundamentalData(**override["fundamentals"])
 
+    # Normalise sector label (e.g. "Financials" → "Banking")
+    sector = _resolve_sector(sector)
     # Get sector ranges or use default
     ranges = SECTOR_FUNDAMENTALS.get(sector, SECTOR_FUNDAMENTALS["Default"])
     
@@ -291,6 +319,7 @@ def generate_qualitative_analysis(ticker: str, sector: str = "Default") -> Quali
     if override and "qualitative" in override:
         return QualitativeAnalysis(**override["qualitative"])
 
+    sector = _resolve_sector(sector)
     # Sector-specific qualitative insights
     sector_insights = {
         "Banking": {
@@ -425,6 +454,7 @@ def generate_analysis_approach(ticker: str, sector: str = "Default") -> Analysis
     if override and "approach" in override:
         return AnalysisApproach(**override["approach"])
 
+    sector = _resolve_sector(sector)
     # Determine methodology based on sector
     if sector in ["Banking", "Infrastructure"]:
         methodology = "Top-Down"
