@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **IDX AI Trader / SahamGue** is an AI-powered stock analysis SPA for the Indonesia Stock Exchange (IDX). It is a dual-backend monorepo: a Python FastAPI core API and a Node.js Express news microservice share a single PostgreSQL database, fronted by a React 19/Vite SPA and a Caddy reverse proxy.
 
-Current version: **1.9.1** (see [CHANGELOG.md](CHANGELOG.md) for full history).
+Current version: **1.10.0** (see [CHANGELOG.md](CHANGELOG.md) for full history).
 
 ---
 

@@ -3,6 +3,30 @@
 
 All notable changes to the IDX AI Trader project will be documented in this file.
 
+## [1.10.0] - IDX/KSEI Data Pipeline & Knowledge Vault - 2026-06-02
+
+### Added
+- **IDX End-of-Day Scraper (primary EOD source):** Added `backend/app/services/idx_ingest_service.py`, which calls the official IDX Stock Summary endpoint via `curl_cffi` (Chrome TLS impersonation, run off-thread) to clear Cloudflare. A single request returns the full listed universe (~959 tickers) with OHLC + Volume + **Value + Frequency + foreign buy/sell** for a trading date — richer and far more efficient than per-ticker Yahoo. Idempotent upsert into `stock_prices` (auto-creates `stocks` rows), single-flight background runner. Trigger: secret-guarded `POST /api/internal/refresh-idx-eod` (optional `{date: YYYYMMDD}`). Validated live: 959 tickers fetched + upserted for 2026-05-29.
+- **Foreign Flow Storage:** `stock_prices` gains `foreign_buy` / `foreign_sell` / `foreign_net` columns (Alembic `add_foreign_flow`), populated by the IDX path; Yahoo rows leave them NULL.
+- **KSEI Monthly Ownership Ingest:** Added `backend/app/services/ksei_ingest_service.py` to download the monthly KSEI Balance Position file (`web.ksei.co.id/Download/BalanceposEfek{YYYYMMDD}.zip` — pipe-delimited TXT in a ZIP), compute foreign/local ownership %, and store the latest snapshot on `stocks` (`foreign_ownership_pct` / `local_ownership_pct` / `ownership_as_of`, Alembic `add_ksei_ownership`). Trigger: `POST /api/internal/refresh-ksei-ownership` (optional month-end `{date}`; defaults to latest available). Validated live: matched all 93 curated tickers (BBCA 70.4% / TLKM 81.4% foreign).
+- **Obsidian Knowledge Vault:** Added `backend/scripts/build_vault.py`, generating `/vault` — one linked `.md` per ticker (YAML frontmatter + `[[wikilinks]]` to sector / listing-board / index notes) for Obsidian graph-view exploration, sourced from the curated seed (DB source of truth). 109+ notes (93 tickers, 11 sectors, 4 indices, board, MOC).
+- **Derived Index Membership:** Added `backend/scripts/refresh_membership.py`, which ranks the live IDX universe by traded value and writes `vault_membership_generated.json` (top 30/45/80/100 → IDX30/LQ45/IDX80/KOMPAS100). `vault_membership.py` prefers it over a hardcoded seed. A data-grounded proxy, since IDX publishes official constituents only as PDFs; vault notes label provenance.
+- **Daily/Monthly Schedulers:** Extended `.github/workflows/daily-data.yml` with the **IDX EOD primary** job (09:45 UTC, after the WIB close) and a **monthly KSEI** ownership job (3rd, 10:00 UTC). Reuses existing `PYTHON_API_URL` + `INTERNAL_API_SECRET` secrets.
+- **Resilient Migration Runner:** Added `backend/run_migrations.py` — adopts an existing-but-unstamped schema via `stamp head` (no DDL), upgrades otherwise, and prints a full traceback on failure. Replaces a bare `alembic upgrade head` in the deploy start command.
+- **Tests:** Added `backend/tests/test_idx_ingest.py` and `backend/tests/test_ksei_ingest.py` (parser + upsert, no network). Suite now 40 tests.
+- **Documentation:** Rewrote `README.md` as a professional project overview (architecture, full ERD in Mermaid, API/monitoring guide, folder structure, quick start). Added `ERD.md` / `ERD.mmd` (standalone diagrams). Updated `CLAUDE.md` with the IDX-primary/Yahoo-fallback pipeline, KSEI, foreign flow, vault, and an API docs/monitoring section.
+
+### Changed
+- **EOD Source Priority:** Live EOD data is now **IDX-primary → Yahoo-fallback → mock**. The scheduler runs Yahoo first (09:30 UTC) so IDX overwrites with richer official data at 09:45 UTC, and Yahoo's data stands if IDX is down. Both write the same `stock_prices` table.
+- **DB Engine Resilience:** `database.py` now sets `pool_pre_ping=True` + `pool_recycle=300` so connections recycled by Neon/Supabase free-tier auto-suspend are silently reconnected instead of raising `ConnectionDoesNotExistError`.
+
+### Fixed
+- **HTTP 500 from stale Redis in the rate limiter:** `request_guard.py` cached the Redis client after the first ping and never re-validated it; when Upstash dropped the connection, `redis.incr()` raised `ConnectionError`, which `GlobalRateLimitMiddleware` (catching only `HTTPException`) let bubble into a 500 on every API request. The guard now pings/reconnects the cached client and falls back to the in-memory counter on any Redis error instead of 500-ing.
+- **Frontend swallowed backend error messages:** `services/backendApi.ts` read only `error.detail`, but the backend's custom handler returns `{ error: { message } }`; every failure surfaced as a generic `"API Error: 500"`. Now reads both shapes.
+- **Fundamental sector ranges ignored for banks:** `market_data.py` tags blue chips as `"Financials"` while `fundamental_service.py` keyed ranges on `"Banking"`, so every bank fell back to generic Default ranges. Added a sector alias map (`Financials→Banking`, `Basic Materials→Mining`, etc.).
+- **Production deploy blocked at startup:** Documented and unblocked the chain where setting `ENVIRONMENT=production` made `validate_production_ready()` raise on incomplete live secrets (Clerk/Xendit/reCAPTCHA/Google), which failed both `alembic` and `uvicorn` at import and kept stale code serving 500s. The resilient migration runner + diagnostics surfaced the real cause; remaining step is configuring live secrets (or running `staging`).
+- **Duplicate config fields:** Removed copy-pasted `MFA_ENCRYPTION_KEY` / `TOTP_ISSUER` / `TWILIO_*` declarations in `config.py`.
+
 ## [1.9.1] - Any-Ticker Coverage & Analyze Fix - 2026-05-31
 
 ### Added
