@@ -86,10 +86,11 @@ export async function loadStockAnalysis(stock: StockProfile): Promise<StockAnaly
         const isBackendUp = await checkBackendHealth();
 
         if (isBackendUp) {
-            // Backend available — parallel fetch
-            const [analysisData, historyData, newsData] = await Promise.allSettled([
+            // Backend available — parallel fetch (incl. the real /price endpoint)
+            const [analysisData, historyData, priceData, newsData] = await Promise.allSettled([
                 getMarketAnalysis(stock.ticker),
                 getStockHistory(stock.ticker, '1Y'),
+                getRealTimePrice(stock.ticker),
                 fetchStockNews(stock.ticker, stock.name),
             ]);
 
@@ -98,25 +99,55 @@ export async function loadStockAnalysis(stock: StockProfile): Promise<StockAnaly
                 result.news = newsData.value;
             }
 
-            // Analysis
+            // Real history from the backend (authoritative — never let Gemini override it)
+            let gotRealHistory = false;
+            if (historyData.status === 'fulfilled' && historyData.value && historyData.value.length > 0) {
+                result.fullStockData = historyData.value;
+                gotRealHistory = true;
+            }
+
+            // Real last price from the backend
+            let gotRealPrice = false;
+            if (priceData.status === 'fulfilled' && priceData.value) {
+                result.realTimeData = priceData.value;
+                gotRealPrice = true;
+            }
+
+            // Full analysis from the backend
             if (analysisData.status === 'fulfilled' && analysisData.value) {
                 const formatted = convertToFrontendFormat(analysisData.value);
-                result.realTimeData = formatted.realTimeData;
-                result.technicals = formatted.technicals;
+                if (!gotRealPrice) result.realTimeData = formatted.realTimeData;
+                if (!gotRealHistory) result.technicals = formatted.technicals;
                 result.analysis = formatted.aiResult;
             }
 
-            // History
-            if (historyData.status === 'fulfilled' && historyData.value && historyData.value.length > 0) {
-                result.fullStockData = historyData.value;
-            } else if (result.realTimeData) {
-                result.fullStockData = generateMockStockData(stock.ticker, 365, result.realTimeData.price);
+            // Recompute technicals from real history if we have it
+            if (gotRealHistory) {
+                result.technicals = calculateTechnicals(result.fullStockData);
             }
 
-            if (result.analysis) return applyOverrides(stock.ticker, result);
+            // If the backend gave us ANY real data, use it — do NOT fall back to
+            // Gemini (whose price lookups can be wrong and would clobber real data).
+            if (gotRealHistory || gotRealPrice || result.analysis) {
+                if (!result.analysis) {
+                    // Prices are real but the analysis endpoint failed — derive the
+                    // analysis from the REAL data rather than Gemini's price.
+                    try {
+                        result.analysis = await analyzeStockWithGemini(
+                            stock.ticker,
+                            result.fullStockData,
+                            result.technicals,
+                            result.realTimeData || undefined
+                        );
+                    } catch {
+                        result.analysis = null as any;
+                    }
+                }
+                return applyOverrides(stock.ticker, result);
+            }
         }
 
-        // Fallback to Gemini
+        // Full Gemini fallback — ONLY when the backend gave us nothing real.
         console.log('[DataProvider] Backend unavailable, falling back to Gemini...');
 
         const [rtResult, newsResult] = await Promise.allSettled([
