@@ -1,12 +1,16 @@
 {
   "rewrites": [
     {
+      "source": "/health",
+      "destination": "https://sahamgue-api.onrender.com/health"
+    },
+    {
       "source": "/api/news/:path*",
-      "destination": "https://REPLACE_NODE_BACKEND_URL/api/news/:path*"
+      "destination": "https://sahamgue-news.onrender.com/api/news/:path*"
     },
     {
       "source": "/api/agent/:path*",
-      "destination": "https://REPLACE_NODE_BACKEND_URL/api/agent/:path*"
+      "destination": "https://sahamgue-news.onrender.com/api/agent/:path*"
     },
     {
       "source": "/api/:path*",

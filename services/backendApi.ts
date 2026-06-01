@@ -38,7 +38,9 @@ async function checkBackendHealth(): Promise<boolean> {
   try {
     const response = await fetch(`${API_BASE_URL}/health`, {
       method: 'GET',
-      signal: AbortSignal.timeout(3000)
+      // Render free instances can be briefly slow to respond; 8s is tolerant of
+      // warm-up without blocking the UI for a full cold start.
+      signal: AbortSignal.timeout(8000)
     });
     backendAvailable = response.ok;
     lastCheckTime = now;
