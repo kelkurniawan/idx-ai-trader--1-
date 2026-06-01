@@ -42,3 +42,9 @@ uploads/
 # OS
 .DS_Store
 Thumbs.db
+
+# Local tooling / editor / deploy artifacts (accidentally committed once)
+.obsidian/
+.vercel/
+.playwright-mcp/
+idx trader/
