@@ -135,10 +135,28 @@ export async function runAgentPipeline(agentRunId: string): Promise<void> {
         }
         if (isDup) { articlesDuped++; continue; }
 
+        // Prefer a non-neutral provider impact; otherwise fall back to Groq's
+        // classification (the provider returns an explicit 'medium' on its
+        // no-API-key neutral path, so '?? ' is not enough).
+        const impactLevel =
+          enriched.impactLevel && enriched.impactLevel !== 'medium'
+            ? enriched.impactLevel
+            : (groq!.impactLevel ?? 'medium');
+        const category = enriched.category ?? 'latest';
+
         try {
           await prisma.newsItem.upsert({
             where: { originalUrl: article.originalUrl },
-            update: {},  // idempotent – don't overwrite existing records
+            // Refresh the AI-derived classification on re-scrape so existing
+            // articles pick up improved tagging (e.g. newly-extracted tickers).
+            // Leaves views / publishedAt / agentRunId untouched.
+            update: {
+              category,
+              impactLevel,
+              tickers,
+              aiConfidence: enriched.aiConfidence ?? 50,
+              whyRelevant: enriched.whyRelevant ?? [],
+            },
             create: {
               headline: article.headline,
               summary: groq!.summary,
@@ -148,14 +166,8 @@ export async function runAgentPipeline(agentRunId: string): Promise<void> {
               rawContent: article.rawContent,
               isLive: false,
               isActive: true,
-              category: enriched.category ?? 'latest',
-              // Prefer a non-neutral provider impact; otherwise fall back to
-              // Groq's classification (the provider returns an explicit
-              // 'medium' on its no-API-key neutral path, so '?? ' is not enough).
-              impactLevel:
-                enriched.impactLevel && enriched.impactLevel !== 'medium'
-                  ? enriched.impactLevel
-                  : (groq!.impactLevel ?? 'medium'),
+              category,
+              impactLevel,
               tickers,
               aiConfidence: enriched.aiConfidence ?? 50,
               whyRelevant: enriched.whyRelevant ?? [],
