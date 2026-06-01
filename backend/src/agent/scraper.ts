@@ -1,4 +1,5 @@
 import Parser from 'rss-parser';
+import { extract as extractArticle } from '@extractus/article-extractor';
 
 // ─── Types ────────────────────────────────────────────────────
 export interface RawArticle {
@@ -94,4 +95,31 @@ export async function scrapeAllFeeds(): Promise<RawArticle[]> {
 
   console.log(`[Scraper] Total articles fetched: ${results.length}`);
   return results;
+}
+
+// ─── Full-article fetch ───────────────────────────────────────
+// RSS feeds only provide a short snippet (often just the headline), which is
+// too little for reliable ticker extraction. Use a readability extractor to
+// pull the clean article body (nav/ads removed) so the AI sees the full story.
+
+/** Fetch an article URL and return its clean body text, or '' on any failure. */
+export async function fetchArticleBody(url: string): Promise<string> {
+  try {
+    const article = await extractArticle(url);
+    const content = article?.content ?? '';
+    if (!content) return '';
+    return content
+      .replace(/<[^>]+>/g, ' ')        // strip tags -> plain text
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&quot;/g, '"')
+      .replace(/&#0?39;|&apos;/g, "'")
+      .replace(/&[a-z]+;/gi, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 4000);
+  } catch {
+    console.warn(`[Scraper] Failed to fetch article body: ${url}`);
+    return '';
+  }
 }

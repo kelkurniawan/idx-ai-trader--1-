@@ -98,7 +98,7 @@ export async function summarizeAndScore(
         { role: 'system', content: SYSTEM_PROMPT },
         {
           role: 'user',
-          content: `Headline: ${article.headline}\n\nContent: ${article.rawContent.slice(0, 800)}`,
+          content: `Headline: ${article.headline}\n\nContent: ${article.rawContent.slice(0, 1500)}`,
         },
       ],
     });

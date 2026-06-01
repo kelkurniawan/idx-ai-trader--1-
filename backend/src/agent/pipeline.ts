@@ -1,5 +1,5 @@
 import { prisma } from '../db/prisma';
-import { scrapeAllFeeds } from './scraper';
+import { scrapeAllFeeds, fetchArticleBody } from './scraper';
 import { summarizeAndScore } from './groq';
 import { enrichBatch } from './provider';
 import { isNewUrl, isBatchDup } from './dedup';
@@ -54,6 +54,19 @@ export async function runAgentPipeline(agentRunId: string): Promise<void> {
       });
       return;
     }
+
+    // ── Step 2.5: Fetch full article bodies ──────────────────
+    // RSS snippets are too short for ticker extraction; replace each article's
+    // content with its full page text (best-effort, failures keep the snippet).
+    console.log(`[Pipeline ${agentRunId}] Step 2.5: Fetching full text for ${freshArticles.length} articles...`);
+    await Promise.allSettled(
+      freshArticles.map(async (a) => {
+        const body = await fetchArticleBody(a.originalUrl);
+        if (body && body.length > a.rawContent.length) {
+          a.rawContent = body;
+        }
+      })
+    );
 
     // ── Step 3: Groq pass (FREE) – summarize + relevance score ─
     console.log(`[Pipeline ${agentRunId}] Step 3: Running Groq on ${freshArticles.length} articles...`);
