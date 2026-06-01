@@ -10,10 +10,28 @@ export interface RawArticle {
 }
 
 // ─── Config ───────────────────────────────────────────────────
-const RSS_SOURCES = (process.env.NEWS_SOURCES ?? '')
-  .split(',')
-  .map((u) => u.trim())
-  .filter(Boolean);
+// Curated, verified IDX-relevant feeds. The CNBC "market" feed is
+// company/emiten-focused (earnings, dividends, corporate actions) so the
+// pipeline gets ticker-taggable stories, not just macro news. Any feeds in the
+// NEWS_SOURCES env var are merged in on top of these defaults.
+const DEFAULT_SOURCES = [
+  'https://www.cnbcindonesia.com/market/rss',  // market/emiten — company-specific
+  'https://www.cnbcindonesia.com/rss',         // general business
+  'https://www.idxchannel.com/rss',            // IDX-focused
+  'https://www.kontan.co.id/rss/news',
+  'https://www.bisnis.com/rss',
+  'https://finance.detik.com/rss',
+];
+
+const RSS_SOURCES = Array.from(
+  new Set([
+    ...DEFAULT_SOURCES,
+    ...(process.env.NEWS_SOURCES ?? '')
+      .split(',')
+      .map((u) => u.trim())
+      .filter(Boolean),
+  ])
+);
 
 const rss = new Parser({
   customFields: {
