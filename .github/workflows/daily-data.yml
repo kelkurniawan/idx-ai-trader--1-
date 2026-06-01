@@ -2,24 +2,43 @@ name: Daily Data Refresh
 
 on:
   schedule:
-    # Stocks: 09:30 UTC (~16:30 WIB, after IDX close), Mon-Fri
+    # Yahoo fallback: 09:30 UTC (~16:30 WIB). Runs first; IDX overwrites it 15 min
+    # later with richer official data. If IDX is down, this data stands.
     - cron: "30 9 * * 1-5"
+    # IDX EOD (PRIMARY): 09:45 UTC (~16:45 WIB), after IDX publishes the summary.
+    - cron: "45 9 * * 1-5"
     # News: 01:30 UTC (~08:30 WIB, before market open), Mon-Fri
     - cron: "30 1 * * 1-5"
   workflow_dispatch: {}
 
 jobs:
+  # Fallback EOD source (Yahoo Finance). Primary is refresh-idx-eod below.
   refresh-stocks:
     if: github.event.schedule == '30 9 * * 1-5' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - name: Wake Python service
         run: curl -fsS --max-time 90 "${{ secrets.PYTHON_API_URL }}/health" || true
-      - name: Trigger price refresh
+      - name: Trigger Yahoo price refresh (fallback)
         run: |
           curl -fsS --max-time 300 -X POST \
             -H "X-Internal-Secret: ${{ secrets.INTERNAL_API_SECRET }}" \
             "${{ secrets.PYTHON_API_URL }}/api/internal/refresh-prices"
+
+  # PRIMARY EOD source: official IDX Stock Summary (full universe, one call).
+  refresh-idx-eod:
+    if: github.event.schedule == '45 9 * * 1-5' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wake Python service
+        run: curl -fsS --max-time 90 "${{ secrets.PYTHON_API_URL }}/health" || true
+      - name: Trigger IDX end-of-day ingest (today)
+        run: |
+          curl -fsS --max-time 300 -X POST \
+            -H "X-Internal-Secret: ${{ secrets.INTERNAL_API_SECRET }}" \
+            -H "Content-Type: application/json" \
+            -d '{}' \
+            "${{ secrets.PYTHON_API_URL }}/api/internal/refresh-idx-eod"
 
   refresh-news:
     if: github.event.schedule == '30 1 * * 1-5' || github.event_name == 'workflow_dispatch'
