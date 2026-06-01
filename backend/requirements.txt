@@ -29,6 +29,9 @@ python-dotenv>=1.0.0
 # HTTP Client (for future IDX API integration)
 httpx>=0.24.0
 
+# IDX end-of-day scraping — Cloudflare-aware client with Chrome TLS impersonation
+curl_cffi>=0.7.0
+
 # File upload support
 python-multipart>=0.0.6
 
