@@ -21,6 +21,10 @@ class Stock(Base):
     subsector = Column(String(100))
     market_cap = Column(Float)
     listed_shares = Column(Float)
+    # KSEI monthly ownership snapshot (Balance Position file)
+    foreign_ownership_pct = Column(Float)
+    local_ownership_pct = Column(Float)
+    ownership_as_of = Column(DateTime)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -39,6 +43,9 @@ class StockPrice(Base):
     volume = Column(Float)
     value = Column(Float)  # Transaction value
     frequency = Column(Integer)  # Number of transactions
+    foreign_buy = Column(Float)  # Foreign buy value (IDX EOD only)
+    foreign_sell = Column(Float)  # Foreign sell value (IDX EOD only)
+    foreign_net = Column(Float)  # foreign_buy - foreign_sell (positive = net inflow)
     created_at = Column(DateTime, default=datetime.utcnow)
     
     __table_args__ = (

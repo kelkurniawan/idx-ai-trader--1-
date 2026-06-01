@@ -4,9 +4,9 @@ ticker: SSIA
 name: "Surya Semesta Internusa Tbk"
 sector: "Consumer Cyclicals"
 board: "Utama"
-indices: []
+indices: ["KOMPAS100"]
 data_source: seed
-last_synced: 2026-06-01
+last_synced: 2026-06-02
 tags: [idx, ticker, "sector/Consumer-Cyclicals"]
 ---
 
@@ -17,7 +17,7 @@ tags: [idx, ticker, "sector/Consumer-Cyclicals"]
 ## Classification
 - **Sector:** [[Consumer Cyclicals]]
 - **Listing board:** [[Utama]]
-- **Index membership:** _none (seed)_
+- **Index membership:** [[KOMPAS100]]
 
 ## Market data
 - End-of-day OHLCV is stored in the `stock_prices` table (`SSIA.JK`).

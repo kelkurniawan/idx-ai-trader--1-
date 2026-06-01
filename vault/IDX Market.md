@@ -8,7 +8,7 @@ tags: [idx, moc]
 # 🇮🇩 IDX Market — Map of Content
 
 Root note for the Indonesia Stock Exchange knowledge vault.
-**93** tickers · generated 2026-06-01.
+**93** tickers · generated 2026-06-02.
 
 > Open **Graph View** (Ctrl/Cmd+G) to explore ticker ↔ sector ↔ index ↔ board.
 
@@ -26,8 +26,10 @@ Root note for the Indonesia Stock Exchange knowledge vault.
 - [[Transportation & Logistics]] (5)
 
 ## Indices
-- [[IDX30]] (26)
-- [[LQ45]] (35)
+- [[IDX30]] (23)
+- [[IDX80]] (50)
+- [[KOMPAS100]] (60)
+- [[LQ45]] (32)
 
 ## Boards
 - [[Utama]] (93)

@@ -4,9 +4,9 @@ ticker: ARTO
 name: "Bank Jago Tbk"
 sector: "Financials"
 board: "Utama"
-indices: ["LQ45"]
+indices: []
 data_source: seed
-last_synced: 2026-06-01
+last_synced: 2026-06-02
 tags: [idx, ticker, "sector/Financials"]
 ---
 
@@ -17,7 +17,7 @@ tags: [idx, ticker, "sector/Financials"]
 ## Classification
 - **Sector:** [[Financials]]
 - **Listing board:** [[Utama]]
-- **Index membership:** [[LQ45]]
+- **Index membership:** _none (seed)_
 
 ## Market data
 - End-of-day OHLCV is stored in the `stock_prices` table (`ARTO.JK`).

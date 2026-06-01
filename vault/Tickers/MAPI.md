@@ -4,9 +4,9 @@ ticker: MAPI
 name: "Mitra Adiperkasa Tbk"
 sector: "Consumer Cyclicals"
 board: "Utama"
-indices: ["LQ45"]
+indices: ["IDX80", "KOMPAS100", "LQ45"]
 data_source: seed
-last_synced: 2026-06-01
+last_synced: 2026-06-02
 tags: [idx, ticker, "sector/Consumer-Cyclicals"]
 ---
 
@@ -17,7 +17,7 @@ tags: [idx, ticker, "sector/Consumer-Cyclicals"]
 ## Classification
 - **Sector:** [[Consumer Cyclicals]]
 - **Listing board:** [[Utama]]
-- **Index membership:** [[LQ45]]
+- **Index membership:** [[IDX80]] [[KOMPAS100]] [[LQ45]]
 
 ## Market data
 - End-of-day OHLCV is stored in the `stock_prices` table (`MAPI.JK`).

@@ -4,9 +4,9 @@ ticker: JPFA
 name: "JAPFA Comfeed Indonesia Tbk"
 sector: "Consumer Non-Cyclicals"
 board: "Utama"
-indices: []
+indices: ["IDX80", "KOMPAS100", "LQ45"]
 data_source: seed
-last_synced: 2026-06-01
+last_synced: 2026-06-02
 tags: [idx, ticker, "sector/Consumer-Non-Cyclicals"]
 ---
 
@@ -17,7 +17,7 @@ tags: [idx, ticker, "sector/Consumer-Non-Cyclicals"]
 ## Classification
 - **Sector:** [[Consumer Non-Cyclicals]]
 - **Listing board:** [[Utama]]
-- **Index membership:** _none (seed)_
+- **Index membership:** [[IDX80]] [[KOMPAS100]] [[LQ45]]
 
 ## Market data
 - End-of-day OHLCV is stored in the `stock_prices` table (`JPFA.JK`).

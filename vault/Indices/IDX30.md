@@ -1,19 +1,17 @@
 ---
 type: index
 name: "IDX30"
-member_count: 26
-data_source: seed
+member_count: 23
+data_source: idx-value-ranked (20260529)
 tags: [idx, index]
 ---
 
 # IDX30
 
-IDX headline index. Membership below is a **seed** and will be refreshed by the
-IDX constituent scraper.
+IDX headline index. Membership is **liquidity-derived** (top-N by traded value, source: `idx-value-ranked (20260529)`) — a data-grounded proxy, not the official IDX committee list.
 
-## Members (26)
-- [[ADRO]]
-- [[AKRA]]
+## Members (23)
+- [[AMMN]]
 - [[AMRT]]
 - [[ANTM]]
 - [[ASII]]
@@ -21,20 +19,18 @@ IDX constituent scraper.
 - [[BBNI]]
 - [[BBRI]]
 - [[BMRI]]
-- [[BRIS]]
+- [[BREN]]
 - [[BRPT]]
+- [[BUMI]]
 - [[CPIN]]
-- [[GOTO]]
-- [[ICBP]]
+- [[DSSA]]
 - [[INCO]]
-- [[ISAT]]
-- [[KLBF]]
+- [[INDF]]
+- [[INKP]]
 - [[MDKA]]
-- [[MEDC]]
-- [[PGAS]]
-- [[PTBA]]
-- [[SMGR]]
+- [[PTRO]]
+- [[RAJA]]
+- [[TKIM]]
 - [[TLKM]]
-- [[TOWR]]
 - [[UNTR]]
 - [[UNVR]]

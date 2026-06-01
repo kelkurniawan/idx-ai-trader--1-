@@ -4,9 +4,9 @@ ticker: PWON
 name: "Pakuwon Jati Tbk"
 sector: "Property & Real Estate"
 board: "Utama"
-indices: []
+indices: ["KOMPAS100"]
 data_source: seed
-last_synced: 2026-06-01
+last_synced: 2026-06-02
 tags: [idx, ticker, "sector/Property-and-Real-Estate"]
 ---
 
@@ -17,7 +17,7 @@ tags: [idx, ticker, "sector/Property-and-Real-Estate"]
 ## Classification
 - **Sector:** [[Property & Real Estate]]
 - **Listing board:** [[Utama]]
-- **Index membership:** _none (seed)_
+- **Index membership:** [[KOMPAS100]]
 
 ## Market data
 - End-of-day OHLCV is stored in the `stock_prices` table (`PWON.JK`).

@@ -4,9 +4,9 @@ ticker: INTP
 name: "Indocement Tunggal Prakarsa Tbk"
 sector: "Basic Materials"
 board: "Utama"
-indices: ["LQ45"]
+indices: ["KOMPAS100"]
 data_source: seed
-last_synced: 2026-06-01
+last_synced: 2026-06-02
 tags: [idx, ticker, "sector/Basic-Materials"]
 ---
 
@@ -17,7 +17,7 @@ tags: [idx, ticker, "sector/Basic-Materials"]
 ## Classification
 - **Sector:** [[Basic Materials]]
 - **Listing board:** [[Utama]]
-- **Index membership:** [[LQ45]]
+- **Index membership:** [[KOMPAS100]]
 
 ## Market data
 - End-of-day OHLCV is stored in the `stock_prices` table (`INTP.JK`).

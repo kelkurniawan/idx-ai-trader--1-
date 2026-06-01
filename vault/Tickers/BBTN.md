@@ -4,9 +4,9 @@ ticker: BBTN
 name: "Bank Tabungan Negara Tbk"
 sector: "Financials"
 board: "Utama"
-indices: []
+indices: ["KOMPAS100"]
 data_source: seed
-last_synced: 2026-06-01
+last_synced: 2026-06-02
 tags: [idx, ticker, "sector/Financials"]
 ---
 
@@ -17,7 +17,7 @@ tags: [idx, ticker, "sector/Financials"]
 ## Classification
 - **Sector:** [[Financials]]
 - **Listing board:** [[Utama]]
-- **Index membership:** _none (seed)_
+- **Index membership:** [[KOMPAS100]]
 
 ## Market data
 - End-of-day OHLCV is stored in the `stock_prices` table (`BBTN.JK`).

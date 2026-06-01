@@ -30,7 +30,7 @@ REPO_ROOT = os.path.dirname(BACKEND)
 sys.path.insert(0, BACKEND)
 sys.path.insert(0, HERE)
 
-from vault_membership import indices_for, board_for, INDEX_MEMBERS  # noqa: E402
+from vault_membership import indices_for, board_for, INDEX_MEMBERS, MEMBERSHIP_SOURCE  # noqa: E402
 
 VAULT = os.path.join(REPO_ROOT, "vault")
 TODAY = date.today().isoformat()
@@ -129,19 +129,25 @@ IDX-IC sector. **{len(tickers)}** tickers in the vault.
 
 def index_note(index: str, tickers: list[str]) -> str:
     present = sorted(t for t in tickers)
-    links = "\n".join(f"- [[{t}]]" for t in present) if present else "_no seeded members_"
+    links = "\n".join(f"- [[{t}]]" for t in present) if present else "_no members_"
+    if MEMBERSHIP_SOURCE == "seed":
+        provenance = ("Membership below is a **seed**. Run "
+                      "`python backend/scripts/refresh_membership.py` to derive it from live IDX data.")
+    else:
+        provenance = (f"Membership is **liquidity-derived** (top-N by traded value, "
+                      f"source: `{MEMBERSHIP_SOURCE}`) — a data-grounded proxy, "
+                      f"not the official IDX committee list.")
     return f"""---
 type: index
 name: "{index}"
 member_count: {len(present)}
-data_source: seed
+data_source: {MEMBERSHIP_SOURCE}
 tags: [idx, index]
 ---
 
 # {index}
 
-IDX headline index. Membership below is a **seed** and will be refreshed by the
-IDX constituent scraper.
+IDX headline index. {provenance}
 
 ## Members ({len(present)})
 {links}

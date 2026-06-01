@@ -9,6 +9,9 @@ on:
     - cron: "45 9 * * 1-5"
     # News: 01:30 UTC (~08:30 WIB, before market open), Mon-Fri
     - cron: "30 1 * * 1-5"
+    # KSEI ownership: monthly, 3rd of the month 10:00 UTC (KSEI publishes the
+    # prior month-end Balance Position file a couple of days into the new month).
+    - cron: "0 10 3 * *"
   workflow_dispatch: {}
 
 jobs:
@@ -39,6 +42,21 @@ jobs:
             -H "Content-Type: application/json" \
             -d '{}' \
             "${{ secrets.PYTHON_API_URL }}/api/internal/refresh-idx-eod"
+
+  # Monthly KSEI share-ownership (foreign vs local) enrichment.
+  refresh-ksei-ownership:
+    if: github.event.schedule == '0 10 3 * *' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wake Python service
+        run: curl -fsS --max-time 90 "${{ secrets.PYTHON_API_URL }}/health" || true
+      - name: Trigger KSEI ownership ingest (latest available month)
+        run: |
+          curl -fsS --max-time 300 -X POST \
+            -H "X-Internal-Secret: ${{ secrets.INTERNAL_API_SECRET }}" \
+            -H "Content-Type: application/json" \
+            -d '{}' \
+            "${{ secrets.PYTHON_API_URL }}/api/internal/refresh-ksei-ownership"
 
   refresh-news:
     if: github.event.schedule == '30 1 * * 1-5' || github.event_name == 'workflow_dispatch'

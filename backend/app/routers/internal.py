@@ -10,6 +10,7 @@ from pydantic import BaseModel
 from ..config import get_settings
 from ..services.price_ingest_service import run_ingest_in_background
 from ..services.idx_ingest_service import run_idx_ingest_in_background
+from ..services.ksei_ingest_service import run_ksei_ingest_in_background
 
 router = APIRouter()
 settings = get_settings()
@@ -17,6 +18,12 @@ settings = get_settings()
 
 class IdxEodRequest(BaseModel):
     """Optional body for the IDX EOD trigger. `date` is YYYYMMDD (defaults to today)."""
+    date: str | None = None
+
+
+class KseiOwnershipRequest(BaseModel):
+    """Optional body for the KSEI trigger. `date` is a month-end YYYYMMDD
+    (defaults to the latest available file)."""
     date: str | None = None
 
 
@@ -52,3 +59,18 @@ async def refresh_idx_eod(
     """
     date_str = body.date if body else None
     return run_idx_ingest_in_background(date_str)
+
+
+@router.post("/refresh-ksei-ownership")
+async def refresh_ksei_ownership(
+    body: KseiOwnershipRequest | None = None,
+    _: None = Depends(_require_internal_secret),
+):
+    """Kick off the MONTHLY KSEI share-ownership ingest.
+
+    Downloads the KSEI Balance Position file (defaults to the latest available
+    month-end) and stores each ticker's foreign/local ownership % on `stocks`.
+    Runs in the background and returns immediately.
+    """
+    date_str = body.date if body else None
+    return run_ksei_ingest_in_background(date_str)

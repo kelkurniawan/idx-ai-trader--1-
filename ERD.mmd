@@ -1,0 +1,249 @@
+erDiagram
+
+    users {
+        string   id                   PK
+        string   email                UK
+        string   name
+        string   password_hash
+        string   auth_provider
+        string   clerk_user_id        UK
+        string   google_id            UK
+        string   profile_picture_url
+        string   phone_number
+        boolean  mfa_enabled
+        string   mfa_type
+        string   plan
+        datetime plan_expires_at
+        datetime plan_grace_until
+        boolean  has_used_trial
+        string   subscription_cycle
+        string   theme_preference
+        boolean  is_admin
+        string   xendit_customer_id
+        datetime created_at
+        datetime deleted_at
+    }
+
+    remember_me_tokens {
+        string   id         PK
+        string   user_id    FK
+        string   token_hash UK
+        datetime expires_at
+        datetime created_at
+    }
+
+    password_reset_tokens {
+        string   id         PK
+        string   user_id    FK
+        string   token_hash UK
+        datetime expires_at
+        datetime used_at
+        datetime created_at
+    }
+
+    notification_preferences {
+        string   id               PK
+        string   user_id          FK
+        boolean  price_alerts
+        boolean  news_alerts
+        boolean  portfolio_digest
+        boolean  market_open
+        boolean  market_close
+        boolean  email_enabled
+        boolean  push_enabled
+        datetime created_at
+        datetime updated_at
+    }
+
+    user_sessions {
+        string   id         PK
+        string   user_id    FK
+        string   token_hash UK
+        string   user_agent
+        string   ip_address
+        datetime created_at
+        datetime expires_at
+    }
+
+    portfolio_holdings {
+        bigint   id             PK
+        string   user_id        FK
+        string   ticker
+        int      avg_buy_price
+        int      current_price
+        int      lot
+        int      cost_basis
+        int      market_value
+        int      unrealized_pnl
+        numeric  unrealized_pct
+        datetime created_at
+        datetime updated_at
+    }
+
+    trade_journal_entries {
+        bigint   id           PK
+        string   user_id      FK
+        string   ticker
+        string   trade_type
+        int      entry_price
+        int      exit_price
+        int      lot
+        string   strategy
+        date     trade_date
+        int      realized_pnl
+        numeric  realized_pct
+        string   status
+        datetime created_at
+        datetime updated_at
+    }
+
+    broker_cash {
+        int      id           PK
+        string   user_id      FK
+        bigint   cash_balance
+        datetime last_updated
+    }
+
+    stocks {
+        int      id            PK
+        string   ticker        UK
+        string   name
+        string   sector
+        string   subsector
+        float    market_cap
+        float    listed_shares
+        datetime created_at
+        datetime updated_at
+    }
+
+    stock_prices {
+        int      id        PK
+        string   ticker
+        datetime date
+        float    open
+        float    high
+        float    low
+        float    close
+        float    volume
+        float    value
+        int      frequency
+        datetime created_at
+    }
+
+    watchlist {
+        int      id           PK
+        string   ticker
+        float    target_price
+        float    stop_loss
+        string   note
+        datetime added_at
+    }
+
+    subscriptions {
+        string   id               PK
+        string   user_id          FK
+        string   plan
+        string   billing_cycle
+        string   status
+        boolean  is_trial
+        int      amount_idr
+        datetime started_at
+        datetime expires_at
+        datetime grace_until
+        string   xendit_invoice_id
+        datetime created_at
+        datetime updated_at
+    }
+
+    payment_history {
+        string   id                PK
+        string   user_id           FK
+        string   subscription_id   FK
+        string   xendit_invoice_id UK
+        string   plan
+        string   billing_cycle
+        int      amount_idr
+        string   status
+        string   payment_method
+        string   payment_channel
+        datetime paid_at
+        datetime created_at
+        datetime updated_at
+    }
+
+    analysis_cache {
+        int      id            PK
+        string   ticker
+        string   analysis_type
+        json     data
+        string   signal
+        float    confidence
+        datetime created_at
+        datetime expires_at
+    }
+
+    news_sources {
+        string   id        PK
+        string   name      UK
+        string   rssUrl    UK
+        boolean  isActive
+        datetime createdAt
+    }
+
+    news_items {
+        string   id             PK
+        string   headline
+        string   summary
+        string   originalUrl    UK
+        string   source
+        datetime publishedAt
+        datetime fetchedAt
+        boolean  isLive
+        boolean  isActive
+        string   category
+        string   impactLevel
+        string   tickers
+        int      aiConfidence
+        int      views
+        int      trendRank
+        string   agentRunId     FK
+        string   sourceId       FK
+    }
+
+    agent_runs {
+        string   id                 PK
+        datetime startedAt
+        datetime finishedAt
+        string   status
+        string   agentType
+        int      articlesFound
+        int      articlesSaved
+        int      articlesDuped
+        string   errorMessage
+        int      groqTokensUsed
+        int      claudeInputTokens
+        int      claudeOutputTokens
+        float    estimatedCostUsd
+    }
+
+    user_personalizations {
+        string   id               PK
+        string   userId           UK
+        string   watchlistTickers
+        string   preferredSources
+        datetime updatedAt
+    }
+
+    users ||--o{ remember_me_tokens : "has"
+    users ||--o{ password_reset_tokens : "has"
+    users ||--|| notification_preferences : "has one"
+    users ||--o{ user_sessions : "has"
+    users ||--o{ portfolio_holdings : "owns"
+    users ||--o{ trade_journal_entries : "logs"
+    users ||--o| broker_cash : "holds"
+    users ||--o{ subscriptions : "subscribes"
+    users ||--o{ payment_history : "pays"
+    subscriptions ||--o{ payment_history : "generates"
+    stocks ||--o{ stock_prices : "has prices"
+    agent_runs ||--o{ news_items : "produces"
+    news_sources ||--o{ news_items : "feeds"

@@ -201,6 +201,7 @@ async def upsert_idx_rows(db: AsyncSession, rows: list[dict]) -> int:
             )
         )).scalar_one_or_none()
 
+        foreign_net = r["foreign_buy"] - r["foreign_sell"]
         if existing:
             existing.open = r["open"]
             existing.high = r["high"]
@@ -209,11 +210,16 @@ async def upsert_idx_rows(db: AsyncSession, rows: list[dict]) -> int:
             existing.volume = r["volume"]
             existing.value = r["value"]
             existing.frequency = r["frequency"]
+            existing.foreign_buy = r["foreign_buy"]
+            existing.foreign_sell = r["foreign_sell"]
+            existing.foreign_net = foreign_net
         else:
             db.add(StockPrice(
                 ticker=ticker, date=r["date"],
                 open=r["open"], high=r["high"], low=r["low"], close=r["close"],
                 volume=r["volume"], value=r["value"], frequency=r["frequency"],
+                foreign_buy=r["foreign_buy"], foreign_sell=r["foreign_sell"],
+                foreign_net=foreign_net,
             ))
         written += 1
 

@@ -4,9 +4,9 @@ ticker: ICBP
 name: "Indofood CBP Sukses Makmur Tbk"
 sector: "Consumer Non-Cyclicals"
 board: "Utama"
-indices: ["IDX30", "LQ45"]
+indices: ["KOMPAS100"]
 data_source: seed
-last_synced: 2026-06-01
+last_synced: 2026-06-02
 tags: [idx, ticker, "sector/Consumer-Non-Cyclicals"]
 ---
 
@@ -17,7 +17,7 @@ tags: [idx, ticker, "sector/Consumer-Non-Cyclicals"]
 ## Classification
 - **Sector:** [[Consumer Non-Cyclicals]]
 - **Listing board:** [[Utama]]
-- **Index membership:** [[IDX30]] [[LQ45]]
+- **Index membership:** [[KOMPAS100]]
 
 ## Market data
 - End-of-day OHLCV is stored in the `stock_prices` table (`ICBP.JK`).

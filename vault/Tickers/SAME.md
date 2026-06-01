@@ -6,7 +6,7 @@ sector: "Healthcare"
 board: "Utama"
 indices: []
 data_source: seed
-last_synced: 2026-06-01
+last_synced: 2026-06-02
 tags: [idx, ticker, "sector/Healthcare"]
 ---
 

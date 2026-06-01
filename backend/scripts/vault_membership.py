@@ -1,19 +1,26 @@
 """
-Seed membership data for the Obsidian knowledge vault.
+Membership data for the Obsidian knowledge vault.
 
-This is intentionally a SEED. Index membership (LQ45/IDX30/...) changes every
-evaluation period, and listing board can change too. The Step-2 IDX scraper
-(scrape_idx_constituents) is the authoritative source and will overwrite this.
-
-Until then, this provides enough structure for a meaningful Obsidian graph.
-Anything not listed here is treated as Main board with no index membership.
+Index membership resolution order:
+  1. `vault_membership_generated.json` (if present) — produced by
+     refresh_membership.py from the IDX Stock Summary, ranked by traded value
+     (a liquidity-derived proxy: top-30 = IDX30, top-45 = LQ45, top-80 = IDX80,
+     top-100 = KOMPAS100). This is DERIVED, not the official IDX committee list
+     (which IDX only publishes as PDFs), but it auto-refreshes and is grounded
+     in real trading data.
+  2. The hardcoded SEED below — used until the refresh script has run.
 
 Listing boards: "Utama" (Main), "Pengembangan" (Development), "Akselerasi".
 """
 
-# Tickers that are (as a stable seed) part of each headline index.
-# NOTE: seed only — refresh via the scraper for accuracy.
-INDEX_MEMBERS: dict[str, set[str]] = {
+import json
+import os
+
+_GENERATED = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                          "vault_membership_generated.json")
+
+# Stable seed (used until refresh_membership.py generates real rankings).
+_SEED_INDEX_MEMBERS: dict[str, set[str]] = {
     "LQ45": {
         "BBCA", "BBRI", "BMRI", "BBNI", "TLKM", "ASII", "UNVR", "ICBP", "INDF",
         "KLBF", "GGRM", "UNTR", "ADRO", "ANTM", "PGAS", "PTBA", "SMGR", "INKP",
@@ -33,6 +40,23 @@ BOARD_OVERRIDES: dict[str, str] = {
     # "EXAMPLE": "Pengembangan",
 }
 DEFAULT_BOARD = "Utama"
+
+
+def _load_index_members() -> tuple[dict[str, set[str]], str]:
+    """Generated rankings (preferred) over the seed. Returns (members, source)."""
+    if os.path.exists(_GENERATED):
+        try:
+            with open(_GENERATED, encoding="utf-8") as f:
+                raw = json.load(f)
+            members = {k: set(v) for k, v in (raw.get("indices") or {}).items()}
+            if members:
+                return members, raw.get("source", "generated")
+        except Exception:  # noqa: BLE001 - fall back to seed on any parse issue
+            pass
+    return {k: set(v) for k, v in _SEED_INDEX_MEMBERS.items()}, "seed"
+
+
+INDEX_MEMBERS, MEMBERSHIP_SOURCE = _load_index_members()
 
 
 def indices_for(ticker: str) -> list[str]:

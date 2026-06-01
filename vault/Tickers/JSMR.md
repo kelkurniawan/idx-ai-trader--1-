@@ -4,9 +4,9 @@ ticker: JSMR
 name: "Jasa Marga Tbk"
 sector: "Infrastructures"
 board: "Utama"
-indices: []
+indices: ["KOMPAS100"]
 data_source: seed
-last_synced: 2026-06-01
+last_synced: 2026-06-02
 tags: [idx, ticker, "sector/Infrastructures"]
 ---
 
@@ -17,7 +17,7 @@ tags: [idx, ticker, "sector/Infrastructures"]
 ## Classification
 - **Sector:** [[Infrastructures]]
 - **Listing board:** [[Utama]]
-- **Index membership:** _none (seed)_
+- **Index membership:** [[KOMPAS100]]
 
 ## Market data
 - End-of-day OHLCV is stored in the `stock_prices` table (`JSMR.JK`).

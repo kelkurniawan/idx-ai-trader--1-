@@ -1,0 +1,29 @@
+- generic [active] [ref=e1]:
+  - main [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]: P
+        - generic [ref=e6]: PropelRFP
+      - heading "Win more contracts, faster." [level=1] [ref=e7]:
+        - text: Win more contracts,
+        - text: faster.
+      - paragraph [ref=e8]: AI-powered proposal automation grounded in your company's own winning history. Stop rewriting — start winning.
+    - generic [ref=e9]:
+      - link "Start free trial" [ref=e10] [cursor=pointer]:
+        - /url: /signup
+      - link "Sign in" [ref=e11] [cursor=pointer]:
+        - /url: /login
+    - paragraph [ref=e12]: 14-day free trial · No credit card required · Starting at $299/mo
+    - generic [ref=e13]:
+      - generic [ref=e14]:
+        - generic [ref=e15]: 60%
+        - generic [ref=e16]: Faster
+      - generic [ref=e17]:
+        - generic [ref=e18]: 40%
+        - generic [ref=e19]: Accept rate
+      - generic [ref=e20]:
+        - generic [ref=e21]: 10x
+        - generic [ref=e22]: ROI
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e28] [cursor=pointer]:
+    - img [ref=e29]

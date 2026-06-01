@@ -4,9 +4,9 @@ ticker: PTRO
 name: "Petrosea Tbk"
 sector: "Industrials"
 board: "Utama"
-indices: []
+indices: ["IDX30", "IDX80", "KOMPAS100", "LQ45"]
 data_source: seed
-last_synced: 2026-06-01
+last_synced: 2026-06-02
 tags: [idx, ticker, "sector/Industrials"]
 ---
 
@@ -17,7 +17,7 @@ tags: [idx, ticker, "sector/Industrials"]
 ## Classification
 - **Sector:** [[Industrials]]
 - **Listing board:** [[Utama]]
-- **Index membership:** _none (seed)_
+- **Index membership:** [[IDX30]] [[IDX80]] [[KOMPAS100]] [[LQ45]]
 
 ## Market data
 - End-of-day OHLCV is stored in the `stock_prices` table (`PTRO.JK`).
