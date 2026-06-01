@@ -20,6 +20,7 @@ export interface GroqResult {
   relevanceScore: number;        // 0.0 – 1.0
   isFinanceRelated: boolean;
   impactLevel: ImpactLevel;      // market impact, classified by Groq
+  tickers: string[];             // IDX ticker codes mentioned/affected
   groqTokensUsed: number;
 }
 
@@ -31,19 +32,37 @@ function normalizeImpact(raw: unknown): ImpactLevel {
   return VALID_IMPACTS.includes(v) ? v : 'medium';
 }
 
+/** Keep only well-formed IDX ticker codes (1-5 uppercase letters), deduped, max 5. */
+function normalizeTickers(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const t of raw) {
+    const code = String(t ?? '').toUpperCase().trim();
+    if (/^[A-Z]{1,5}$/.test(code) && !seen.has(code)) {
+      seen.add(code);
+      out.push(code);
+      if (out.length >= 5) break;
+    }
+  }
+  return out;
+}
+
 // ─── System prompt (stable — not regenerated per call) ────────
 const SYSTEM_PROMPT = `You are a financial news analyst for the Indonesian stock exchange (IDX/BEI).
 Your job is to: (1) summarize the news article in Bahasa Indonesia in max 200 characters,
 (2) score how relevant it is to Indonesian equities on a scale of 0.0 to 1.0,
 (3) determine if it is finance-related at all,
-(4) classify its market impact level.
+(4) classify its market impact level,
+(5) extract the IDX ticker codes of listed companies named or clearly affected.
 
 ALWAYS return valid JSON only, no markdown, no explanation:
 {
   "summary": "<string, max 200 chars, Bahasa Indonesia>",
   "relevanceScore": <float 0.0-1.0>,
   "isFinanceRelated": <boolean>,
-  "impactLevel": "<breaking|high|medium|low>"
+  "impactLevel": "<breaking|high|medium|low>",
+  "tickers": ["<IDX ticker code, 4 uppercase letters>"]
 }
 
 Score guidance:
@@ -56,7 +75,14 @@ impactLevel guidance:
 - "breaking": urgent market-moving event right now (halt, default, major M&A, regulatory shock)
 - "high":     clearly affects specific tickers (earnings beat/miss, dividends, guidance, sanctions)
 - "medium":   relevant context, sector/macro news, ordinary corporate updates
-- "low":      tangential or non-finance news`;
+- "low":      tangential or non-finance news
+
+tickers guidance:
+- Use the official 4-letter IDX code, e.g. Bank Central Asia -> BBCA, Telkom -> TLKM,
+  Bank Rakyat Indonesia -> BBRI, GoTo -> GOTO, Astra International -> ASII.
+- Only include companies actually named or unambiguously the subject of the article.
+- Return an empty array [] when no specific listed company is involved (macro/sector news).
+- Max 5 tickers, most relevant first. Do NOT guess or invent codes.`;
 
 // ─── Groq summarizer ─────────────────────────────────────────
 export async function summarizeAndScore(
@@ -91,6 +117,7 @@ export async function summarizeAndScore(
       relevanceScore: Math.min(1, Math.max(0, Number(parsed.relevanceScore ?? 0))),
       isFinanceRelated: Boolean(parsed.isFinanceRelated ?? false),
       impactLevel: normalizeImpact(parsed.impactLevel),
+      tickers: normalizeTickers(parsed.tickers),
       groqTokensUsed: tokensUsed,
     };
   } catch (err) {

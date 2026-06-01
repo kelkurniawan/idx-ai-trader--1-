@@ -118,9 +118,16 @@ export async function runAgentPipeline(agentRunId: string): Promise<void> {
         const enriched = claudeResult.items[i];
         if (!enriched) continue;
 
+        // Prefer provider-extracted tickers; fall back to Groq's extraction when
+        // the provider ran neutrally (no API key) and returned none.
+        const tickers =
+          enriched.tickers && enriched.tickers.length > 0
+            ? enriched.tickers
+            : (groq!.tickers ?? []);
+
         // COST RULE: skip ticker+headline duplicates to avoid re-storing same story
         let isDup = false;
-        for (const ticker of enriched.tickers ?? []) {
+        for (const ticker of tickers) {
           if (await isBatchDup(ticker, article.headline)) {
             isDup = true;
             break;
@@ -149,7 +156,7 @@ export async function runAgentPipeline(agentRunId: string): Promise<void> {
                 enriched.impactLevel && enriched.impactLevel !== 'medium'
                   ? enriched.impactLevel
                   : (groq!.impactLevel ?? 'medium'),
-              tickers: enriched.tickers ?? [],
+              tickers,
               aiConfidence: enriched.aiConfidence ?? 50,
               whyRelevant: enriched.whyRelevant ?? [],
               estimatedImpact: (enriched.estimatedImpact as any) ?? [],
